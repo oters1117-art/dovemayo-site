@@ -1,3 +1,4 @@
+export const FOOD = Object.freeze({"CHILI": 26, "EGGPLANT": 20, "BLUEBERRY": 6, "TOMATO": 48});
 /** Continuous snake simulation. Coordinates are CSS pixels; no DOM dependency. */
 export const TAU = Math.PI * 2;
 export const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
@@ -17,18 +18,18 @@ export class SnakeGame {
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;
     this.speed=125;this.age=0;this.score=0;this.kills=0;this.dead=false;
     this.food=[];this.enemies=[];this.events=[];this.nextEnemy=11+random()*5;
-    this.projectiles=[];this.puddles=[];this.bombs=[];this.slowUntil=0;this.spawnCount=0;
+    this.projectiles=[];this.puddles=[];this.bombs=[];this.slowUntil=0;this.spawnCount=0;this.buff={kind:null,until:0};
     this.refill();
   }
   blocked(p,r) {
     return p.x<r+2 || p.y<r+2 || p.x>this.width-r-2 || p.y>this.height-r-2 || this.obstacles.some(b=>touches(p,r,b));
   }
-  freePoint(minDistance=60) {
+  freePoint(minDistance=60,radius=16) {
     for(let i=0;i<700;i++) {
       const p={x:18+this.random()*(this.width-36),y:18+this.random()*(this.height-36)};
-      if(!this.blocked(p,16) && distance(p,this.body[0])>minDistance &&
+      if(!this.blocked(p,radius) && distance(p,this.body[0])>minDistance &&
         !this.body.some(b=>distance(p,b)<23) && !this.food.some(b=>distance(p,b)<36) &&
-        !this.enemies.some(b=>distance(p,b)<42)) return p;
+        !this.enemies.some(b=>distance(p,b)<48) && !this.bombs.some(b=>distance(p,b)<36)) return p;
     }
     return null;
   }
@@ -47,15 +48,19 @@ export class SnakeGame {
   }
   tick(dt) {
     this.age+=dt;
-    this.angle=turnToward(this.angle,this.target,9.5*dt);
-    for(const p of this.puddles)if(p.until>this.age && distance(this.body[0],p)<p.radius+this.radius)this.slowUntil=this.age+1.2;
-    const speed=(this.speed+Math.min(this.score*1.2,32))*(this.age<this.slowUntil?.55:1);
+    this.angle=turnToward(this.angle,this.target,4.6*dt);
+    for(const p of this.puddles)if(!this.invincible && p.until>this.age && distance(this.body[0],p)<p.radius+this.radius)this.slowUntil=this.age+1.2;
+    const speed=this.currentSpeed;
     const head={x:this.body[0].x+Math.cos(this.angle)*speed*dt,y:this.body[0].y+Math.sin(this.angle)*speed*dt};
-    if(this.blocked(head,this.radius)){this.fail('벽이나 글자, 카드에 부딪혔어요.');return;}
+    if(this.invincible){
+      const r=this.radius+2;
+      if(head.x<r||head.x>this.width-r){head.x=Math.max(r,Math.min(this.width-r,head.x));this.angle=Math.PI-this.angle;this.target=Math.PI-this.target;}
+      if(head.y<r||head.y>this.height-r){head.y=Math.max(r,Math.min(this.height-r,head.y));this.angle=-this.angle;this.target=-this.target;}
+    }else if(this.blocked(head,this.radius)){this.fail('벽이나 글자, 카드에 부딪혔어요.');return;}
     let behind=0;
     for(let i=1;i<this.body.length;i++) {
       behind+=distance(this.body[i-1],this.body[i]);
-      if(behind>22 && distance(head,this.body[i])<this.radius*1.65){this.fail('자기 몸에 부딪혔어요.');return;}
+      if(!this.invincible && behind>22 && distance(head,this.body[i])<this.radius*1.65){this.fail('자기 몸에 부딪혔어요.');return;}
     }
     this.body.unshift(head);
     this.length=Math.min(this.goalLength,this.length+dt*82);
@@ -66,22 +71,23 @@ export class SnakeGame {
       used+=d;
     }
     for(let i=this.food.length-1;i>=0;i--)if(distance(head,this.food[i])<15){
-      const p=this.food.splice(i,1)[0];this.goalLength+=24;this.score++;this.events.push({type:'eat',...p});
+      this.eatFood(this.food.splice(i,1)[0]);
     }
     this.refill();
     if(this.age>=this.nextEnemy) {
       this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;
       if(this.enemies.length<Math.min(24,3+Math.floor(this.age/15))){
-        const p=this.freePoint(160);
-        if(p){const kind=this.spawnCount<6?this.spawnCount:Math.floor(this.random()*6);this.spawnCount++;
-          this.enemies.push({...p,kind,born:this.age,state:'idle',until:this.age+2});this.events.push({type:'enemy',...p});}
+        const kind=this.spawnCount<6?this.spawnCount:Math.floor(this.random()*6);
+        const p=this.freePoint(160,kind===4?24:16);
+        if(p){this.spawnCount++;
+          this.enemies.push({...p,kind,born:this.age,state:'idle',until:this.age+(kind===4?12+this.random()*12:2)});this.events.push({type:'enemy',...p});}
       }
     }
     for(let i=this.enemies.length-1;i>=0;i--) {
       const e=this.enemies[i];if(this.age-e.born<1)continue;
       this.updateEnemy(e,dt);
-      if(e.kind!==4 && distance(e,head)<13){this.fail('표정 이모지에게 잡혔어요.');return;}
-      if(this.bodyHit(e,14)){this.enemies.splice(i,1);this.kills++;this.events.push({type:'defeat',x:e.x,y:e.y});}
+      if(!this.invincible && e.kind!==4 && distance(e,head)<13){this.fail('표정 이모지에게 잡혔어요.');return;}
+      if((this.invincible && distance(e,head)<16)||this.bodyHit(e,14)){this.enemies.splice(i,1);this.kills++;this.events.push({type:'defeat',x:e.x,y:e.y});}
     }
     this.updateHazards(dt);
 
@@ -94,13 +100,55 @@ export class SnakeGame {
     }
     return false;
   }
+  get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
+  get invincible(){return this.buffKind==='rainbow';}
+  get currentSpeed(){return (this.speed+Math.min(Math.max(0,this.score)*1.2,32))*(this.buffKind==='red'?1.5:1)*(!this.invincible&&this.age<this.slowUntil?.55:1);}
+  setBuff(kind,duration){this.buff={kind,until:this.age+duration};this.slowUntil=0;}
+  eatFood(p){
+    if(p.kind===FOOD.EGGPLANT){this.score-=5;this.goalLength=Math.max(18,this.goalLength-48);this.length=Math.min(this.length,this.goalLength);this.events.push({type:'penalty',...p});return;}
+    this.score++;this.goalLength+=24;
+    if(p.kind===FOOD.CHILI)this.setBuff('red',5);
+    if(p.kind===FOOD.BLUEBERRY)this.setBuff('blue',3);
+    if(p.kind===FOOD.TOMATO)this.setBuff('rainbow',5);
+    this.events.push({type:'eat',...p});
+  }
+  enemyDiscs(e,p=e){return e.kind===4?[{x:p.x,y:p.y,r:10},{x:p.x-16,y:p.y+1,r:6}]:[{x:p.x,y:p.y,r:10}];}
+  enemyBlocked(e,p){
+    return this.enemyDiscs(e,p).some(c=>this.blocked(c,c.r)||
+      this.enemies.some(other=>other!==e&&this.enemyDiscs(other).some(d=>distance(c,d)<c.r+d.r+1))||
+      this.food.some(f=>distance(c,f)<c.r+10)||this.bombs.some(b=>distance(c,b)<c.r+10));
+  }
   moveEnemy(e,target,speed,dt,away=false){
-    const a=Math.atan2(target.y-e.y,target.x-e.x)+(away?Math.PI:0);
-    for(const offset of [0,.55,-.55,1.1,-1.1,1.6,-1.6]){
-      const p={x:e.x+Math.cos(a+offset)*speed*dt,y:e.y+Math.sin(a+offset)*speed*dt};
-      if(!this.blocked(p,11)){e.x=p.x;e.y=p.y;return true;}
+    const steps=Math.max(1,Math.ceil(speed*dt/2)),stride=speed*dt/steps;let moved=false;
+    for(let i=0;i<steps;i++){
+      const a=Math.atan2(target.y-e.y,target.x-e.x)+(away?Math.PI:0);let accepted=false;
+      for(const offset of [0,.4,-.4,.85,-.85,1.3,-1.3,1.65,-1.65]){
+        const p={x:e.x+Math.cos(a+offset)*stride,y:e.y+Math.sin(a+offset)*stride};
+        if(!this.enemyBlocked(e,p)){e.x=p.x;e.y=p.y;accepted=true;moved=true;break;}
+      }
+      if(!accepted)break;
     }
-    return false;
+    return moved;
+  }
+  orbit(e,dt){
+    e.orbitDirection ??= this.random()<.5?-1:1;
+    const h=this.body[0],a=Math.atan2(e.y-h.y,e.x-h.x)+e.orbitDirection*.38;
+    this.moveEnemy(e,{x:h.x+Math.cos(a)*185,y:h.y+Math.sin(a)*185},72,dt);
+  }
+  predictiveAim(e){
+    const h=this.body[0],vx=Math.cos(this.angle)*this.currentSpeed,vy=Math.sin(this.angle)*this.currentSpeed;
+    let t=Math.min(1.1,distance(e,h)/300),p;
+    for(let i=0;i<3;i++){p={x:h.x+vx*t,y:h.y+vy*t};t=Math.min(1.1,distance(e,p)/300);}
+    return p;
+  }
+  dropBomb(e){
+    if(this.bombs.length>=20)return;
+    for(let i=0;i<12;i++){
+      const a=i*TAU/12,p={x:e.x+Math.cos(a)*27,y:e.y+Math.sin(a)*27};
+      if(!this.blocked(p,11)&&!this.enemies.some(o=>this.enemyDiscs(o).some(d=>distance(p,d)<11+d.r))&&!this.food.some(o=>distance(p,o)<22)&&!this.bombs.some(o=>distance(p,o)<24)){
+        this.bombs.push({...p,born:this.age,armed:null});return;
+      }
+    }
   }
   aim(){
     const h=this.body[0],p={x:Math.max(20,Math.min(this.width-20,h.x+Math.cos(this.angle)*32)),y:Math.max(20,Math.min(this.height-20,h.y+Math.sin(this.angle)*32))};
@@ -113,37 +161,42 @@ export class SnakeGame {
   }
   updateEnemy(e,dt){
     const h=this.body[0],d=distance(e,h),age=this.age;
-    e.state ||= 'idle';e.until ??= age+2;
+    e.state ||= 'idle';e.until ??= age+(e.kind===4?12+this.random()*12:2);
     if(e.kind===0){this.moveEnemy(e,h,37+Math.min(this.score,15),dt);return;}
     if(e.kind===4){
       // Harmless by design: it dashes to a nearby point, never attacks.
       if(e.state==='dash'){
-        if(distance(e,e.aim)<12 || age>e.until){e.state='idle';e.until=age+1.6+this.random()*3;}
+        if(distance(e,e.aim)<12 || age>e.until){e.state='idle';e.until=age+10+this.random()*14;}
         else this.moveEnemy(e,e.aim,480,dt);
       }else if(age>e.until){
         const a=this.random()*TAU,p={x:h.x+Math.cos(a)*48,y:h.y+Math.sin(a)*48};
-        e.aim=this.blocked(p,12)?{...e}:p;e.state='dash';e.until=age+.7;
+        e.aim=this.enemyBlocked(e,p)?{x:e.x,y:e.y}:p;e.state='dash';e.until=age+Math.min(2,distance(e,e.aim)/480+.2);
       }
       return;
     }
     if(e.kind===5){
       if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{...e};e.roamUntil=age+3;}
       this.moveEnemy(e,e.aim,56,dt);
-      if(age>e.until){if(this.bombs.length<20)this.bombs.push({x:e.x,y:e.y,born:age,armed:null});e.until=age+3+this.random()*3;}
+      if(age>e.until){this.dropBomb(e);e.until=age+3+this.random()*3;}
       return;
     }
+    if(e.kind===3){
+      this.orbit(e,dt);
+      if(e.state==='charge'){
+        if(age>=e.until){
+          const predicted=this.predictiveAim(e),a=Math.atan2(predicted.y-e.y,predicted.x-e.x),range=Math.min(360,Math.max(180,distance(e,predicted)));
+          if(this.projectiles.length<24)this.projectiles.push({type:'boomerang',x:e.x,y:e.y,from:{x:e.x,y:e.y},to:{x:e.x+Math.cos(a)*range,y:e.y+Math.sin(a)*range},born:age,duration:1.6,owner:e});
+          this.events.push({type:'throw',x:e.x,y:e.y});e.state='recover';e.until=age+2.4;
+        }
+      }else if(age>=e.until&&d<300){e.state='charge';e.chargeAt=age;e.until=age+1.1;}
+      return;
+    }
+    if(e.state==='flee'){this.moveEnemy(e,h,155,dt,true);if(age>=e.until)e.state='idle';return;}
     if(e.state==='mark'){
       if(age>=e.until){e.state='shake';e.until=age+.42;}return;
     }
     if(e.state==='shake'){
-      if(age>=e.until){this.toss(e,e.kind===1?'shoe':'potion');e.state='recover';e.until=age+2.8+this.random();}return;
-    }
-    if(e.state==='charge'){
-      if(age>=e.until){
-        const a=Math.atan2(h.y-e.y,h.x-e.x);
-        if(this.projectiles.length<24)this.projectiles.push({type:'boomerang',x:e.x,y:e.y,from:{x:e.x,y:e.y},to:{x:e.x+Math.cos(a)*240,y:e.y+Math.sin(a)*240},born:age,duration:1.6,owner:e});
-        this.events.push({type:'throw',x:e.x,y:e.y});e.state='recover';e.until=age+2.4;
-      }return;
+      if(age>=e.until){this.toss(e,e.kind===1?'shoe':'potion');e.state=e.kind===1?'flee':'recover';e.until=age+(e.kind===1?3.5:2.8)+this.random();}return;
     }
     if(e.state==='recover'){
       if(d<175)this.moveEnemy(e,h,90,dt,true);
@@ -162,8 +215,8 @@ export class SnakeGame {
         if(t>=1){this.projectiles.splice(i,1);continue;}
         if(t<.5){const k=Math.sin(t*Math.PI);p.x=p.from.x+(p.to.x-p.from.x)*k;p.y=p.from.y+(p.to.y-p.from.y)*k;}
         else {const k=(t-.5)*2,target=this.enemies.includes(p.owner)?p.owner:p.from;p.x=p.to.x+(target.x-p.to.x)*k;p.y=p.to.y+(target.y-p.to.y)*k;}
-        if(distance(p,h)<13){this.fail('빡침 부메랑에 맞았어요.');return;}
-        if(this.bodyHit(p,13)){this.projectiles.splice(i,1);this.events.push({type:'defeat',x:p.x,y:p.y});}
+        if(!this.invincible && distance(p,h)<13){this.fail('빡침 부메랑에 맞았어요.');return;}
+        if((this.invincible && distance(p,h)<16)||this.bodyHit(p,13)){this.projectiles.splice(i,1);this.events.push({type:'defeat',x:p.x,y:p.y});}
       }else {
         p.x=p.from.x+(p.to.x-p.from.x)*Math.min(t,1);p.y=p.from.y+(p.to.y-p.from.y)*Math.min(t,1);
         if(t>=1){
@@ -171,9 +224,9 @@ export class SnakeGame {
           if(p.type==='potion'){
             if(this.puddles.length>=12)this.puddles.shift();
             this.puddles.push({x:p.to.x,y:p.to.y,radius:35,born:this.age,until:this.age+7});
-            if(distance(h,p.to)<39)this.slowUntil=this.age+1.2;
+            if(!this.invincible && distance(h,p.to)<39)this.slowUntil=this.age+1.2;
             this.events.push({type:'splash',x:p.to.x,y:p.to.y});
-          }else {this.events.push({type:'impact',x:p.to.x,y:p.to.y});if(distance(h,p.to)<24){this.fail('신발에 맞았어요.');return;}}
+          }else {this.events.push({type:'impact',x:p.to.x,y:p.to.y});if(!this.invincible && distance(h,p.to)<24){this.fail('신발에 맞았어요.');return;}}
         }
       }
     }
@@ -183,7 +236,7 @@ export class SnakeGame {
       if(b.armed===null && this.age-b.born>.5 && distance(h,b)<82)b.armed=this.age;
       if(b.armed!==null && this.age-b.armed>=.95){
         this.bombs.splice(i,1);this.events.push({type:'blast',x:b.x,y:b.y,radius:72});
-        if(distance(h,b)<72+this.radius){this.fail('폭탄에 휘말렸어요.');return;}
+        if(!this.invincible && distance(h,b)<72+this.radius){this.fail('폭탄에 휘말렸어요.');return;}
       }else if(this.age-b.born>30)this.bombs.splice(i,1);
     }
   }
@@ -194,4 +247,9 @@ export function headingFromKeys(keys,angle){
   const x=Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft'));
   const y=Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp'));
   return x||y?Math.atan2(y,x):angle;
+}
+
+export function cardObstacle(b){
+  const inset=Math.min(8,Math.max(5,b.width*.085));
+  return {x:b.left+inset,y:b.top+inset,w:b.width-2*inset,h:b.height-2*inset,radius:Math.max(3,b.width*.21-inset)};
 }
