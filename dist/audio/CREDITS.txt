@@ -15,3 +15,10 @@ Underwater Ambience — Kinoton: https://freesound.org/people/Kinoton/sounds/393
 Bubble/wine excerpts equalized and faded; underwater excerpt filtered and crossfaded into a loop. Tooth and shoe use Kenney book flip and footstep recordings.
 
 Clarity revision: wine-clear isolates the 3.08 kHz wineglass ring; underwater-clear removes sub-260 Hz rumble and retains water detail up to 3.5 kHz. Same CC0 sources above.
+
+Additional CC0 sources, edited excerpts:
+Apple - bite 01 — Anthousai: https://freesound.org/people/Anthousai/sounds/398756/
+Page Turn (1) — OwlStorm: https://freesound.org/people/OwlStorm/sounds/151220/
+WaterBottle.wav — MCYost: https://freesound.org/s/146334/ (beer and non-vocal low water gag)
+Bubbles 001.wav — ristooooo1: https://freesound.org/s/539823/ (six separate bubbles)
+44.1 kHz excerpts, gentle filtering, level matching and edge fades. No human voice used for eggplant.
