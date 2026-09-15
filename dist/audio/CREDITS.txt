@@ -1,0 +1,9 @@
+Sound sources (CC0 1.0):
+Ice moving in glass — Rvgerxini
+https://freesound.org/people/Rvgerxini/sounds/464451/
+50 RPG sound effects — Kenney
+https://opengameart.org/content/50-rpg-sound-effects
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Edited for dovemayo: short excerpts, mono conversion, EQ, level matching, fades.
+Ice samples: ice-0/1/2. Book flips: paper-0/1/2. Cloth: cloth-0/1. Book close: soft.

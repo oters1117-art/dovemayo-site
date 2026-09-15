@@ -216,12 +216,12 @@ test('tomato speeds up, crosses its own body and gives 1.5 seconds of expiry pro
  g.body=[{x:440,y:200},{x:420,y:200},{x:420,y:220},{x:460,y:220},{x:442,y:200}];g.step(.01);assert(!g.dead);assert(g.body[0].x>440);
  g.age=10.1;assert(g.invincible);assert.equal(g.currentSpeed,125);g.age=11.51;assert(!g.invincible);
 });
-test('golden apple gives three points and summons ten enemies',()=>{
- const g=fresh();g.food=[];g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(g.score,3);assert.equal(g.enemies.length,10);
+test('golden apple gives five points and summons fifteen enemies',()=>{
+ const g=fresh();g.food=[];g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(g.score,5);assert.equal(g.enemies.length,15);
 });
 test('blueberry periodically fires forward bullets that do not hurt the player',()=>{
  const g=fresh();g.food=[];g.eatFood({kind:FOOD.BLUEBERRY});g.step(.01);assert.equal(g.projectiles.length,1);assert.equal(g.projectiles[0].type,'blue');assert.equal(g.projectiles[0].vx,360);
- g.step(.3);assert.equal(g.projectiles.length,2);assert(!g.dead);
+ g.step(.3);assert.equal(g.projectiles.length,3);assert(!g.dead);
  g.projectiles=[{type:'blue',...g.body[0],vx:0,vy:0,born:g.age}];g.updateHazards(.01);assert(!g.dead);
  g.age=8.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
 });

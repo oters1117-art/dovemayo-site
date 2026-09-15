@@ -31,9 +31,9 @@ export class SnakeGame{
   refill(){while(this.food.length<Math.min(12,3+Math.floor(this.age/20))){const p=this.freePoint();if(!p)break;this.food.push({...p,kind:Math.floor(this.random()*47)});}}
   setBuff(kind,duration){if(this.buffKind==='rainbow'&&kind!=='rainbow')this.graceUntil=this.age+1.5;this.buff={kind,until:this.age+duration};if(kind==='rainbow')this.graceUntil=this.buff.until+1.5;this.slowUntil=0;}
   eatFood(p){
-    this.score+=p.kind===FOOD.GOLDEN_APPLE?3:1;this.goalLength+=24;
+    this.score+=p.kind===FOOD.GOLDEN_APPLE?5:1;this.goalLength+=24;
     if(p.kind===FOOD.EGGPLANT){this.setBuff('purple',1.1);this.freezeUntil=this.age+1.1;this.events.push({type:'penalty',...p});return;}
-    if(p.kind===FOOD.GOLDEN_APPLE)for(let i=0;i<10;i++)this.spawnEnemy(0,true);
+    if(p.kind===FOOD.GOLDEN_APPLE)for(let i=0;i<15;i++)this.spawnEnemy(0,true);
     if(p.kind===FOOD.CHILI)this.setBuff('red',10);
     if(p.kind===FOOD.BLUEBERRY){this.setBuff('blue',8);this.nextBlueShot=this.age;}
     if(p.kind===FOOD.TOMATO)this.setBuff('rainbow',10);
@@ -100,7 +100,7 @@ export class SnakeGame{
       if(e.kind!==6&&((this.invincible&&hit)||this.bodyHit(e,14)))this.killEnemy(e,'body');
     }
     if(this.buffKind==='blue'&&this.age>=this.nextBlueShot){
-      this.nextBlueShot=this.age+.28;
+      this.nextBlueShot=this.age+.14;
       if(this.projectiles.length<96){const a=this.angle;this.projectiles.push({type:'blue',x:head.x+Math.cos(a)*14,y:head.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});}
     }
     this.updateHazards(dt);
