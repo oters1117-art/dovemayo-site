@@ -1,5 +1,5 @@
-import {SnakeGame,headingFromKeys,cardObstacle} from './snake-engine.mjs?v=5';
-// Twemoji © Twitter and contributors; CC BY 4.0. Unmodified local assets.
+import {SnakeGame,headingFromKeys,cardObstacle} from './snake-engine.mjs?v=6';
+// Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
 const title=document.querySelector('.identity h1');
@@ -38,7 +38,7 @@ function pop(type='eat') {
 }
 function unlockAudio(){try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();master=audio.createDynamicsCompressor();master.threshold.value=-8;master.knee.value=12;master.ratio.value=4;master.attack.value=.003;master.release.value=.16;master.connect(audio.destination);}audio.resume().catch(()=>{});}catch{}}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=5').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=6').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -66,8 +66,11 @@ function textBox(element,node){
 }
 function layout(){
   const d=textBox(title,dot);
-  const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,parseFloat(getComputedStyle(el.parentElement).columnGap)||12);})];
+  const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,parseFloat(getComputedStyle(el.parentElement).columnGap)||12,parseFloat(getComputedStyle(el.parentElement).rowGap)||18);})];
   return {width:innerWidth,height:innerHeight,origin:{x:d.x+d.w/2,y:d.y+d.h/2},obstacles};
+}
+function positionScore(){
+  if(score.hidden)return;const d=textBox(title,dot);score.style.left=(d.x+d.w/2)+'px';score.style.top=(d.y+d.h/2-17)+'px';
 }
 function sizeCanvas(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
 async function start(angle=0){
@@ -78,14 +81,14 @@ async function start(angle=0){
   score.hidden=false;sizeCanvas();
   const options=layout();
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
-  score.style.left=options.origin.x+'px';score.style.top=options.origin.y+'px';
+  positionScore();
   game=new SnakeGame({...options,angle});particles=[];mode='playing';pending=false;
   document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   score.textContent='0';steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
   loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);clearInterval(backgroundTimer);backgroundTimer=setInterval(()=>{if(document.hidden&&mode==='playing')advance(performance.now());},100);raf=requestAnimationFrame(frame);
 }
-function end(){stopMusic();clearInterval(backgroundTimer);pending=false;mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);score.hidden=true;canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
+function end(){stopMusic();clearInterval(backgroundTimer);pending=false;if(game)score.textContent=String(game.score);mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
 function failure(){
   pop('fail');end();say('게임 끝.');
   flashBackground(reduced?'#e7b9b9':'#ef6767',700);
@@ -159,6 +162,7 @@ function drawHazards(){
   for(const b of game.bombs){
     const fuse=b.armed===null?0:Math.min(1,(game.age-b.armed)/.95);
     const shake=0;
+    if(b.armed!==null)disc(b,72,'rgba(232,79,55,'+(.07+fuse*.12)+')','rgba(214,67,44,.5)');
     emoji('props',3,b.x+shake,b.y);
     if(fuse){ctx.save();ctx.filter='brightness(0) saturate(100%) invert(26%) sepia(88%) saturate(3200%) hue-rotate(344deg)';emoji('props',3,b.x+shake,b.y,fuse);ctx.restore();}
   }
@@ -170,7 +174,7 @@ function draw(){
   for(const e of game.enemies){
     const t=Math.min(1,game.age-e.born),fade=t*t*(3-2*t),shaking=e.kind===3&&game.age-e.chargeAt<.22;
     const dx=shaking&&!reduced?Math.sin(game.age*65)*.8:0,dy=shaking&&!reduced?Math.cos(game.age*59)*.6:0;
-    if(e.kind===6){emoji('boss',0,e.x,e.y,fade,84);emoji('boss',1,e.x,e.y-10,fade,46);emoji('boss',2,e.x,e.y+16,fade,44);}else emoji('enemies',e.kind,e.x+dx,e.y+dy,fade);
+    if(e.kind===6){emoji('boss',0,e.x,e.y,fade,84);emoji('boss',1,e.x-17,e.y-11,fade,34);emoji('boss',1,e.x+17,e.y-11,fade,34);emoji('boss',2,e.x,e.y+16,fade,44);}else emoji('enemies',e.kind,e.x+dx,e.y+dy,fade);
     if(e.kind===4)emoji('props',5,e.x-23,e.y+1,fade);
     if(e.kind===3 && (e.state==='charge'||e.state==='recover')){const red=e.state==='charge'?Math.min(1,(game.age-e.chargeAt)/1.1):Math.max(0,(e.until-game.age)/2.4);emoji('props',4,e.x+dx,e.y+dy,fade*red);}
   }
@@ -181,9 +185,9 @@ function draw(){
     if(p.type==='tooth')emoji('boss',3,0,0,1,20);else emoji('props',p.type==='shoe'?0:p.type==='potion'?1:2,0,0);ctx.restore();
   }
   if(game.knife)emoji('boss',4,game.knife.x,game.knife.y,1,27);
-  if(game.armed){const blade=game.blade();ctx.save();ctx.translate(blade.x,blade.y);ctx.rotate(game.angle+Math.PI/4);emoji('boss',4,0,0,1,30);ctx.restore();}
+  if(game.armed){const blade=game.blade();ctx.save();ctx.translate(blade.x,blade.y);ctx.rotate(game.angle+Math.PI*5/4);emoji('boss',4,0,0,1,30);ctx.restore();}
   const buff=game.buffKind;
-  ctx.strokeStyle=buff==='red'?'#e74743':buff==='blue'?'#478de2':game.age<game.slowUntil?'#42aa70':'#242424';
+  ctx.strokeStyle=buff==='red'?'#e74743':buff==='blue'?'#478de2':buff==='orange'?'#ec963a':game.age<game.slowUntil?'#42aa70':'#242424';
   if(buff==='rainbow'){const hue=game.age*(reduced?25:190),gradient=ctx.createLinearGradient(game.body[0].x-35,game.body[0].y-35,game.body[0].x+35,game.body[0].y+35);for(let i=0;i<=6;i++)gradient.addColorStop(i/6,'hsl('+((hue+i*60)%360)+' 85% 58%)');ctx.strokeStyle=gradient;}
   ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';
   ctx.beginPath();game.body.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
@@ -207,10 +211,10 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{if(e.key in directions){held.delete(e.key);steer();}});
 window.addEventListener('blur',()=>{held.clear();steer();});
 document.addEventListener('visibilitychange',()=>{held.clear();steer();if(mode==='playing'){advance(performance.now());if(!document.hidden){cancelAnimationFrame(raf);if(mode==='playing')raf=requestAnimationFrame(frame);}}});
-window.addEventListener('resize',()=>{if(mode!=='idle')end();});
+window.addEventListener('resize',()=>{if(mode!=='idle')end();positionScore();});
 window.addEventListener('wheel',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
 window.addEventListener('touchmove',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
-window.addEventListener('scroll',()=>{if(mode!=='idle')end();},{passive:true});
+window.addEventListener('scroll',()=>{if(mode!=='idle')end();positionScore();},{passive:true});
 
 canvas.hidden=true;
 // Fetching only the small manifest/assets after activation keeps normal visits lightweight.

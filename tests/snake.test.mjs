@@ -81,9 +81,9 @@ test('angry enemy throws immediately and the boomerang returns',()=>{
  const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
  g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
 });
-test('nerd is harmless and instantly visits beside the player from far away',()=>{
+test('nerd is harmless and quickly runs beside the player from far away',()=>{
  const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(!g.dead);
- e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert(Math.abs(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)-43)<.01);assert(!g.enemyBlocked(e,e));
+ e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<55);
 });
 test('wink drops bombs; proximity arms, warns, then explodes',()=>{
  const g=fresh();g.age=3;const e={x:100,y:100,kind:5,born:0,until:0};g.updateEnemy(e,.01);assert.equal(g.bombs.length,1);
@@ -104,9 +104,9 @@ test('eggplant deducts exactly five with no eating bonus and shrinks immediately
  assert.equal(g.score,-2);assert.equal(g.goalLength,72);assert.equal(g.length,72);assert.equal(g.events.at(-1).type,'penalty');
  assert(g.currentSpeed>=125);
 });
-test('tomato passes through cards, bounces harmlessly off walls and defeats head-contact enemies',()=>{
- const g=fresh({obstacles:[{x:446,y:190,w:30,h:30}]});g.setBuff('rainbow',5);g.step(.15);assert(!g.dead);assert(g.body[0].x>446);
- const wall=fresh({origin:{x:893,y:200}});wall.setBuff('rainbow',5);wall.step(.04);assert(!wall.dead);assert(wall.body[0].x<=894);assert(Math.cos(wall.angle)<0);
+test('tomato turns away from cards and walls and defeats head-contact enemies',()=>{
+ const g=fresh({obstacles:[{x:446,y:190,w:30,h:30}]});g.setBuff('rainbow',5);for(let i=0;i<30;i++){g.step(.01);assert(!g.dead);assert(!g.blocked(g.body[0],g.radius));}assert.notEqual(g.angle,0);
+ const wall=fresh({origin:{x:893,y:200}});wall.setBuff('rainbow',5);wall.step(.04);assert(!wall.dead);assert(wall.body[0].x<=894);assert(!wall.blocked(wall.body[0],wall.radius));
  const e=fresh();e.age=3;e.setBuff('rainbow',5);e.enemies=[{x:443,y:200,kind:0,born:0}];e.step(.01);assert(!e.dead);assert.equal(e.kills,1);
 });
 test('tomato ignores shoes bombs boomerangs and potion slowdown',()=>{
@@ -117,7 +117,7 @@ test('tomato ignores shoes bombs boomerangs and potion slowdown',()=>{
 });
 test('shrunk cards leave a passable corridor and enemies cannot overlap each other or food',()=>{
  const a=cardObstacle({left:100,top:100,width:100,height:100}),b=cardObstacle({left:212,top:100,width:100,height:100});
- assert(a.w<100&&b.x-a.x-a.w>=21&&b.x-a.x-a.w<22);
+ assert(a.w<100&&Math.abs(b.x-a.x-a.w-20.25)<.001);
  const g=fresh({obstacles:[a,b]});g.food=[];const e={x:206,y:80,kind:0};g.enemies=[e];
  for(let i=0;i<100;i++)g.moveEnemy(e,{x:206,y:250},90,.01);assert(e.y>165);
  const other={x:206,y:e.y+22,kind:0};g.enemies.push(other);
@@ -126,7 +126,7 @@ test('shrunk cards leave a passable corridor and enemies cannot overlap each oth
 });
 test('nerd finger is farther away and visits remain infrequent',()=>{
  const g=fresh();g.food=[];g.age=4;const e={x:100,y:100,kind:4,until:0};g.enemies=[e];g.updateEnemy(e,.01);
- assert(e.until-g.age>=10);assert.equal(g.enemyDiscs(e)[1].x,e.x-23);
+ for(let i=0;i<400&&e.state==='dash';i++){g.age+=.01;g.updateEnemy(e,.01);}assert.equal(e.state,'idle');assert(e.until-g.age>=10);assert.equal(g.enemyDiscs(e)[1].x,e.x-23);
 });
 test('angry enemy orbits and throws off-target random shots without winding up',()=>{
  const g=fresh();g.food=[];g.angle=Math.PI/2;const e={x:255,y:200,kind:3,until:0};g.enemies=[e];g.age=3;
@@ -174,6 +174,39 @@ test('potion creates a larger longer pool only on impact',()=>{
  const g=fresh();g.food=[];g.body=[{x:800,y:650}];g.projectiles=[{type:'potion',from:{x:100,y:200},to:{x:200,y:200},born:0,duration:1}];
  g.age=.5;g.updateHazards(.01);assert.equal(g.puddles.length,0);g.age=1;g.updateHazards(.01);assert.equal(g.puddles[0].radius,52);assert.equal(g.puddles[0].until,13);
 });
-test('special-item test spawn cycles through the four special foods',()=>{
- const g=fresh();g.food=[];for(let i=0;i<4;i++)assert(g.spawnSpecial());assert.deepEqual(g.food.map(p=>p.kind),[FOOD.TOMATO,FOOD.CHILI,FOOD.BLUEBERRY,FOOD.EGGPLANT]);
+test('special-item test spawn cycles through the five special foods',()=>{
+ const g=fresh();g.food=[];for(let i=0;i<5;i++)assert(g.spawnSpecial());assert.deepEqual(g.food.map(p=>p.kind),[FOOD.TOMATO,FOOD.CHILI,FOOD.BLUEBERRY,FOOD.EGGPLANT,FOOD.BEER]);
+});
+
+test('flying throws ignore enemies food attacks blades and explosions until landing',()=>{
+ for(const type of ['shoe','potion'])for(const target of ['enemy','food','shot','blade','blast']){
+  const g=fresh();g.food=[];g.body=[{x:800,y:650}];g.age=.5;
+  const p={type,from:{x:100,y:200},to:{x:200,y:200},born:0,duration:1};g.projectiles=[p];g.updateHazards(.001);
+  const at={x:p.x,y:p.y};
+  if(target==='enemy')g.enemies=[{...at,kind:0,born:0}];
+  if(target==='food')g.food=[{...at,kind:0}];
+  if(target==='shot')g.projectiles.push({...at,type:'tooth',vx:0,vy:0,born:0});
+  if(target==='blade'){g.body=[{x:at.x-24,y:at.y}];g.armed=true;g.updateBlade();assert(g.armed);}
+  if(target==='blast')g.explode(at);
+  g.updateHazards(.001);assert(g.projectiles.includes(p));assert(!g.dead);assert.equal(g.puddles.length,0);
+  if(target==='enemy')assert.equal(g.enemies.length,1);
+  if(target==='food')assert.equal(g.food.length,1);
+  if(target==='shot')assert.equal(g.projectiles.length,2);
+ }
+});
+test('returning boomerang never kills its owner',()=>{
+ const g=fresh();g.food=[];g.body=[{x:800,y:650}];const e={x:100,y:100,kind:3,born:0};g.enemies=[e];
+ g.projectiles=[{type:'boomerang',from:{x:122,y:100},to:{x:200,y:100},born:0,duration:1,owner:e,leftOwner:true}];g.age=.98;g.updateHazards(.001);assert(g.enemies.includes(e));assert.equal(g.projectiles.length,1);
+});
+test('beer replaces buffs with temporary orange steering wobble',()=>{
+ const g=fresh();g.food=[];g.setBuff('rainbow',10);g.eatFood({kind:FOOD.BEER});assert.equal(g.buffKind,'orange');assert(!g.invincible);g.step(.1);assert(Math.abs(g.angle)>.01);g.age=g.buff.until+.1;assert.equal(g.buffKind,null);
+});
+test('basic enemies move at 94 percent and dominate the spawn mix',()=>{
+ const g=fresh();g.food=[];const e={x:100,y:200,kind:0};g.enemies=[e];g.updateEnemy(e,.1);assert(Math.abs(e.x-111.75)<.001);
+ let basic=0;for(let i=0;i<1000;i++)if(g.chooseEnemyKind()===0)basic++;assert(basic>550&&basic<690);
+});
+test('nerd does not tunnel through the snake body while rushing',()=>{
+ const g=fresh();g.food=[];g.body=[{x:440,y:200},...Array.from({length:80},(_,i)=>({x:300,y:40+i*8}))];
+ const e={x:100,y:200,kind:4,state:'dash',side:0,aim:{x:483,y:200},until:20};g.enemies=[e];
+ for(let i=0;i<180;i++){g.age+=.01;g.updateEnemy(e,.01);assert(!g.enemyBlocked(e,e));}
 });

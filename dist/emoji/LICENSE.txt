@@ -1,4 +1,4 @@
 Twemoji graphics copyright Twitter, Inc. and other contributors.
 Source: https://github.com/jdecked/twemoji (v17.0.2)
 Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
-Graphics unmodified.
+Tooth SVG contrast outline added; other graphics unmodified.
