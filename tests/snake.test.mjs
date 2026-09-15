@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {SnakeGame,turnToward,touches} from '../dist/snake-engine.mjs';
+let seed=82;const random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
+const fresh=(extra={})=>new SnakeGame({width:900,height:700,origin:{x:440,y:200},random,...extra});
+test('smooth steering is immediate, bounded, and reaches a quarter turn quickly',()=>{
+ const g=fresh();g.target=Math.PI/2;g.step(1/60);assert(g.angle>0&&g.angle<Math.PI/2);
+ for(let i=0;i<12;i++)g.step(1/60);assert(Math.abs(g.angle-Math.PI/2)<.001);assert(!g.dead);
+ assert(Math.abs(turnToward(Math.PI-.05,-Math.PI+.05,.03)-(Math.PI-.02))<.0001);
+});
+test('right/up/down starts leave the title without hitting it',()=>{
+ for(const angle of [0,-Math.PI/2,Math.PI/2]){
+ const g=fresh({origin:{x:540,y:200},angle,obstacles:[{x:340,y:162,w:187,h:43},{x:410,y:230,w:60,h:16}]});
+ for(let i=0;i<30;i++)g.step(1/60);assert(!g.dead);assert(g.length>38);}
+});
+test('food increases length and score, and is replaced in free space',()=>{
+ const g=fresh();g.food=[{x:448,y:200,kind:0}];const length=g.goalLength;g.step(.02);
+ assert.equal(g.score,1);assert.equal(g.goalLength,length+24);assert.equal(g.food.length,3);
+ assert(g.food.every(p=>!g.blocked(p,16)));assert(g.events.some(e=>e.type==='eat'));
+});
+test('walls and rectangular text obstacles kill without tunneling',()=>{
+ const wall=fresh({origin:{x:894,y:200}});wall.step(.08);assert(wall.dead);
+ const text=fresh({obstacles:[{x:450,y:195,w:1,h:15}]});text.step(.08);assert(text.dead);
+});
+test('rounded cards use their rounded visible boundary',()=>{
+ const b={x:100,y:100,w:100,h:100,radius:21};assert(!touches({x:101,y:101},4,b));assert(touches({x:150,y:99},4,b));
+});
+test('the head collides with its own older body',()=>{
+ const g=fresh();g.body=[{x:440,y:200},{x:430,y:200},{x:430,y:220},{x:460,y:220},{x:442,y:200}];g.step(.01);assert(g.dead);
+});
+test('enemy contact with the head fails, contact with older body defeats enemy',()=>{
+ const g=fresh();g.age=3;g.enemies=[{x:445,y:200,born:0,kind:0}];g.step(.01);assert(g.dead);
+ const b=fresh();b.age=3;b.goalLength=120;b.length=120;b.body=[{x:440,y:200},{x:420,y:200},{x:400,y:200},{x:380,y:200}];b.enemies=[{x:400,y:210,born:0,kind:0}];b.step(.01);assert(!b.dead);assert.equal(b.kills,1);assert.equal(b.enemies.length,0);
+});
+test('enemy warns for one second and spawns away from player and obstacles',()=>{
+ const g=fresh();g.nextEnemy=0;g.step(.01);assert.equal(g.enemies.length,1);const e={...g.enemies[0]};g.step(.08);assert.equal(g.enemies[0].x,e.x);assert.equal(g.enemies[0].y,e.y);assert(!g.blocked(e,11));
+});
+test('movement is independent of rendering frame rate',()=>{
+ const a=fresh(),b=fresh();a.food=[];b.food=[];
+ for(let i=0;i<60;i++)a.step(1/60);for(let i=0;i<30;i++)b.step(1/30);
+ assert(Math.abs(a.body[0].x-b.body[0].x)<.01);assert(Math.abs(a.length-b.length)<.01);
+});
