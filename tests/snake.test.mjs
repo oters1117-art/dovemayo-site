@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SnakeGame,turnToward,touches} from '../dist/snake-engine.mjs';
+import {SnakeGame,turnToward,touches,headingFromKeys} from '../dist/snake-engine.mjs';
 let seed=82;const random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
 const fresh=(extra={})=>new SnakeGame({width:900,height:700,origin:{x:440,y:200},random,...extra});
 test('smooth steering is immediate, bounded, and reaches a quarter turn quickly',()=>{
@@ -39,4 +39,15 @@ test('movement is independent of rendering frame rate',()=>{
  const a=fresh(),b=fresh();a.food=[];b.food=[];
  for(let i=0;i<60;i++)a.step(1/60);for(let i=0;i<30;i++)b.step(1/30);
  assert(Math.abs(a.body[0].x-b.body[0].x)<.01);assert(Math.abs(a.length-b.length)<.01);
+});
+
+test('diagonal holds and release preserve a non-cardinal heading',()=>{
+ const g=fresh();g.target=headingFromKeys(new Set(['ArrowRight','ArrowDown']),g.angle);
+ assert.equal(g.target,Math.PI/4);g.step(.04);const released=g.angle;
+ assert(released>0&&released<Math.PI/4);
+ g.target=headingFromKeys(new Set(),released);
+ const before={...g.body[0]};g.step(.04);
+ assert.equal(g.angle,released);
+ assert(Math.abs((g.body[0].y-before.y)/(g.body[0].x-before.x)-Math.tan(released))<.000001);
+ assert.equal(headingFromKeys(new Set(['ArrowUp','ArrowDown']),released),released);
 });

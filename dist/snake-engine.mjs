@@ -15,7 +15,7 @@ export class SnakeGame {
   constructor({width,height,origin,angle=0,obstacles=[],random=Math.random}) {
     Object.assign(this,{width,height,obstacles,random,angle,target:angle});
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;
-    this.speed=105;this.age=0;this.score=0;this.kills=0;this.dead=false;
+    this.speed=125;this.age=0;this.score=0;this.kills=0;this.dead=false;
     this.food=[];this.enemies=[];this.events=[];this.nextEnemy=11+random()*5;
     this.refill();
   }
@@ -69,7 +69,7 @@ export class SnakeGame {
     this.refill();
     if(this.age>=this.nextEnemy) {
       this.nextEnemy=this.age+12+this.random()*8;
-      if(this.enemies.length<3){const p=this.freePoint(160);if(p){this.enemies.push({...p,kind:Math.floor(this.random()*3),born:this.age});this.events.push({type:'enemy',...p});}}
+      if(this.enemies.length<3){const p=this.freePoint(160);if(p){this.enemies.push({...p,kind:0,born:this.age});this.events.push({type:'enemy',...p});}}
     }
     for(let i=this.enemies.length-1;i>=0;i--) {
       const e=this.enemies[i];if(this.age-e.born<1)continue;
@@ -88,4 +88,10 @@ export class SnakeGame {
       if(hit){this.enemies.splice(i,1);this.kills++;this.events.push({type:'defeat',x:e.x,y:e.y});}
     }
   }
+}
+
+export function headingFromKeys(keys,angle){
+  const x=Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft'));
+  const y=Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp'));
+  return x||y?Math.atan2(y,x):angle;
 }
