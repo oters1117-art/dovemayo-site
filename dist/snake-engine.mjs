@@ -67,7 +67,7 @@ export class SnakeGame{
   killEnemy(e,source='impact'){
     if(e.kind===6&&source!=='knife')return false;
     const i=this.enemies.indexOf(e);if(i<0)return false;
-    this.enemies.splice(i,1);this.kills++;this.events.push({type:e.kind===6?'boss-defeat':'defeat',x:e.x,y:e.y});
+    this.enemies.splice(i,1);this.kills++;this.events.push({type:e.kind===6?'boss-defeat':'defeat',silent:source==='tooth',x:e.x,y:e.y});
     if(e.kind===6){this.knife=null;this.nextBoss=this.age+120;}
     return true;
   }
@@ -101,7 +101,7 @@ export class SnakeGame{
     }
     if(this.buffKind==='blue'&&this.age>=this.nextBlueShot){
       this.nextBlueShot=this.age+.14;
-      if(this.projectiles.length<96){const a=this.angle;this.projectiles.push({type:'blue',x:head.x+Math.cos(a)*14,y:head.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});}
+      if(this.projectiles.length<96){const a=this.angle;this.projectiles.push({type:'blue',x:head.x+Math.cos(a)*14,y:head.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});this.events.push({type:'blue-shot'});}
     }
     this.updateHazards(dt);
   }
@@ -149,7 +149,7 @@ export class SnakeGame{
       }return;
     }
     if(e.kind===5){if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{x:e.x,y:e.y};e.roamUntil=age+3;}this.moveEnemy(e,e.aim,56,dt);if(age>=e.until){this.dropBomb(e);e.until=age+3+this.random()*3;}return;}
-    if(e.kind===3){this.orbit(e,dt);if(age>=e.until&&d<300){this.toss(e,'boomerang');e.state='recover';e.chargeAt=age;e.until=age+2.4;}return;}
+    if(e.kind===3){this.orbit(e,dt);if(e.state==='charge'){if(age>=e.until){this.toss(e,'boomerang');e.state='recover';e.until=age+2.4;}}else if(age>=e.until&&d<300){e.state='charge';e.chargeAt=age;e.until=age+.65;}return;}
     if(e.state==='flee'){this.moveEnemy(e,h,155,dt,true);if(age>=e.until)e.state='idle';return;}
     if(e.state==='recover'){if(d<175)this.moveEnemy(e,h,90,dt,true);if(age>=e.until)e.state='idle';return;}
     if(d>215){this.moveEnemy(e,h,e.kind===1?65:48,dt);return;}
@@ -173,7 +173,7 @@ export class SnakeGame{
     if(e.pattern===0){const offset=this.random()*TAU;for(let i=0;i<14;i++)this.fireTooth(e,offset+i*TAU/14,175);e.nextShot=age+2;}
     if(e.pattern===1){this.fireTooth(e,aim,245);e.nextShot=age+.11;}
     if(e.pattern===2){for(let i=-2;i<=2;i++)this.fireTooth(e,aim+i*.18,230);e.nextShot=age+.7;}
-    this.events.push({type:'throw',x:e.x,y:e.y});
+    this.events.push({type:'tooth-shot',x:e.x,y:e.y});
   }
   updateBlade(){
     if(!this.armed)return;const p=this.blade();
@@ -193,6 +193,11 @@ export class SnakeGame{
       for(const other of this.bombs)if(distance(other,x)<82&&!seen.has(other))queue.push(other);
       if(!this.invincible&&distance(this.body[0],x)<76)this.fail('폭탄에 휘말렸어요.');
     }
+  }
+  shotImpact(p,other=null,terrain=false){
+    const blue=p.type==='blue'||other?.type==='blue';
+    const silent=terrain||(!blue&&['tooth','shoe','potion'].includes(p.type));
+    this.events.push({type:'impact',silent,x:p.x,y:p.y});
   }
   finalizeShots(){
     for(const p of this.projectiles)if(p.dead&&p.type==='potion'&&!p.spilled&&!p.cancelSpill){
@@ -214,32 +219,32 @@ export class SnakeGame{
           if(t>=1){p.dead=true;continue;}
           if(t<.5){const k=Math.sin(t*Math.PI);p.x=p.from.x+(p.to.x-p.from.x)*k;p.y=p.from.y+(p.to.y-p.from.y)*k;}
           else{const k=(t-.5)*2,target=this.enemies.includes(p.owner)?p.owner:p.from;p.x=p.to.x+(target.x-p.to.x)*k;p.y=p.to.y+(target.y-p.to.y)*k;}
-        }else{const k=Math.min(t,1);p.x=p.from.x+(p.to.x-p.from.x)*k;p.height=Math.sin(k*Math.PI)*85;p.y=p.from.y+(p.to.y-p.from.y)*k-p.height;p.airborne=p.height>12;if(t>=1)p.landed=true;}
+        }else{const k=Math.min(t,1);p.x=p.from.x+(p.to.x-p.from.x)*k;p.height=Math.sin(k*Math.PI)*85;p.y=p.from.y+(p.to.y-p.from.y)*k-p.height;p.airborne=p.height>12;if(t>=1&&!p.landed){p.landed=true;if(p.type==='shoe')this.events.push({type:'shoe-land',x:p.x,y:p.y});}}
       }
       if(this.isFlying(p))continue;
       const outside=p.x<9||p.y<9||p.x>this.width-9||p.y>this.height-9;
-      if(outside||(!p.airborne&&this.blocked(p,7))){p.dead=true;p.cancelSpill=outside;this.events.push({type:'impact',x:p.x,y:p.y});}
+      if(outside||(!p.airborne&&this.blocked(p,7))){p.dead=true;p.cancelSpill=outside;this.shotImpact(p,null,true);}
     }
     // All moving attack objects cancel each other, including same-type shots.
-    for(let i=0;i<this.projectiles.length;i++){const a=this.projectiles[i];if(a.dead||this.isFlying(a))continue;for(let j=i+1;j<this.projectiles.length;j++){const b=this.projectiles[j];if(!b.dead&&!this.isFlying(b)&&distance(a,b)<15){a.dead=b.dead=true;this.events.push({type:'impact',x:a.x,y:a.y});break;}}}
+    for(let i=0;i<this.projectiles.length;i++){const a=this.projectiles[i];if(a.dead||this.isFlying(a))continue;for(let j=i+1;j<this.projectiles.length;j++){const b=this.projectiles[j];if(!b.dead&&!this.isFlying(b)&&distance(a,b)<15){a.dead=b.dead=true;this.shotImpact(a,b);break;}}}
     for(const p of this.projectiles){
       if(p.dead||this.isFlying(p))continue;
       if(p.type!=='blue'&&this.armed&&distance(p,this.blade())<16){p.dead=true;this.consumeKnife();continue;}
       for(const e of [...this.enemies]){
         if(e===p.owner&&p.type==='boomerang')continue;
         if(e===p.owner&&!p.leftOwner){if(distance(p,e)>this.enemyRadius(e)+10)p.leftOwner=true;else continue;}
-        if(distance(p,e)<this.enemyRadius(e)+7){p.dead=true;this.killEnemy(e,'projectile');break;}
+        if(distance(p,e)<this.enemyRadius(e)+7){p.dead=true;this.killEnemy(e,p.type);break;}
       }
       if(p.dead)continue;
-      const fi=p.type==='blue'?-1:this.food.findIndex(f=>distance(p,f)<17);if(fi>=0){this.food.splice(fi,1);p.dead=true;this.events.push({type:'impact',x:p.x,y:p.y});continue;}
+      const fi=p.type==='blue'?-1:this.food.findIndex(f=>distance(p,f)<17);if(fi>=0){this.food.splice(fi,1);p.dead=true;this.shotImpact(p);continue;}
       if(p.type!=='blue'&&this.knife&&distance(p,this.knife)<17){this.knife=null;this.nextKnife=this.age+6;p.dead=true;continue;}
       const bomb=this.bombs.find(b=>distance(p,b)<17);if(bomb){p.dead=true;this.explode(bomb);if(this.dead)return;continue;}
       if(p.type==='blue')continue;
       if(distance(p,h)<(p.landed?22:12)){
         p.dead=true;
         if(!this.invincible){if(p.type==='potion'){this.slowUntil=this.age+8;}else{this.fail('공격에 맞았어요.');return;}}
-      }else if(this.bodyHit(p,12)){p.dead=true;this.events.push({type:'defeat',x:p.x,y:p.y});}
-      if(p.landed){p.dead=true;if(p.type!=='potion')this.events.push({type:'impact',x:p.x,y:p.y});}
+      }else if(this.bodyHit(p,12)){p.dead=true;this.shotImpact(p);}
+      if(p.landed)p.dead=true;
     }
     this.finalizeShots();
     for(const b of [...this.bombs]){

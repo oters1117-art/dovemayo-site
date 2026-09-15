@@ -1,19 +1,23 @@
 // Recorded CC0 foley, locally hosted. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft'];
+export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble','wine','tooth','shoe','underwater'];
 const profiles={
- eat:{bank:['ice-0','ice-1','ice-2'],gain:.95,rate:.94,gap:.035},
+ eat:{bank:['bubble'],gain:.85,rate:.98,gap:.035},
+ special:{bank:['ice-0','ice-1','ice-2'],gain:.88,rate:.94,gap:.05},
+ blue:{bank:['bubble'],gain:.42,rate:1.18,gap:.09},
+ tooth:{bank:['tooth'],gain:.82,rate:1.06,gap:.065},
+ shoe:{bank:['shoe'],gain:.8,rate:.84,gap:.08},
  defeat:{bank:['paper-0','paper-1','paper-2'],gain:.8,rate:1,gap:.055},
  throw:{bank:['cloth-0','cloth-1'],gain:.22,rate:1.25,gap:.13},
  impact:{bank:['paper-1','paper-2'],gain:.36,rate:1.12,gap:.09},
- splash:{bank:['ice-0','ice-2'],gain:.66,rate:.77,gap:.12},
+ splash:{bank:['wine'],gain:.82,rate:1,gap:.12},
  fail:{bank:['soft'],gain:1,rate:.62,gap:.2},
  blast:{bank:['soft'],gain:.8,rate:.77,gap:.12},
  penalty:{bank:['cloth-0','cloth-1'],gain:.75,rate:.75,gap:.1},
  start:{bank:['paper-1','paper-2'],gain:.5,rate:.94,gap:.1},
- texture:{bank:['ice-0','cloth-0','ice-1','cloth-1','ice-2'],gain:.18,rate:.76,gap:.5}
+ texture:{bank:['cloth-0'],gain:.1,rate:.76,gap:.5}
 };
 export class FoleySound{
- constructor(){this.context=null;this.buffers=new Map();this.voices=new Set();this.previous=new Map();this.last=new Map();this.loading=null;}
+ constructor(){this.context=null;this.buffers=new Map();this.voices=new Set();this.previous=new Map();this.last=new Map();this.loading=null;this.ambience=null;}
  unlock(){
   try{
    if(!this.context){
@@ -48,5 +52,14 @@ export class FoleySound{
   source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(now);
  }
  stopVoice(v){if(!v)return;try{const t=this.context.currentTime;v.gain.gain.cancelScheduledValues(t);v.gain.gain.setTargetAtTime(0,t,.012);v.source.stop(t+.05);}catch{}this.voices.delete(v);}
- stopTexture(){for(const v of this.voices)if(v.type==='texture')this.stopVoice(v);}
+ setUnderwater(active){
+  const c=this.context;
+  if(!active){if(this.ambience){const v=this.ambience;this.ambience=null;const t=c.currentTime;v.gain.gain.cancelScheduledValues(t);v.gain.gain.setTargetAtTime(0,t,.08);v.source.stop(t+.4);}return;}
+  if(this.ambience||!c||c.state!=='running'||!this.buffers.has('underwater'))return;
+  const source=c.createBufferSource(),gain=c.createGain();source.buffer=this.buffers.get('underwater');source.loop=true;
+  const t=c.currentTime;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.42,t+.45);source.connect(gain);gain.connect(this.low);
+  const voice={source,gain};this.ambience=voice;source.onended=()=>{source.disconnect();gain.disconnect();if(this.ambience===voice)this.ambience=null;};source.start(t);
+ }
+ stopTexture(){this.setUnderwater(false);}
+
 }

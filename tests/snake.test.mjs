@@ -76,8 +76,8 @@ test('scientist potion creates temporary slow ground and speed recovers',()=>{
  g.age=22;g.step(.001);assert.equal(g.puddles.length,0);
  const x=g.body[0].x;g.step(.04);assert(Math.abs(g.body[0].x-x-125*.04)<.01);
 });
-test('angry enemy throws immediately and the boomerang returns',()=>{
- const g=fresh();g.food=[];g.age=2;const e={x:260,y:200,kind:3,born:0,until:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(g.projectiles[0].type,'boomerang');
+test('angry enemy charges before firing and the boomerang returns',()=>{
+ const g=fresh();g.food=[];g.age=2;const e={x:260,y:200,kind:3,born:0,until:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'charge');assert.equal(g.projectiles.length,0);g.age+=.66;g.updateEnemy(e,.01);assert.equal(g.projectiles[0].type,'boomerang');
  const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
  g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
 });
@@ -128,9 +128,9 @@ test('nerd finger is farther away and visits remain infrequent',()=>{
  const g=fresh();g.food=[];g.age=4;const e={x:100,y:100,kind:4,until:0};g.enemies=[e];g.updateEnemy(e,.01);
  for(let i=0;i<400&&e.state==='dash';i++){g.age+=.01;g.updateEnemy(e,.01);}assert.equal(e.state,'idle');assert(e.until-g.age>=10);assert.equal(g.enemyDiscs(e)[1].x,e.x-23);
 });
-test('angry enemy orbits and throws off-target random shots without winding up',()=>{
+test('angry enemy orbits and visibly winds up before random shots',()=>{
  const g=fresh();g.food=[];g.angle=Math.PI/2;const e={x:255,y:200,kind:3,until:0};g.enemies=[e];g.age=3;
- const y=e.y;g.updateEnemy(e,.05);assert(Math.abs(e.y-y)>1);assert.equal(e.state,'recover');assert.equal(g.projectiles.length,1);
+ const y=e.y;g.updateEnemy(e,.05);assert(Math.abs(e.y-y)>1);assert.equal(e.state,'charge');assert.equal(g.projectiles.length,0);g.age+=.66;g.updateEnemy(e,.01);assert.equal(e.state,'recover');assert.equal(g.projectiles.length,1);
  const shot=g.projectiles[0];assert(Math.hypot(shot.to.x-g.body[0].x,shot.to.y-g.body[0].y)>=36);
 });
 
@@ -237,4 +237,16 @@ test('boss cycles radial barrage, orbit machine gun and aimed fan',()=>{
  const g=fresh();g.food=[];const e={x:200,y:300,kind:6,until:0};g.enemies=[e];g.updateBoss(e,.01);assert.equal(e.pattern,0);assert.equal(g.projectiles.length,14);
  g.age=6.1;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
  g.age=12.2;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
+});
+
+test('teeth and blue bullets are silent on terrain collisions',()=>{
+ for(const type of ['tooth','blue']){const g=fresh({obstacles:[{x:100,y:90,w:20,h:30}]});g.food=[];g.projectiles=[{type,x:101,y:100,vx:0,vy:0,born:0}];g.updateHazards(.01);assert.equal(g.projectiles.length,0);assert(g.events.filter(e=>e.type==='impact').every(e=>e.silent));}
+});
+test('teeth destroy enemies silently while blue shots retain destruction audio',()=>{
+ for(const type of ['tooth','blue']){const g=fresh();g.food=[];g.enemies=[{x:100,y:100,kind:0,born:0}];g.projectiles=[{type,x:100,y:100,vx:0,vy:0,born:0}];g.updateHazards(.01);assert.equal(g.enemies.length,0);assert.equal(g.events.find(e=>e.type==='defeat').silent,type==='tooth');}
+});
+test('blue and boss fire emit distinct firing cues; shoe emits one landing cue',()=>{
+ const g=fresh();g.food=[];g.eatFood({kind:FOOD.BLUEBERRY});g.step(.01);assert(g.events.some(e=>e.type==='blue-shot'));
+ const boss={x:100,y:100,kind:6,until:0};g.updateBoss(boss,.01);assert(g.events.some(e=>e.type==='tooth-shot'));
+ g.projectiles=[{type:'shoe',from:{x:100,y:100},to:{x:200,y:100},born:0,duration:1}];g.age=1;g.updateHazards(.01);g.updateHazards(.01);assert.equal(g.events.filter(e=>e.type==='shoe-land').length,1);
 });

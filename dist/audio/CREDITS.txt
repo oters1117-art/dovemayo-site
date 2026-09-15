@@ -7,3 +7,9 @@ https://creativecommons.org/publicdomain/zero/1.0/
 
 Edited for dovemayo: short excerpts, mono conversion, EQ, level matching, fades.
 Ice samples: ice-0/1/2. Book flips: paper-0/1/2. Cloth: cloth-0/1. Book close: soft.
+
+Additional sources (CC0 1.0):
+Bubbles pop: https://opengameart.org/content/bubbles-pop
+Wine Glasses on contact (Clink) — EpicWizard: https://freesound.org/people/EpicWizard/sounds/325194/
+Underwater Ambience — Kinoton: https://freesound.org/people/Kinoton/sounds/393819/
+Bubble/wine excerpts equalized and faded; underwater excerpt filtered and crossfaded into a loop. Tooth and shoe use Kenney book flip and footstep recordings.
