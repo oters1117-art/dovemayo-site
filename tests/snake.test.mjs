@@ -51,3 +51,45 @@ test('diagonal holds and release preserve a non-cardinal heading',()=>{
  assert(Math.abs((g.body[0].y-before.y)/(g.body[0].x-before.x)-Math.tan(released))<.000001);
  assert.equal(headingFromKeys(new Set(['ArrowUp','ArrowDown']),released),released);
 });
+test('background elapsed time continues all the way to death instead of freezing',()=>{
+ const g=fresh();g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
+});
+test('food quantity and enemy spawn frequency scale with elapsed time',()=>{
+ const g=fresh();g.age=100;g.refill();assert.equal(g.food.length,8);
+ g.nextEnemy=0;g.step(.01);assert(g.nextEnemy-g.age<6.6);
+});
+test('cowboy marks, shakes, throws a shoe, then retreats',()=>{
+ const g=fresh();g.age=2;const e={x:270,y:200,kind:1,born:0,state:'idle'};
+ g.updateEnemy(e,.01);assert.equal(e.state,'mark');assert(e.aim);
+ g.age=e.until+.01;g.updateEnemy(e,.01);assert.equal(e.state,'shake');
+ g.age=e.until+.01;g.updateEnemy(e,.01);assert.equal(e.state,'recover');assert.equal(g.projectiles[0].type,'shoe');
+ const x=e.x;g.updateEnemy(e,.1);assert(e.x<x);
+});
+test('shoe lands at its marked target and hits only on impact',()=>{
+ const g=fresh();g.projectiles=[{type:'shoe',x:300,y:200,from:{x:300,y:200},to:{...g.body[0]},born:0,duration:.7}];
+ g.age=.3;g.updateHazards(.01);assert(!g.dead);assert.equal(g.projectiles.length,1);
+ g.age=.8;g.updateHazards(.01);assert(g.dead);assert(g.events.some(e=>e.type==='impact'));
+});
+test('scientist potion creates temporary slow ground and speed recovers',()=>{
+ const g=fresh();g.projectiles=[{type:'potion',from:{x:300,y:200},to:{...g.body[0]},born:0,duration:.8}];
+ g.age=1;g.updateHazards(.01);assert.equal(g.puddles.length,1);assert(g.slowUntil>g.age);assert(!g.dead);
+ const before=g.body[0].x;g.step(.04);assert(Math.abs(g.body[0].x-before-125*.55*.04)<.01);
+ g.age=10;g.updateHazards(.01);assert.equal(g.puddles.length,0);
+ const x=g.body[0].x;g.step(.04);assert(Math.abs(g.body[0].x-x-125*.04)<.01);
+});
+test('angry enemy charges before throwing and boomerang returns',()=>{
+ const g=fresh();g.age=2;const e={x:260,y:200,kind:3,born:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'charge');
+ g.age=e.until+.01;g.updateEnemy(e,.01);assert.equal(g.projectiles[0].type,'boomerang');
+ const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
+ g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
+});
+test('nerd contact is harmless and its burst is much faster than the snake',()=>{
+ const g=fresh();g.age=3;const e={...g.body[0],kind:4,born:0,state:'idle',until:5};g.enemies=[e];g.step(.01);assert(!g.dead);
+ e.state='dash';e.aim={x:e.x+100,y:e.y};e.until=4;const x=e.x;g.updateEnemy(e,.01);assert(Math.abs(e.x-x-4.8)<.01);
+});
+test('wink drops bombs; proximity arms, warns, then explodes',()=>{
+ const g=fresh();g.age=3;const e={x:100,y:100,kind:5,born:0,until:0};g.updateEnemy(e,.01);assert.equal(g.bombs.length,1);
+ const b=g.bombs[0];g.age=4;g.body=[{x:b.x+50,y:b.y}];g.updateHazards(.01);assert.equal(b.armed,4);assert(!g.dead);
+ g.age=4.8;g.updateHazards(.01);assert(!g.dead);
+ g.age=5;g.updateHazards(.01);assert(g.dead);assert(g.events.some(e=>e.type==='blast'));assert.equal(g.bombs.length,0);
+});

@@ -1,4 +1,4 @@
-import {SnakeGame,headingFromKeys} from './snake-engine.mjs?v=2';
+import {SnakeGame,headingFromKeys} from './snake-engine.mjs?v=3';
 // Twemoji © Twitter and contributors; CC BY 4.0. Unmodified local assets.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -9,7 +9,8 @@ const ctx=canvas.getContext('2d');
 const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
 document.body.append(canvas,score,live);
-let game=null,mode='idle',raf=0,last=0,muted=false,audio=null,assets=null,images={food:[],enemies:[]},particles=[],previousFocus=null,pending=false;
+let game=null,mode='idle',raf=0,last=0,muted=false,audio=null,assets=null,images={food:[],enemies:[],props:[]},particles=[],previousFocus=null,pending=false;
+let master=null,backgroundTimer=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Math.PI/2};
 const held=new Set();
@@ -19,25 +20,25 @@ function pop(type='eat') {
   if(muted || !audio)return;
   try {
     if(audio.state==='suspended')audio.resume().catch(()=>{});
-    const now=audio.currentTime,gain=audio.createGain();gain.connect(audio.destination);
+    const now=audio.currentTime,gain=audio.createGain();gain.connect(master||audio.destination);
     if(type==='defeat'){
       const buffer=audio.createBuffer(1,Math.ceil(audio.sampleRate*.16),audio.sampleRate),data=buffer.getChannelData(0);
       for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
       const source=audio.createBufferSource(),filter=audio.createBiquadFilter();source.buffer=buffer;filter.type='bandpass';filter.Q.value=.75;filter.frequency.setValueAtTime(5200,now);filter.frequency.exponentialRampToValueAtTime(1400,now+.14);
-      gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.22,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.15);
+      gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.6,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.15);
       source.connect(filter);filter.connect(gain);source.start(now);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};return;
     }
-    const osc=audio.createOscillator(),death=type==='fail',duration=death?.65:.17;
-    osc.type='sine';const base=death?135:660+Math.random()*90;
+    const osc=audio.createOscillator(),death=type==='fail'||type==='blast',duration=death?.65:.17;
+    osc.type='sine';const base=death?115:type==='throw'?400:660+Math.random()*90;
     osc.frequency.setValueAtTime(base,now);osc.frequency.exponentialRampToValueAtTime(death?42:base*.36,now+(death?.5:.095));
-    gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(death?.24:.105,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+    gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(death?.55:type==='throw'?.16:type==='start'?.2:.3,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
     osc.connect(gain);osc.start(now);osc.stop(now+duration+.02);osc.onended=()=>{osc.disconnect();gain.disconnect();};
   }catch{}
 }
-function unlockAudio(){try{audio ||= new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch{}}
+function unlockAudio(){try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();master=audio.createDynamicsCompressor();master.threshold.value=-8;master.knee.value=12;master.ratio.value=4;master.attack.value=.003;master.release.value=.16;master.connect(audio.destination);}audio.resume().catch(()=>{});}catch{}}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=2').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
-    await Promise.all(['food','enemies'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
+  return assets ||= fetch('/emoji/manifest.json?v=3').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+    await Promise.all(['food','enemies','props'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
   }).catch(()=>{assets=null;});
@@ -76,13 +77,14 @@ async function start(angle=0){
   score.hidden=false;sizeCanvas();
   const options=layout();
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
+  score.style.left=options.origin.x+'px';score.style.top=options.origin.y+'px';
   game=new SnakeGame({...options,angle});particles=[];mode='playing';pending=false;
   document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   score.textContent='0';steer();
   say('스네이크 시작. 방향키로 이동, Space로 일시정지, Escape로 끝내기.');
-  loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
+  loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);clearInterval(backgroundTimer);backgroundTimer=setInterval(()=>{if(document.hidden&&mode==='playing')advance(performance.now());},100);raf=requestAnimationFrame(frame);
 }
-function end(){pending=false;mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);score.hidden=true;canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});}
+function end(){clearInterval(backgroundTimer);pending=false;mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);score.hidden=true;canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
 function pause(){
   held.clear();if(game)game.target=game.angle;
   if(mode==='playing'){mode='paused';cancelAnimationFrame(raf);say('일시정지');}
@@ -93,17 +95,34 @@ function failure(){
   document.body.animate([{backgroundColor:'#f1eeee'},{backgroundColor:reduced?'#e7b9b9':'#ef6767',offset:.04},{backgroundColor:'#f1eeee'}],{duration:700,easing:'ease-out'});
 }
 function burst(p,color){if(reduced)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
-function frame(now){
+function advance(now){
   if(mode!=='playing')return;
-  const dt=Math.min((now-last)/1000,.045);last=now;game.step(dt);
-  for(const e of game.events.splice(0)){
+  const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);
+  const events=game.events.splice(0);
+  for(const e of events){
     if(e.type==='eat'){pop();score.textContent=String(game.score);burst(e,'#bdb39d');}
     if(e.type==='defeat'){pop('defeat');burst(e,'#e4c361');}
-    if(e.type==='enemy')say('표정 이모지가 나타났어요. 몸통으로 막으면 없앨 수 있어요.');
+    if(e.type==='throw')pop('throw');
+    if(e.type==='impact'){pop('impact');burst(e,'#b88662');}
+    if(e.type==='splash'){pop('splash');burst(e,'#56b886');}
+    if(e.type==='blast'){pop('blast');explosion(e);}
+    if(e.type==='enemy')say('적이 나타났어요.');
     if(e.type==='fail'){failure();return;}
   }
   for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
-  draw();if(mode==='playing')raf=requestAnimationFrame(frame);
+}
+function frame(now){
+  advance(now);if(mode!=='playing')return;draw();raf=requestAnimationFrame(frame);
+}
+function explosion(e){
+  for(const [i,color] of ['#fff','#ffd44e','#f25448'].entries()){
+    const ring=document.createElement('div');
+    Object.assign(ring.style,{position:'fixed',left:e.x+'px',top:e.y+'px',width:'8px',height:'8px',border:'8px solid '+color,borderRadius:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none',zIndex:'21',boxSizing:'border-box'});
+    document.body.append(ring);
+    const size=(e.radius||72)*2*(1-i*.12);
+    const animation=ring.animate([{width:'8px',height:'8px',borderWidth:'8px',opacity:1},{width:size+'px',height:size+'px',borderWidth:'.5px',opacity:0}],{duration:reduced?200:550,delay:i*28,easing:'cubic-bezier(.15,.65,.25,1)',fill:'both'});
+    animation.onfinish=()=>ring.remove();
+  }
 }
 function emoji(type,kind,x,y,alpha=1){
   const image=images[type][kind];ctx.globalAlpha=alpha;
@@ -111,11 +130,35 @@ function emoji(type,kind,x,y,alpha=1){
   else {ctx.fillStyle=type==='food'?'#edb457':'#efcd54';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();}
   ctx.globalAlpha=1;
 }
+function disc(p,r,color,stroke){ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}}
+function drawHazards(){
+  for(const p of game.puddles){ctx.globalAlpha=Math.min(1,p.until-game.age);disc(p,p.radius,'rgba(67,183,108,.19)','rgba(47,151,80,.32)');disc({x:p.x-10,y:p.y+7},6,'rgba(91,213,128,.3)');disc({x:p.x+11,y:p.y-8},4,'rgba(91,213,128,.3)');ctx.globalAlpha=1;}
+  for(const e of game.enemies)if(e.aim && (e.state==='mark'||e.state==='shake'))disc(e.aim,e.kind===1?24:35,e.kind===1?'rgba(204,106,73,.14)':'rgba(70,168,92,.14)',e.kind===1?'#bf8064':'#6ea983');
+  for(const p of game.projectiles)if(p.type!=='boomerang')disc(p.to,p.type==='shoe'?24:35,p.type==='shoe'?'rgba(204,106,73,.10)':'rgba(70,168,92,.10)');
+  for(const b of game.bombs){
+    const fuse=b.armed===null?0:Math.min(1,(game.age-b.armed)/.95);
+    const shake=fuse&&!reduced?Math.sin(game.age*110)*2.4*fuse:0;
+    if(fuse)disc(b,72,'rgba(239,90,65,'+(.04+fuse*.09)+')','rgba(226,80,54,.18)');
+    emoji('props',3,b.x+shake,b.y);
+    if(fuse){ctx.save();ctx.filter='brightness(0) saturate(100%) invert(26%) sepia(88%) saturate(3200%) hue-rotate(344deg)';emoji('props',3,b.x+shake,b.y,fuse);ctx.restore();}
+  }
+}
 function draw(){
   ctx.clearRect(0,0,innerWidth,innerHeight);if(!game)return;
+  drawHazards();
   for(const p of game.food)emoji('food',p.kind,p.x,p.y);
-  for(const e of game.enemies){const t=Math.min(1,game.age-e.born);emoji('enemies',0,e.x,e.y,t*t*(3-2*t));}
-  ctx.strokeStyle=mode==='over'?'#8e8585':'#242424';ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';
+  for(const e of game.enemies){
+    const t=Math.min(1,game.age-e.born),fade=t*t*(3-2*t),shaking=e.state==='shake'||e.state==='charge';
+    const dx=shaking&&!reduced?Math.sin(game.age*95)*1.7:0,dy=shaking&&!reduced?Math.cos(game.age*83)*1.2:0;
+    emoji('enemies',e.kind,e.x+dx,e.y+dy,fade);
+    if(e.kind===3 && (e.state==='charge'||e.state==='recover')){const red=e.state==='charge'?Math.min(1,(game.age-e.chargeAt)/1.1):Math.max(0,(e.until-game.age)/2.4);emoji('props',4,e.x+dx,e.y+dy,fade*red);}
+  }
+  for(const p of game.projectiles){
+    const t=Math.min(1,(game.age-p.born)/p.duration),height=p.type==='boomerang'?0:Math.sin(t*Math.PI)*85;
+    if(height){ctx.fillStyle='rgba(36,36,36,.12)';ctx.beginPath();ctx.ellipse(p.x,p.y,6,2.5,0,0,Math.PI*2);ctx.fill();}
+    ctx.save();ctx.translate(p.x,p.y-height);ctx.rotate(p.type==='boomerang'?t*20:t*4);emoji('props',p.type==='shoe'?0:p.type==='potion'?1:2,0,0);ctx.restore();
+  }
+  ctx.strokeStyle=game.age<game.slowUntil?'#42aa70':'#242424';ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';
   ctx.beginPath();game.body.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
   const h=game.body[0];ctx.beginPath();ctx.arc(h.x,h.y,4,0,Math.PI*2);ctx.fill();
   if(game.age>.2){for(const s of [-1,1]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(h.x+Math.cos(game.angle)*1.5+Math.sin(game.angle)*s*1.8,h.y+Math.sin(game.angle)*1.5-Math.cos(game.angle)*s*1.8,1,0,Math.PI*2);ctx.fill();}}
@@ -133,12 +176,12 @@ window.addEventListener('keydown',e=>{
   if(e.key in directions){e.preventDefault();if(mode==='playing'){held.add(e.key);steer();}}
 });
 window.addEventListener('keyup',e=>{if(e.key in directions){held.delete(e.key);steer();}});
-window.addEventListener('blur',()=>{if(mode==='playing')pause();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='playing')pause();});
+window.addEventListener('blur',()=>{held.clear();steer();});
+document.addEventListener('visibilitychange',()=>{held.clear();steer();if(mode==='playing'){advance(performance.now());if(!document.hidden){cancelAnimationFrame(raf);if(mode==='playing')raf=requestAnimationFrame(frame);}}});
 window.addEventListener('resize',()=>{if(mode!=='idle')end();});
 window.addEventListener('wheel',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
 window.addEventListener('touchmove',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
 window.addEventListener('scroll',()=>{if(mode!=='idle')end();},{passive:true});
-document.addEventListener('click',e=>{if(mode==='playing'&&e.target.closest('a'))pause();});
+
 canvas.hidden=true;
 // Fetching only the small manifest/assets after activation keeps normal visits lightweight.
