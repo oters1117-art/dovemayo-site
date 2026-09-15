@@ -1,5 +1,5 @@
-import {FoleySound} from './foley.mjs?v=2';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=9';
+import {FoleySound} from './foley.mjs?v=3';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=10';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -21,7 +21,7 @@ const say=t=>{live.textContent=t;};
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=9').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=10').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -86,7 +86,7 @@ function advance(now){
     if(e.type==='eat'){pop(Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
     if(e.type==='penalty'){pop('special');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);updateScore();burst(e,'#9e7cba');}
     if(e.type==='defeat'){if(!e.silent)pop('defeat');burst(e,'#e4c361');}
-    if(e.type==='throw')pop('throw');
+    if(e.type==='throw')pop(e.attack==='potion'?'potion':'throw');
     if(e.type==='tooth-shot')pop('tooth');
     if(e.type==='blue-shot')pop('blue');
     if(e.type==='shoe-land')pop('shoe');
@@ -129,6 +129,10 @@ function emoji(type,kind,x,y,alpha=1,size=24){
   ctx.globalAlpha=1;
 }
 function disc(p,r,color,stroke){ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}}
+function sparkle(x,y,alpha,size){
+  ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle='#e6b52e';ctx.shadowColor='#f7dc79';ctx.shadowBlur=3;
+  ctx.beginPath();ctx.moveTo(x,y-size);ctx.quadraticCurveTo(x+.65,y-.65,x+size,y);ctx.quadraticCurveTo(x+.65,y+.65,x,y+size);ctx.quadraticCurveTo(x-.65,y+.65,x-size,y);ctx.quadraticCurveTo(x-.65,y-.65,x,y-size);ctx.fill();disc({x,y},.55,'#fff7cf');ctx.restore();
+}
 function drawHazards(){
   for(const p of game.puddles){ctx.globalAlpha=Math.min(1,p.until-game.age);disc(p,p.radius,'rgba(67,183,108,.19)','rgba(47,151,80,.32)');disc({x:p.x-14,y:p.y+9},8,'rgba(91,213,128,.3)');disc({x:p.x+16,y:p.y-12},6,'rgba(91,213,128,.3)');ctx.globalAlpha=1;}
   for(const b of game.bombs){
@@ -145,11 +149,12 @@ function draw(){
   for(const p of game.food){
     if(p.kind!==FOOD.GOLDEN_APPLE){emoji('food',p.kind,p.x,p.y);continue;}
     emoji('food',p.kind,p.x,p.y,1,24);
-    if(!reduced){
+    if(reduced){sparkle(p.x-15,p.y-10,.7,3);sparkle(p.x+15,p.y+7,.6,2.4);}
+    else{
       p.sparkles??=[];
-      if(game.age>=(p.nextSparkle||0)){const a=Math.random()*Math.PI*2;p.sparkles.push({x:p.x+Math.cos(a)*(14+Math.random()*5),y:p.y+Math.sin(a)*(14+Math.random()*5),born:game.age,duration:.3+Math.random()*.35});p.nextSparkle=game.age+.12+Math.random()*.6;}
+      if(game.age>=(p.nextSparkle||0)){const a=Math.random()*Math.PI*2,r=15+Math.random()*5;p.sparkles.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r,born:game.age,duration:.13+Math.random()*.14,size:2.5+Math.random()*1.6});p.nextSparkle=game.age+.06+Math.random()*.12;}
       p.sparkles=p.sparkles.filter(s=>game.age-s.born<s.duration);
-      for(const s of p.sparkles){const t=(game.age-s.born)/s.duration,alpha=Math.sin(t*Math.PI);ctx.globalAlpha=alpha;ctx.shadowColor='#e9c664';ctx.shadowBlur=4;disc(s,1.15,'#fffdf0');ctx.shadowBlur=0;ctx.globalAlpha=1;}
+      for(const s of p.sparkles){const t=(game.age-s.born)/s.duration;sparkle(s.x,s.y,Math.sin(t*Math.PI),s.size);}
     }
   }
   for(const e of game.enemies){

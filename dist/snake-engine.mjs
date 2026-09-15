@@ -48,7 +48,7 @@ export class SnakeGame{
   nearPoint(center,min,max){
     for(let i=0;i<80;i++){const a=this.random()*TAU,r=min+this.random()*(max-min),p={x:center.x+Math.cos(a)*r,y:center.y+Math.sin(a)*r};if(!this.blocked(p,12)&&!this.food.some(o=>distance(p,o)<28)&&!this.enemies.some(o=>distance(p,o)<this.enemyRadius(o)+18)&&!this.bombs.some(o=>distance(p,o)<24))return p;}return null;
   }
-  chooseEnemyKind(){return this.random()<.62?0:1+Math.floor(this.random()*5);}
+  chooseEnemyKind(){const r=this.random();return r<.48?0:r<.62?1:r<.76?2:r<.90?3:r<.97?4:5;}
   spawnEnemy(kind=this.chooseEnemyKind(),bonus=false){
     if(this.enemies.length>=(bonus?96:32))return false;
     const p=this.freePoint(150,kind===4?31:16);if(!p)return false;
@@ -129,7 +129,7 @@ export class SnakeGame{
   toss(e,type){
     if(this.projectiles.length>=96)return;
     const to=this.randomAim(),a=Math.atan2(to.y-e.y,to.x-e.x),from={x:e.x+Math.cos(a)*22,y:e.y+Math.sin(a)*22};
-    this.projectiles.push({type,...from,from,to,born:this.age,duration:type==='boomerang'?1.6:type==='shoe'?.72:.88,owner:e});this.events.push({type:'throw',x:e.x,y:e.y});
+    this.projectiles.push({type,...from,from,to,born:this.age,duration:type==='boomerang'?1.6:type==='shoe'?.72:.88,owner:e});this.events.push({type:'throw',attack:type,x:e.x,y:e.y});
   }
   dropBomb(e){if(this.bombs.length>=20)return;for(let i=0;i<12;i++){const a=i*TAU/12,p={x:e.x+Math.cos(a)*27,y:e.y+Math.sin(a)*27};if(!this.blocked(p,11)&&!this.enemies.some(o=>this.enemyDiscs(o).some(d=>distance(p,d)<11+d.r))&&!this.food.some(o=>distance(p,o)<22)&&!this.bombs.some(o=>distance(p,o)<24)){this.bombs.push({...p,born:this.age,armed:null});return;}}}
   updateEnemy(e,dt){

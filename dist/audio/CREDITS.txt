@@ -13,3 +13,5 @@ Bubbles pop: https://opengameart.org/content/bubbles-pop
 Wine Glasses on contact (Clink) — EpicWizard: https://freesound.org/people/EpicWizard/sounds/325194/
 Underwater Ambience — Kinoton: https://freesound.org/people/Kinoton/sounds/393819/
 Bubble/wine excerpts equalized and faded; underwater excerpt filtered and crossfaded into a loop. Tooth and shoe use Kenney book flip and footstep recordings.
+
+Clarity revision: wine-clear isolates the 3.08 kHz wineglass ring; underwater-clear removes sub-260 Hz rumble and retains water detail up to 3.5 kHz. Same CC0 sources above.

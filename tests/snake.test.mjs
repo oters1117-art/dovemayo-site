@@ -203,7 +203,7 @@ test('beer replaces buffs with temporary orange steering wobble',()=>{
 });
 test('basic enemies move at 94 percent and dominate the spawn mix',()=>{
  const g=fresh();g.food=[];const e={x:100,y:200,kind:0};g.enemies=[e];g.updateEnemy(e,.1);assert(Math.abs(e.x-111.75)<.001);
- let basic=0;for(let i=0;i<1000;i++)if(g.chooseEnemyKind()===0)basic++;assert(basic>550&&basic<690);
+ let basic=0;for(let i=0;i<1000;i++)if(g.chooseEnemyKind()===0)basic++;assert(basic>420&&basic<540);
 });
 test('nerd does not tunnel through the snake body while rushing',()=>{
  const g=fresh();g.food=[];g.body=[{x:440,y:200},...Array.from({length:80},(_,i)=>({x:300,y:40+i*8}))];
@@ -250,3 +250,8 @@ test('blue and boss fire emit distinct firing cues; shoe emits one landing cue',
  const boss={x:100,y:100,kind:6,until:0};g.updateBoss(boss,.01);assert(g.events.some(e=>e.type==='tooth-shot'));
  g.projectiles=[{type:'shoe',from:{x:100,y:100},to:{x:200,y:100},born:0,duration:1}];g.age=1;g.updateHazards(.01);g.updateHazards(.01);assert.equal(g.events.filter(e=>e.type==='shoe-land').length,1);
 });
+
+test('natural enemy mix follows 48/14/14/14/7/3 weighting',()=>{
+ const g=fresh(),counts=[0,0,0,0,0,0];for(let i=0;i<1000;i++){g.random=()=>(i+.5)/1000;counts[g.chooseEnemyKind()]++;}assert.deepEqual(counts,[480,140,140,140,70,30]);
+});
+test('potion throws expose a distinct glass cue',()=>{const g=fresh();g.food=[];g.toss({x:100,y:100},'potion');assert.equal(g.events.at(-1).attack,'potion');});
