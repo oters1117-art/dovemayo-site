@@ -1,4 +1,4 @@
-import {SnakeGame,headingFromKeys,cardObstacle} from './snake-engine.mjs?v=6';
+import {SnakeGame,headingFromKeys,cardObstacle} from './snake-engine.mjs?v=7';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -6,7 +6,7 @@ const title=document.querySelector('.identity h1');
 const subtitle=document.querySelector('.identity p');
 const canvas=document.createElement('canvas');canvas.className='snake-canvas';canvas.setAttribute('aria-hidden','true');
 const ctx=canvas.getContext('2d');
-const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수');
+const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수와 생존 시간');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
 document.body.append(canvas,score,live);
 let game=null,mode='idle',raf=0,last=0,muted=false,audio=null,assets=null,images={food:[],enemies:[],props:[],boss:[]},particles=[],previousFocus=null,pending=false;
@@ -38,7 +38,7 @@ function pop(type='eat') {
 }
 function unlockAudio(){try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();master=audio.createDynamicsCompressor();master.threshold.value=-8;master.knee.value=12;master.ratio.value=4;master.attack.value=.003;master.release.value=.16;master.connect(audio.destination);}audio.resume().catch(()=>{});}catch{}}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=6').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=7').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -46,9 +46,9 @@ function loadAssets(){
 }
 // Measure the visible glyph ink, so the snake is born at the printed dot rather than its line box.
 function ink(text,rect,element){
-  const style=getComputedStyle(element),size=parseFloat(style.fontSize),temp=document.createElement('canvas');
+  const style=getComputedStyle(element),scale=parseFloat(document.querySelector('.page').style.getPropertyValue('--page-scale'))||1,size=parseFloat(style.fontSize)*scale,temp=document.createElement('canvas');
   temp.width=Math.ceil(rect.width+size*2);temp.height=Math.ceil(size*3);
-  const c=temp.getContext('2d');c.font=style.fontWeight+' '+style.fontSize+' '+style.fontFamily;c.textBaseline='alphabetic';
+  const c=temp.getContext('2d');c.font=style.fontWeight+' '+size+'px '+style.fontFamily;c.textBaseline='alphabetic';
   const m=c.measureText(text),ascent=m.fontBoundingBoxAscent??size*.8,descent=m.fontBoundingBoxDescent??size*.2;
   const baseline=rect.top+(rect.height-ascent-descent)/2+ascent;
   return {x:rect.left-m.actualBoundingBoxLeft,y:baseline-m.actualBoundingBoxAscent,w:m.actualBoundingBoxLeft+m.actualBoundingBoxRight,h:m.actualBoundingBoxAscent+m.actualBoundingBoxDescent};
@@ -65,10 +65,11 @@ function textBox(element,node){
   const range=document.createRange();range.selectNodeContents(node);return ink(node.textContent,range.getBoundingClientRect(),element);
 }
 function layout(){
-  const d=textBox(title,dot);
-  const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,parseFloat(getComputedStyle(el.parentElement).columnGap)||12,parseFloat(getComputedStyle(el.parentElement).rowGap)||18);})];
+  const d=textBox(title,dot),scale=parseFloat(document.querySelector('.page').style.getPropertyValue('--page-scale'))||1;
+  const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,(parseFloat(getComputedStyle(el.parentElement).columnGap)||12)*scale,(parseFloat(getComputedStyle(el.parentElement).rowGap)||18)*scale);})];
   return {width:innerWidth,height:innerHeight,origin:{x:d.x+d.w/2,y:d.y+d.h/2},obstacles};
 }
+function updateScore(){if(game){const t=Math.floor(game.age);score.textContent=game.score+'  '+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}}
 function positionScore(){
   if(score.hidden)return;const d=textBox(title,dot);score.style.left=(d.x+d.w/2)+'px';score.style.top=(d.y+d.h/2-17)+'px';
 }
@@ -84,11 +85,11 @@ async function start(angle=0){
   positionScore();
   game=new SnakeGame({...options,angle});particles=[];mode='playing';pending=false;
   document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
-  score.textContent='0';steer();
+  updateScore();steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
   loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);clearInterval(backgroundTimer);backgroundTimer=setInterval(()=>{if(document.hidden&&mode==='playing')advance(performance.now());},100);raf=requestAnimationFrame(frame);
 }
-function end(){stopMusic();clearInterval(backgroundTimer);pending=false;if(game)score.textContent=String(game.score);mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
+function end(){stopMusic();clearInterval(backgroundTimer);pending=false;updateScore();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
 function failure(){
   pop('fail');end();say('게임 끝.');
   flashBackground(reduced?'#e7b9b9':'#ef6767',700);
@@ -96,11 +97,11 @@ function failure(){
 function burst(p,color){if(reduced)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
 function advance(now){
   if(mode!=='playing')return;
-  const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);
+  const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();
   const events=game.events.splice(0);
   for(const e of events){
-    if(e.type==='eat'){pop();score.textContent=String(game.score);burst(e,'#bdb39d');}
-    if(e.type==='penalty'){pop('penalty');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);score.textContent=String(game.score);burst(e,'#9e7cba');}
+    if(e.type==='eat'){pop();updateScore();burst(e,'#bdb39d');}
+    if(e.type==='penalty'){pop('penalty');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);updateScore();burst(e,'#9e7cba');}
     if(e.type==='defeat'){pop('defeat');burst(e,'#e4c361');}
     if(e.type==='throw')pop('throw');
     if(e.type==='impact'){pop('impact');burst(e,'#b88662');}
@@ -174,11 +175,12 @@ function draw(){
   for(const e of game.enemies){
     const t=Math.min(1,game.age-e.born),fade=t*t*(3-2*t),shaking=e.kind===3&&game.age-e.chargeAt<.22;
     const dx=shaking&&!reduced?Math.sin(game.age*65)*.8:0,dy=shaking&&!reduced?Math.cos(game.age*59)*.6:0;
-    if(e.kind===6){emoji('boss',0,e.x,e.y,fade,84);emoji('boss',1,e.x-17,e.y-11,fade,34);emoji('boss',1,e.x+17,e.y-11,fade,34);emoji('boss',2,e.x,e.y+16,fade,44);}else emoji('enemies',e.kind,e.x+dx,e.y+dy,fade);
+    if(e.kind===6){emoji('boss',0,e.x,e.y,fade,84);emoji('boss',1,e.x-17,e.y-4,fade,34);emoji('boss',1,e.x+17,e.y-4,fade,34);emoji('boss',2,e.x,e.y+23,fade,44);}else emoji('enemies',e.kind,e.x+dx,e.y+dy,fade);
     if(e.kind===4)emoji('props',5,e.x-23,e.y+1,fade);
     if(e.kind===3 && (e.state==='charge'||e.state==='recover')){const red=e.state==='charge'?Math.min(1,(game.age-e.chargeAt)/1.1):Math.max(0,(e.until-game.age)/2.4);emoji('props',4,e.x+dx,e.y+dy,fade*red);}
   }
   for(const p of game.projectiles){
+    if(p.type==='blue'){disc(p,3.5,'#529eff','#d9eeff');continue;}
     const t=p.type==='tooth'?0:Math.min(1,(game.age-p.born)/p.duration);
     if(p.type==='shoe'||p.type==='potion'){const y=p.from.y+(p.to.y-p.from.y)*t;ctx.fillStyle='rgba(36,36,36,.12)';ctx.beginPath();ctx.ellipse(p.x,y,6,2.5,0,0,Math.PI*2);ctx.fill();}
     ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.type==='tooth'?Math.atan2(p.vy,p.vx)+Math.PI/2:p.type==='boomerang'?t*20:t*4);
@@ -187,7 +189,8 @@ function draw(){
   if(game.knife)emoji('boss',4,game.knife.x,game.knife.y,1,27);
   if(game.armed){const blade=game.blade();ctx.save();ctx.translate(blade.x,blade.y);ctx.rotate(game.angle+Math.PI*5/4);emoji('boss',4,0,0,1,30);ctx.restore();}
   const buff=game.buffKind;
-  ctx.strokeStyle=buff==='red'?'#e74743':buff==='blue'?'#478de2':buff==='orange'?'#ec963a':game.age<game.slowUntil?'#42aa70':'#242424';
+  ctx.strokeStyle=buff==='red'?'#e74743':buff==='blue'?'#478de2':buff==='orange'?'#ec963a':buff==='purple'?'#9861bf':game.age<game.slowUntil?'#42aa70':'#242424';
+  if(game.invincible&&buff!=='rainbow')ctx.strokeStyle=Math.sin(game.age*22)>0?'#b1aeb8':ctx.strokeStyle;
   if(buff==='rainbow'){const hue=game.age*(reduced?25:190),gradient=ctx.createLinearGradient(game.body[0].x-35,game.body[0].y-35,game.body[0].x+35,game.body[0].y+35);for(let i=0;i<=6;i++)gradient.addColorStop(i/6,'hsl('+((hue+i*60)%360)+' 85% 58%)');ctx.strokeStyle=gradient;}
   ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';
   ctx.beginPath();game.body.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
@@ -216,5 +219,7 @@ window.addEventListener('wheel',e=>{if(mode!=='idle')e.preventDefault();},{passi
 window.addEventListener('touchmove',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
 window.addEventListener('scroll',()=>{if(mode!=='idle')end();positionScore();},{passive:true});
 
+function fitPage(){const p=document.querySelector('.page');const scale=Math.min(1,(innerHeight-40)/p.offsetHeight);p.style.setProperty('--page-scale',Math.max(.1,scale));}
+fitPage();document.fonts.ready.then(fitPage);window.addEventListener('resize',fitPage);
 canvas.hidden=true;
 // Fetching only the small manifest/assets after activation keeps normal visits lightweight.

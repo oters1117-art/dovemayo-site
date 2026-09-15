@@ -81,8 +81,8 @@ test('angry enemy throws immediately and the boomerang returns',()=>{
  const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
  g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
 });
-test('nerd is harmless and quickly runs beside the player from far away',()=>{
- const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(!g.dead);
+test('nerd contact kills and it quickly runs beside the player from far away',()=>{
+ const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(g.dead);g.dead=false;
  e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<55);
 });
 test('wink drops bombs; proximity arms, warns, then explodes',()=>{
@@ -96,13 +96,13 @@ test('chili speeds up, blueberry replaces it without a speed effect, tomato repl
  const g=fresh();g.eatFood({kind:FOOD.CHILI});assert.equal(g.buffKind,'red');assert(g.currentSpeed>185);
  g.eatFood({kind:FOOD.BLUEBERRY});assert.equal(g.buffKind,'blue');assert(g.currentSpeed<130);assert(!g.invincible);
  g.eatFood({kind:FOOD.TOMATO});assert.equal(g.buffKind,'rainbow');assert(g.invincible);
- g.eatFood({kind:FOOD.BLUEBERRY});assert(!g.invincible);assert.equal(g.buffKind,'blue');
+ g.eatFood({kind:FOOD.BLUEBERRY});assert(g.invincible);assert.equal(g.buffKind,'blue');g.age+=1.6;assert(!g.invincible);
  g.age=g.buff.until+.01;assert.equal(g.buffKind,null);
 });
-test('eggplant deducts exactly five with no eating bonus and shrinks immediately',()=>{
+test('eggplant awards one point and briefly freezes purple without shrinking',()=>{
  const g=fresh();g.score=3;g.goalLength=120;g.length=120;g.eatFood({kind:FOOD.EGGPLANT});
- assert.equal(g.score,-2);assert.equal(g.goalLength,72);assert.equal(g.length,72);assert.equal(g.events.at(-1).type,'penalty');
- assert(g.currentSpeed>=125);
+ assert.equal(g.score,4);assert.equal(g.goalLength,144);assert.equal(g.length,120);assert.equal(g.buffKind,'purple');assert.equal(g.currentSpeed,0);
+ const h={...g.body[0]};g.step(.5);assert.deepEqual(g.body[0],h);assert.equal(g.body.length,1);g.age=1.2;assert(g.currentSpeed>0);assert.equal(g.buffKind,null);
 });
 test('tomato turns away from cards and walls and defeats head-contact enemies',()=>{
  const g=fresh({obstacles:[{x:446,y:190,w:30,h:30}]});g.setBuff('rainbow',5);for(let i=0;i<30;i++){g.step(.01);assert(!g.dead);assert(!g.blocked(g.body[0],g.radius));}assert.notEqual(g.angle,0);
@@ -174,8 +174,8 @@ test('potion creates a larger longer pool only on impact',()=>{
  const g=fresh();g.food=[];g.body=[{x:800,y:650}];g.projectiles=[{type:'potion',from:{x:100,y:200},to:{x:200,y:200},born:0,duration:1}];
  g.age=.5;g.updateHazards(.01);assert.equal(g.puddles.length,0);g.age=1;g.updateHazards(.01);assert.equal(g.puddles[0].radius,52);assert.equal(g.puddles[0].until,13);
 });
-test('special-item test spawn cycles through the five special foods',()=>{
- const g=fresh();g.food=[];for(let i=0;i<5;i++)assert(g.spawnSpecial());assert.deepEqual(g.food.map(p=>p.kind),[FOOD.TOMATO,FOOD.CHILI,FOOD.BLUEBERRY,FOOD.EGGPLANT,FOOD.BEER]);
+test('special-item test spawn cycles through the six special foods',()=>{
+ const g=fresh();g.food=[];for(let i=0;i<6;i++)assert(g.spawnSpecial());assert.deepEqual(g.food.map(p=>p.kind),[FOOD.TOMATO,FOOD.CHILI,FOOD.BLUEBERRY,FOOD.EGGPLANT,FOOD.BEER,FOOD.GOLDEN_APPLE]);
 });
 
 test('flying throws ignore enemies food attacks blades and explosions until landing',()=>{
@@ -199,7 +199,7 @@ test('returning boomerang never kills its owner',()=>{
  g.projectiles=[{type:'boomerang',from:{x:122,y:100},to:{x:200,y:100},born:0,duration:1,owner:e,leftOwner:true}];g.age=.98;g.updateHazards(.001);assert(g.enemies.includes(e));assert.equal(g.projectiles.length,1);
 });
 test('beer replaces buffs with temporary orange steering wobble',()=>{
- const g=fresh();g.food=[];g.setBuff('rainbow',10);g.eatFood({kind:FOOD.BEER});assert.equal(g.buffKind,'orange');assert(!g.invincible);g.step(.1);assert(Math.abs(g.angle)>.01);g.age=g.buff.until+.1;assert.equal(g.buffKind,null);
+ const g=fresh();g.food=[];g.setBuff('rainbow',10);g.eatFood({kind:FOOD.BEER});assert.equal(g.buffKind,'orange');assert(g.invincible);g.step(.1);assert(Math.abs(g.angle)>.01);g.age=g.buff.until+.1;assert.equal(g.buffKind,null);
 });
 test('basic enemies move at 94 percent and dominate the spawn mix',()=>{
  const g=fresh();g.food=[];const e={x:100,y:200,kind:0};g.enemies=[e];g.updateEnemy(e,.1);assert(Math.abs(e.x-111.75)<.001);
@@ -209,4 +209,32 @@ test('nerd does not tunnel through the snake body while rushing',()=>{
  const g=fresh();g.food=[];g.body=[{x:440,y:200},...Array.from({length:80},(_,i)=>({x:300,y:40+i*8}))];
  const e={x:100,y:200,kind:4,state:'dash',side:0,aim:{x:483,y:200},until:20};g.enemies=[e];
  for(let i=0;i<180;i++){g.age+=.01;g.updateEnemy(e,.01);assert(!g.enemyBlocked(e,e));}
+});
+
+test('tomato speeds up, crosses its own body and gives 1.5 seconds of expiry protection',()=>{
+ const g=fresh();g.setBuff('rainbow',10);assert.equal(g.currentSpeed,162.5);
+ g.body=[{x:440,y:200},{x:420,y:200},{x:420,y:220},{x:460,y:220},{x:442,y:200}];g.step(.01);assert(!g.dead);assert(g.body[0].x>440);
+ g.age=10.1;assert(g.invincible);assert.equal(g.currentSpeed,125);g.age=11.51;assert(!g.invincible);
+});
+test('golden apple gives three points and summons ten enemies',()=>{
+ const g=fresh();g.food=[];g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(g.score,3);assert.equal(g.enemies.length,10);
+});
+test('blueberry periodically fires forward bullets that do not hurt the player',()=>{
+ const g=fresh();g.food=[];g.eatFood({kind:FOOD.BLUEBERRY});g.step(.01);assert.equal(g.projectiles.length,1);assert.equal(g.projectiles[0].type,'blue');assert.equal(g.projectiles[0].vx,360);
+ g.step(.3);assert.equal(g.projectiles.length,2);assert(!g.dead);
+ g.projectiles=[{type:'blue',...g.body[0],vx:0,vy:0,born:g.age}];g.updateHazards(.01);assert(!g.dead);
+ g.age=8.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
+});
+test('blue bullets defeat ordinary enemies and cancel enemy attacks, but bosses require knives',()=>{
+ for(const target of ['enemy','shot','boss']){
+ const g=fresh();g.food=[];g.projectiles=[{type:'blue',x:100,y:100,vx:0,vy:0,born:0}];
+ if(target==='shot')g.projectiles.push({type:'tooth',x:100,y:100,vx:0,vy:0,born:0});
+ else g.enemies=[{x:100,y:100,kind:target==='boss'?6:0,born:0}];
+ g.updateHazards(.001);assert.equal(g.projectiles.length,0);assert.equal(g.enemies.length,target==='boss'?1:0);
+ }
+});
+test('boss cycles radial barrage, orbit machine gun and aimed fan',()=>{
+ const g=fresh();g.food=[];const e={x:200,y:300,kind:6,until:0};g.enemies=[e];g.updateBoss(e,.01);assert.equal(e.pattern,0);assert.equal(g.projectiles.length,14);
+ g.age=6.1;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
+ g.age=12.2;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
 });
