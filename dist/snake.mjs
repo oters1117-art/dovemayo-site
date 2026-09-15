@@ -1,5 +1,5 @@
-import {FoleySound} from './foley.mjs?v=4';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=11';
+import {FoleySound} from './foley.mjs?v=5';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=12';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -21,7 +21,7 @@ const say=t=>{live.textContent=t;};
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=11').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=12').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -83,7 +83,7 @@ function advance(now){
   const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();
   const events=game.events.splice(0);
   for(const e of events){
-    if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
+    if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':e.kind===FOOD.CHILI?'chili':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
     if(e.type==='penalty'){pop('penalty');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);updateScore();burst(e,'#9e7cba');}
     if(e.type==='defeat'){if(!e.silent)pop('defeat');burst(e,'#e4c361');}
     if(e.type==='throw')pop(e.attack==='potion'?'potion':'throw');

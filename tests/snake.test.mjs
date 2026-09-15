@@ -251,7 +251,11 @@ test('blue and boss fire emit distinct firing cues; shoe emits one landing cue',
  g.projectiles=[{type:'shoe',from:{x:100,y:100},to:{x:200,y:100},born:0,duration:1}];g.age=1;g.updateHazards(.01);g.updateHazards(.01);assert.equal(g.events.filter(e=>e.type==='shoe-land').length,1);
 });
 
-test('natural enemy mix follows 48/14/14/14/7/3 weighting',()=>{
- const g=fresh(),counts=[0,0,0,0,0,0];for(let i=0;i<1000;i++){g.random=()=>(i+.5)/1000;counts[g.chooseEnemyKind()]++;}assert.deepEqual(counts,[480,140,140,140,70,30]);
+test('natural enemy mix follows 50/10/10/10/10/10 weighting',()=>{
+ const g=fresh(),counts=[0,0,0,0,0,0];for(let i=0;i<1000;i++){g.random=()=>(i+.5)/1000;counts[g.chooseEnemyKind()]++;}assert.deepEqual(counts,[500,100,100,100,100,100]);
 });
 test('potion throws expose a distinct glass cue',()=>{const g=fresh();g.food=[];g.toss({x:100,y:100},'potion');assert.equal(g.events.at(-1).attack,'potion');});
+
+test('golden apple uses the ordinary weighted enemy chooser for all fifteen summons',()=>{
+ const g=fresh();let chosen=0;const got=[];g.chooseEnemyKind=()=>chosen++%6;g.spawnEnemy=(kind,bonus)=>{got.push([kind,bonus]);return true;};g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(chosen,15);assert.deepEqual(got.map(v=>v[0]),Array.from({length:15},(_,i)=>i%6));assert(got.every(v=>v[1]));
+});

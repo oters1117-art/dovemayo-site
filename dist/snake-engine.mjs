@@ -33,7 +33,7 @@ export class SnakeGame{
   eatFood(p){
     this.score+=p.kind===FOOD.GOLDEN_APPLE?5:1;this.goalLength+=24;
     if(p.kind===FOOD.EGGPLANT){this.setBuff('purple',1.1);this.freezeUntil=this.age+1.1;this.events.push({type:'penalty',...p});return;}
-    if(p.kind===FOOD.GOLDEN_APPLE)for(let i=0;i<15;i++)this.spawnEnemy(0,true);
+    if(p.kind===FOOD.GOLDEN_APPLE)for(let i=0;i<15;i++)this.spawnEnemy(this.chooseEnemyKind(),true);
     if(p.kind===FOOD.CHILI)this.setBuff('red',10);
     if(p.kind===FOOD.BLUEBERRY){this.setBuff('blue',8);this.nextBlueShot=this.age;}
     if(p.kind===FOOD.TOMATO)this.setBuff('rainbow',10);
@@ -48,7 +48,7 @@ export class SnakeGame{
   nearPoint(center,min,max){
     for(let i=0;i<80;i++){const a=this.random()*TAU,r=min+this.random()*(max-min),p={x:center.x+Math.cos(a)*r,y:center.y+Math.sin(a)*r};if(!this.blocked(p,12)&&!this.food.some(o=>distance(p,o)<28)&&!this.enemies.some(o=>distance(p,o)<this.enemyRadius(o)+18)&&!this.bombs.some(o=>distance(p,o)<24))return p;}return null;
   }
-  chooseEnemyKind(){const r=this.random();return r<.48?0:r<.62?1:r<.76?2:r<.90?3:r<.97?4:5;}
+  chooseEnemyKind(){const r=this.random();return r<.5?0:r<.6?1:r<.7?2:r<.8?3:r<.9?4:5;}
   spawnEnemy(kind=this.chooseEnemyKind(),bonus=false){
     if(this.enemies.length>=(bonus?96:32))return false;
     const p=this.freePoint(150,kind===4?31:16);if(!p)return false;

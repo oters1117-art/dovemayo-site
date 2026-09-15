@@ -1,22 +1,23 @@
 // Recorded CC0 foley, locally hosted. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','beer-glug','gag-water','page-turn','wine-clear','tooth','shoe','underwater-clear'];
+export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear'];
 const profiles={
  eat:{bank:['bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5'],gain:.85,rate:1,gap:.035},
  special:{bank:['ice-0','ice-1','ice-2'],gain:.88,rate:.94,gap:.05},
  blue:{bank:['bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5'],gain:.42,rate:1.12,gap:.09},
- tooth:{bank:['tooth'],gain:.82,rate:1.06,gap:.065},
+ tooth:{bank:['tooth-soft'],gain:.46,rate:1,gap:.09},
  shoe:{bank:['shoe'],gain:.8,rate:.84,gap:.08},
  defeat:{bank:['paper-0','paper-1','paper-2'],gain:.8,rate:1,gap:.055},
  potion:{bank:['cloth-0','cloth-1'],gain:.3,rate:1.25,gap:.12},
  apple:{bank:['apple-crunch'],gain:.88,rate:1,gap:.07},
- beer:{bank:['beer-glug'],gain:.8,rate:1,gap:.15},
+ chili:{bank:['chili-flame'],gain:.7,rate:1,gap:.12},
+ beer:{bank:['beer-pour'],gain:.8,rate:1,gap:.15},
  throw:{bank:['cloth-0','cloth-1'],gain:.22,rate:1.25,gap:.13},
  impact:{bank:['paper-1','paper-2'],gain:.36,rate:1.12,gap:.09},
  splash:{bank:['wine-clear'],gain:.82,rate:1,gap:.12},
  fail:{bank:['soft'],gain:1,rate:.62,gap:.2},
  blast:{bank:['soft'],gain:1.0,rate:.77,gap:.12},
- penalty:{bank:['gag-water'],gain:.9,rate:1,gap:.1},
- start:{bank:['page-turn'],gain:.72,rate:1,gap:.1},
+ penalty:{bank:['bubble-deep'],gain:.9,rate:1,gap:.1},
+ start:{bank:['page-soft'],gain:.5,rate:1,gap:.1},
  texture:{bank:['cloth-0'],gain:.1,rate:.76,gap:.5}
 };
 export class FoleySound{
