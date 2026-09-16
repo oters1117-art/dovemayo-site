@@ -96,7 +96,7 @@ test('chili speeds up, blueberry replaces it without a speed effect, tomato repl
  const g=fresh();g.eatFood({kind:FOOD.CHILI});assert.equal(g.buffKind,'red');assert(g.currentSpeed>185);
  g.eatFood({kind:FOOD.BLUEBERRY});assert.equal(g.buffKind,'blue');assert(g.currentSpeed<130);assert(!g.invincible);
  g.eatFood({kind:FOOD.TOMATO});assert.equal(g.buffKind,'rainbow');assert(g.invincible);
- g.eatFood({kind:FOOD.BLUEBERRY});assert(g.invincible);assert.equal(g.buffKind,'blue');g.age+=1.6;assert(!g.invincible);
+ g.eatFood({kind:FOOD.BLUEBERRY});assert(g.invincible);assert.equal(g.buffKind,'rainbow');
  g.age=g.buff.until+.01;assert.equal(g.buffKind,null);
 });
 test('eggplant awards one point and briefly freezes purple without shrinking',()=>{
@@ -199,7 +199,7 @@ test('returning boomerang never kills its owner',()=>{
  g.projectiles=[{type:'boomerang',from:{x:122,y:100},to:{x:200,y:100},born:0,duration:1,owner:e,leftOwner:true}];g.age=.98;g.updateHazards(.001);assert(g.enemies.includes(e));assert.equal(g.projectiles.length,1);
 });
 test('beer replaces buffs with temporary orange steering wobble',()=>{
- const g=fresh();g.food=[];g.setBuff('rainbow',10);g.eatFood({kind:FOOD.BEER});assert.equal(g.buffKind,'orange');assert(g.invincible);g.step(.1);assert(Math.abs(g.angle)>.01);g.age=g.buff.until+.1;assert.equal(g.buffKind,null);
+ const g=fresh();g.food=[];g.setBuff('red',10);g.eatFood({kind:FOOD.BEER});assert.equal(g.buffKind,'orange');assert(!g.invincible);g.step(.1);assert(Math.abs(g.angle)>.01);g.age=g.buff.until+.1;assert.equal(g.buffKind,null);
 });
 test('basic enemies move at 94 percent and dominate the spawn mix',()=>{
  const g=fresh();g.food=[];const e={x:100,y:200,kind:0};g.enemies=[e];g.updateEnemy(e,.1);assert(Math.abs(e.x-111.75)<.001);
@@ -258,4 +258,24 @@ test('potion throws expose a distinct glass cue',()=>{const g=fresh();g.food=[];
 
 test('golden apple uses the ordinary weighted enemy chooser for all fifteen summons',()=>{
  const g=fresh();let chosen=0;const got=[];g.chooseEnemyKind=()=>chosen++%6;g.spawnEnemy=(kind,bonus)=>{got.push([kind,bonus]);return true;};g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(chosen,15);assert.deepEqual(got.map(v=>v[0]),Array.from({length:15},(_,i)=>i%6));assert(got.every(v=>v[1]));
+});
+
+test('all ordinary colored effects replace both color and mechanics',()=>{
+ const kinds=['red','blue','orange','purple','green'];
+ for(const from of kinds)for(const to of kinds){const g=fresh();g.setBuff(from,8);g.setBuff(to,8);assert.equal(g.buffKind,to);assert.equal(g.slowUntil>g.age,to==='green');assert.equal(g.freezeUntil>g.age,to==='purple');if(to!=='purple')assert(g.currentSpeed>0);}
+});
+test('rainbow rejects all other colors and preserves its full duration',()=>{
+ const g=fresh();g.setBuff('rainbow',10);const until=g.buff.until;
+ for(const kind of ['red','blue','orange','purple','green']){assert.equal(g.setBuff(kind,8),false);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,until);assert(g.currentSpeed>125);}
+ g.age=10.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
+});
+test('potion pools cancel blue fire and eggplant freezing',()=>{
+ for(const kind of ['blue','purple','red','orange']){const g=fresh();g.food=[];g.setBuff(kind,8);g.puddles=[{...g.body[0],radius:52,until:12}];g.step(.01);assert.equal(g.buffKind,'green');assert.equal(g.freezeUntil,0);assert.equal(g.projectiles.length,0);assert(g.currentSpeed>0&&g.currentSpeed<100);}
+});
+test('nerd chooses and updates targets in the rear half plane',()=>{
+ const g=fresh();g.food=[];const e={x:100,y:500,kind:4};g.enemies=[e];
+ for(const angle of [0,.6,Math.PI/2,Math.PI,-Math.PI/2]){g.angle=angle;assert(g.nerdAim(e,true));const h=g.body[0];assert((e.aim.x-h.x)*Math.cos(angle)+(e.aim.y-h.y)*Math.sin(angle)<=.000001);assert(!g.enemyBlocked(e,e.aim));}
+});
+test('nerd dies when snake body reaches its face or finger before it can dodge',()=>{
+ for(const finger of [false,true]){const g=fresh();g.food=[];g.age=3;g.length=g.goalLength=200;g.body=Array.from({length:81},(_,i)=>({x:440-i*2,y:200}));if(finger)g.body=[...Array.from({length:46},(_,i)=>({x:440-i*2,y:200})),...Array.from({length:40},(_,i)=>({x:350,y:202+i*2}))];const e={x:finger?373:350,y:finger?249:210,kind:4,born:0,until:30};g.enemies=[e];g.step(.001);assert(!g.dead);assert(!g.enemies.includes(e));assert.equal(g.kills,1);}
 });

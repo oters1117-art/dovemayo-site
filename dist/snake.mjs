@@ -1,5 +1,5 @@
 import {FoleySound} from './foley.mjs?v=5';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=12';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=13';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -21,7 +21,7 @@ const say=t=>{live.textContent=t;};
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=12').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=13').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -134,7 +134,7 @@ function sparkle(x,y,alpha,size){
   ctx.beginPath();ctx.moveTo(x,y-size);ctx.quadraticCurveTo(x+.65,y-.65,x+size,y);ctx.quadraticCurveTo(x+.65,y+.65,x,y+size);ctx.quadraticCurveTo(x-.65,y+.65,x-size,y);ctx.quadraticCurveTo(x-.65,y-.65,x,y-size);ctx.fill();disc({x,y},.55,'#fff7cf');ctx.restore();
 }
 function drawHazards(){
-  for(const p of game.puddles){ctx.globalAlpha=Math.min(1,p.until-game.age);disc(p,p.radius,'rgba(67,183,108,.19)','rgba(47,151,80,.32)');disc({x:p.x-14,y:p.y+9},8,'rgba(91,213,128,.3)');disc({x:p.x+16,y:p.y-12},6,'rgba(91,213,128,.3)');ctx.globalAlpha=1;}
+  for(const p of game.puddles){ctx.globalAlpha=Math.min(1,p.until-game.age);disc(p,p.radius,'rgba(67,183,108,.19)','rgba(47,151,80,.32)');ctx.globalAlpha=1;}
   for(const b of game.bombs){
     const fuse=b.armed===null?0:Math.min(1,(game.age-b.armed)/.95);
     const shake=0;
@@ -186,8 +186,6 @@ function draw(){
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 window.addEventListener('keydown',e=>{
   if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
-  const debug=e.key.toLowerCase();
-  if(['q','w','e'].includes(debug)&&!e.repeat){e.preventDefault();const act=()=>{if(!game)return;if(debug==='q')game.spawnSpecial();if(debug==='w')game.spawnEnemy();if(debug==='e')game.spawnBoss();};if(mode==='idle')start(0).then(act);else act();return;}
   if(mode==='idle'){
     if(['ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.repeat && !e.target.closest('a,button')){e.preventDefault();held.add(e.key);start(directions[e.key]);}return;
   }
