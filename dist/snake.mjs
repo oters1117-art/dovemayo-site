@@ -1,3 +1,4 @@
+import {TouchSteering} from './touch-steering.mjs?v=1';
 import {PadMusicPlayer} from './music-pads.mjs?v=3';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
@@ -8,12 +9,14 @@ const dot=document.querySelector('.identity h1 > span');
 const title=document.querySelector('.identity h1');
 const subtitle=document.querySelector('.identity p');
 const canvas=document.createElement('canvas');canvas.className='snake-canvas';canvas.setAttribute('aria-hidden','true');
+const touchSurface=document.createElement('div');touchSurface.className='snake-touch';touchSurface.hidden=true;touchSurface.setAttribute('aria-hidden','true');
+const stick=new TouchSteering();
 const ctx=canvas.getContext('2d');
 const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수와 생존 시간');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
 const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='enter';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',()=>{if(performance.now()>=deathReadyAt)end();});
 const rings=new Map();
-document.body.append(canvas,score,live,escapeKey);
+document.body.append(touchSurface,canvas,score,live,escapeKey);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[]},particles=[],previousFocus=null,pending=false;
 let backgroundTimer=0,flashAnimation=null,textureAt=0,deathReadyAt=0;
 const sound=new FoleySound();
@@ -76,7 +79,7 @@ async function start(angle=0){
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
   positionScore();
   game=new SnakeGame({...options,angle,musicVolume:music.volume,routePlanner:s=>routes.request(s)});particles=[];mode='playing';pending=false;
-  document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
+  touchSurface.hidden=false;document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   updateScore();steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
   loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);clearInterval(backgroundTimer);backgroundTimer=setInterval(()=>{if(document.hidden&&mode==='playing')advance(performance.now());},100);raf=requestAnimationFrame(frame);
@@ -89,7 +92,7 @@ function positionEscape(){
 }
 function end(){
   routes.cancel();stopMusic();music.stop();clearInterval(backgroundTimer);pending=false;
-  mode='idle';game=null;held.clear();cancelAnimationFrame(raf);
+  touchSurface.hidden=true;stick.reset();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);
   flashAnimation?.cancel();flashAnimation=null;
   for(const [ring,animation] of rings){animation.cancel();ring.remove();}rings.clear();
   particles=[];score.hidden=true;score.textContent='';escapeKey.hidden=true;
@@ -99,7 +102,7 @@ function end(){
 }
 function failure(){
   if(mode!=='playing')return;
-  mode='dead';deathReadyAt=performance.now()+800;music.pause();pending=false;held.clear();routes.cancel();stopMusic();
+  touchSurface.hidden=true;stick.reset();mode='dead';deathReadyAt=performance.now()+800;music.pause();pending=false;held.clear();routes.cancel();stopMusic();
   clearInterval(backgroundTimer);cancelAnimationFrame(raf);updateScore();
   for(const animation of rings.values())animation.pause();
   escapeKey.hidden=false;positionEscape();draw();
@@ -192,6 +195,16 @@ function drawMusicPads(){
     ctx.restore();
   }
 }
+function drawTouchControl(){
+  if(mode!=='playing'||!stick.origin)return;
+  const o=stick.origin,t=stick.tip,dx=t.x-o.x,dy=t.y-o.y,length=Math.hypot(dx,dy);
+  ctx.save();ctx.strokeStyle='rgba(36,36,36,.48)';ctx.lineWidth=1.4;ctx.setLineDash([3,4]);
+  ctx.beginPath();ctx.arc(o.x,o.y,24,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  if(length>=6){const angle=Math.atan2(dy,dx),distance=Math.min(76,length),x=o.x+Math.cos(angle)*distance,y=o.y+Math.sin(angle)*distance;
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(x,y);
+    ctx.moveTo(x-Math.cos(angle-.55)*8,y-Math.sin(angle-.55)*8);ctx.lineTo(x,y);ctx.lineTo(x-Math.cos(angle+.55)*8,y-Math.sin(angle+.55)*8);ctx.stroke();
+  }ctx.restore();
+}
 function drawMusicLabels(){
   for(const p of game.musicPads?.labels||[]){
     const t=Math.min(1,(game.age-p.born)/.85);
@@ -241,9 +254,21 @@ function draw(){
   const h=game.body[0];ctx.beginPath();ctx.arc(h.x,h.y,4,0,Math.PI*2);ctx.fill();
   if(game.age>.2){for(const s of [-1,1]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(h.x+Math.cos(game.angle)*1.5+Math.sin(game.angle)*s*1.8,h.y+Math.sin(game.angle)*1.5-Math.cos(game.angle)*s*1.8,1,0,Math.PI*2);ctx.fill();}}
   for(const p of particles){ctx.globalAlpha=p.life/.35;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
-  drawMusicLabels();
+  drawMusicLabels();drawTouchControl();
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
+touchSurface.addEventListener('pointerdown',e=>{
+  if(mode!=='playing'||!stick.begin(e.pointerId,e.clientX,e.clientY))return;
+  e.preventDefault();held.clear();touchSurface.setPointerCapture(e.pointerId);
+});
+touchSurface.addEventListener('pointermove',e=>{
+  if(mode!=='playing')return;const angle=stick.move(e.pointerId,e.clientX,e.clientY);
+  if(angle!==null&&game.buffKind!=='purple')game.target=angle;
+});
+function releaseTouch(e){if(stick.release(e.pointerId)&&mode==='playing')game.target=game.angle;}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])touchSurface.addEventListener(type,releaseTouch);
+document.addEventListener('click',e=>{if(mode!=='idle'&&e.target.closest('a,.snake-start')){e.preventDefault();e.stopPropagation();}},true);
+document.addEventListener('contextmenu',e=>{if(mode!=='idle'&&e.target.closest('a,.snake-touch'))e.preventDefault();});
 document.querySelector('.snake-start')?.addEventListener('click',()=>{if(mode==='idle'&&!pending){held.clear();start(0);}});
 window.addEventListener('keydown',e=>{
   if(mode==='dead'){if(e.key==='Enter'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();if(!e.repeat&&performance.now()>=deathReadyAt)end();}return;}
@@ -257,7 +282,7 @@ window.addEventListener('keydown',e=>{
   if(e.key in directions){e.preventDefault();if(mode==='playing'){held.add(e.key);steer();}}
 });
 window.addEventListener('keyup',e=>{if(e.key in directions){held.delete(e.key);steer();}});
-window.addEventListener('blur',()=>{held.clear();steer();});
+window.addEventListener('blur',()=>{stick.reset();held.clear();steer();});
 document.addEventListener('visibilitychange',()=>{held.clear();steer();if(mode==='playing'){advance(performance.now());if(!document.hidden){cancelAnimationFrame(raf);if(mode==='playing')raf=requestAnimationFrame(frame);}}});
 window.addEventListener('resize',()=>{if(mode==='playing')end();else if(mode==='dead'){sizeCanvas();draw();positionEscape();}positionScore();});
 window.addEventListener('wheel',e=>{if(mode!=='idle')e.preventDefault();},{passive:false});
