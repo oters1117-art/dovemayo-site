@@ -1,4 +1,4 @@
-import {MusicPads} from './music-pads.mjs?v=2';
+import {MusicPads} from './music-pads.mjs?v=3';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
 export const TAU=Math.PI*2;
@@ -9,7 +9,7 @@ export function headingFromKeys(keys,angle){const x=Number(keys.has('ArrowRight'
 export function cardObstacle(b,gap=12,rowGap=18){const x=Math.max(0,(20.25-gap)/2),y=Math.max(0,(20.25-rowGap)/2);return{x:b.left+x,y:b.top+y,w:b.width-2*x,h:b.height-2*y,radius:Math.max(3,b.width*.21-Math.max(x,y))};}
 
 export class SnakeGame{
-  constructor({width,height,origin,angle=0,obstacles=[],random=Math.random,routePlanner=null,musicVolume=80}){
+  constructor({width,height,origin,angle=0,obstacles=[],random=Math.random,routePlanner=null,musicVolume=50}){
     Object.assign(this,{width,height,obstacles,random,routePlanner,angle,target:angle});
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;this.speed=125;
     this.age=0;this.score=0;this.kills=0;this.dead=false;this.events=[];

@@ -1,11 +1,12 @@
 export class MusicPads {
-  constructor(volume=80){this.volume=volume;this.active=false;this.track=0;this.pads=[];this.nextPlacement=0;}
+  constructor(volume=50){this.volume=volume;this.active=false;this.track=0;this.pads=[];this.labels=[];this.nextPlacement=0;}
   place(game,kind){
     for(let i=0;i<8;i++){const p=game.freePoint(55,17);if(p&&this.pads.every(o=>Math.hypot(o.x-p.x,o.y-p.y)>44)){this.pads.push({...p,kind,contacts:new Set(),flashUntil:0});return;}}
   }
   stop(){this.active=false;this.track=0;this.pads=this.pads.filter(p=>p.kind==='play');}
   get visibleKinds(){return ['play',...(this.active&&this.volume<100?['plus']:[]),...(this.active&&this.volume>0?['minus']:[])];}
   update(game){
+    this.labels=this.labels.filter(p=>game.age-p.born<.85);
     this.pads=this.pads.filter(p=>this.visibleKinds.includes(p.kind));
     if(game.age>=this.nextPlacement){
       for(const kind of this.visibleKinds)if(!this.pads.some(p=>p.kind===kind))this.place(game,kind);
@@ -22,6 +23,7 @@ export class MusicPads {
           else {this.active=true;this.track=1+Math.floor(game.random()*6);this.nextPlacement=0;game.events.push({type:'music-play',track:this.track});}
         }else if(this.active){
           this.volume=Math.max(0,Math.min(100,this.volume+(pad.kind==='plus'?10:-10)));
+          this.labels.push({x:pad.x,y:pad.y,born:game.age,volume:this.volume,color:pad.kind==='plus'?'#71ad5e':'#c97171'});if(this.labels.length>32)this.labels.shift();
           this.nextPlacement=0;pad.flashUntil=game.age+.3;game.events.push({type:'music-volume',volume:this.volume});
         }
       }
@@ -33,7 +35,7 @@ export class MusicPads {
 
 // One streaming element, independent from effect volume. No music downloads before stepping on play.
 export class PadMusicPlayer {
-  constructor({createAudio=()=>new Audio(),onStop=()=>{},onEnded=null,volume=80}={}){
+  constructor({createAudio=()=>new Audio(),onStop=()=>{},onEnded=null,volume=50}={}){
     this.audio=createAudio();this.audio.preload='none';this.audio.loop=false;this.volume=volume;this.onStop=onStop;this.onEnded=onEnded;this.generation=0;
     this.audio.addEventListener('ended',()=>{if(this.onEnded)this.onEnded();else this.finish();});this.audio.addEventListener('error',()=>this.finish());
     this.setVolume(volume);

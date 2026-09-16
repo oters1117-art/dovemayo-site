@@ -1,7 +1,7 @@
-import {PadMusicPlayer} from './music-pads.mjs?v=2';
+import {PadMusicPlayer} from './music-pads.mjs?v=3';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=18';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=19';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -183,13 +183,21 @@ function drawMusicPads(){
     ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=p.kind==='play'?1.35:1.65;ctx.lineCap='round';ctx.lineJoin='round';
     ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.stroke();
     if(p.kind==='play'){
-      ctx.font='19px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('♪',pads.active?-4:0,1);
+      ctx.font='19px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('♪',pads.active?-2.5:0,1);
       if(pads.active){ctx.font='9px Arial';ctx.fillText(String(pads.track),5.5,1);}
     }else{
       ctx.beginPath();ctx.moveTo(-7,-2);ctx.lineTo(-4,-2);ctx.lineTo(0,-6);ctx.lineTo(0,6);ctx.lineTo(-4,2);ctx.lineTo(-7,2);ctx.closePath();ctx.stroke();
       ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(8,0);if(p.kind==='plus'){ctx.moveTo(5.5,-2.5);ctx.lineTo(5.5,2.5);}ctx.stroke();
     }
     ctx.restore();
+  }
+}
+function drawMusicLabels(){
+  for(const p of game.musicPads?.labels||[]){
+    const t=Math.min(1,(game.age-p.born)/.85);
+    ctx.save();ctx.globalAlpha=Math.min(1,(1-t)*2);ctx.fillStyle=p.color;
+    ctx.font='11px Arial';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText(p.volume+'%',p.x,p.y-16-(reduced?0:19*(1-(1-t)*(1-t))));ctx.restore();
   }
 }
 function draw(){
@@ -233,6 +241,7 @@ function draw(){
   const h=game.body[0];ctx.beginPath();ctx.arc(h.x,h.y,4,0,Math.PI*2);ctx.fill();
   if(game.age>.2){for(const s of [-1,1]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(h.x+Math.cos(game.angle)*1.5+Math.sin(game.angle)*s*1.8,h.y+Math.sin(game.angle)*1.5-Math.cos(game.angle)*s*1.8,1,0,Math.PI*2);ctx.fill();}}
   for(const p of particles){ctx.globalAlpha=p.life/.35;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+  drawMusicLabels();
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 window.addEventListener('keydown',e=>{
