@@ -1,3 +1,4 @@
+import {planRoute} from '../dist/navigation.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SnakeGame,turnToward,touches,headingFromKeys,FOOD,cardObstacle} from '../dist/snake-engine.mjs';
@@ -81,8 +82,8 @@ test('angry enemy charges before firing and the boomerang returns',()=>{
  const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
  g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
 });
-test('nerd contact kills and it quickly runs beside the player from far away',()=>{
- const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(g.dead);g.dead=false;
+test('nerd contact only kills the nerd and it runs quickly from far away',()=>{
+ const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(!g.dead);assert(!g.enemies.includes(e));g.enemies=[e];
  e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<55);
 });
 test('wink drops bombs; proximity arms, warns, then explodes',()=>{
@@ -124,9 +125,9 @@ test('shrunk cards leave a passable corridor and enemies cannot overlap each oth
  for(let i=0;i<200;i++){g.moveEnemy(e,other,90,.01);assert(Math.hypot(e.x-other.x,e.y-other.y)>=20.99);}
  g.food=[{x:e.x+22,y:e.y,kind:1}];const food=g.food[0];for(let i=0;i<100;i++){g.moveEnemy(e,food,90,.01);assert(Math.hypot(e.x-food.x,e.y-food.y)>=19.99);}
 });
-test('nerd finger is farther away and visits remain infrequent',()=>{
+test('nerd finger has no collider and visits remain infrequent',()=>{
  const g=fresh();g.food=[];g.age=4;const e={x:100,y:100,kind:4,until:0};g.enemies=[e];g.updateEnemy(e,.01);
- for(let i=0;i<400&&e.state==='dash';i++){g.age+=.01;g.updateEnemy(e,.01);}assert.equal(e.state,'idle');assert(e.until-g.age>=10);assert.equal(g.enemyDiscs(e)[1].x,e.x-23);
+ for(let i=0;i<400&&e.state==='dash';i++){g.age+=.01;g.updateEnemy(e,.01);}assert.equal(e.state,'idle');assert(e.until-g.age>=10);assert.equal(g.enemyDiscs(e).length,1);
 });
 test('angry enemy orbits and visibly winds up before random shots',()=>{
  const g=fresh();g.food=[];g.angle=Math.PI/2;const e={x:255,y:200,kind:3,until:0};g.enemies=[e];g.age=3;
@@ -276,6 +277,24 @@ test('nerd chooses and updates targets in the rear half plane',()=>{
  const g=fresh();g.food=[];const e={x:100,y:500,kind:4};g.enemies=[e];
  for(const angle of [0,.6,Math.PI/2,Math.PI,-Math.PI/2]){g.angle=angle;assert(g.nerdAim(e,true));const h=g.body[0];assert((e.aim.x-h.x)*Math.cos(angle)+(e.aim.y-h.y)*Math.sin(angle)<=.000001);assert(!g.enemyBlocked(e,e.aim));}
 });
-test('nerd dies when snake body reaches its face or finger before it can dodge',()=>{
- for(const finger of [false,true]){const g=fresh();g.food=[];g.age=3;g.length=g.goalLength=200;g.body=Array.from({length:81},(_,i)=>({x:440-i*2,y:200}));if(finger)g.body=[...Array.from({length:46},(_,i)=>({x:440-i*2,y:200})),...Array.from({length:40},(_,i)=>({x:350,y:202+i*2}))];const e={x:finger?373:350,y:finger?249:210,kind:4,born:0,until:30};g.enemies=[e];g.step(.001);assert(!g.dead);assert(!g.enemies.includes(e));assert.equal(g.kills,1);}
+test('nerd face contact kills it but the raised finger is decoration only',()=>{
+ for(const finger of [false,true]){const g=fresh();g.food=[];g.age=3;g.length=g.goalLength=200;g.body=Array.from({length:81},(_,i)=>({x:440-i*2,y:200}));const e={x:350,y:finger?225:210,kind:4,born:0,until:30};g.enemies=[e];g.step(.001);assert(!g.dead);assert.equal(g.enemies.includes(e),finger);assert.equal(g.kills,finger?0:1);}
+});
+
+test('one-shot route goes around a wall without crossing it',()=>{
+ const obstacle={x:250,y:100,w:80,h:400};const blocked=p=>touches(p,10,obstacle)||p.x<12||p.y<12||p.x>888||p.y>688;
+ const route=planRoute({x:100,y:350},{x:600,y:350},blocked,900,700);assert(route&&route.length>1);
+ let prev={x:100,y:350};for(const p of route){const n=Math.ceil(Math.hypot(p.x-prev.x,p.y-prev.y));for(let i=1;i<=n;i++)assert(!blocked({x:prev.x+(p.x-prev.x)*i/n,y:prev.y+(p.y-prev.y)*i/n}));prev=p;}
+ assert.deepEqual(route.at(-1),{x:600,y:350});
+});
+test('nerd keeps its original destination and path when the player turns or moves',()=>{
+ const g=fresh();g.food=[];g.age=4;const e={x:50,y:600,kind:4,until:0,born:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'dash');const aim={...e.aim},path=JSON.stringify(e.route);
+ g.body=[{x:700,y:100}];g.angle=Math.PI;g.age+=.001;g.updateEnemy(e,.001);assert.deepEqual(e.aim,aim);assert.equal(JSON.stringify(e.route),path);
+});
+test('nerd stops instead of sliding around a new obstacle or continuing a chase',()=>{
+ const g=fresh();g.food=[];g.body=[{x:800,y:600}];g.obstacles=[{x:130,y:70,w:50,h:60}];const e={x:100,y:100,kind:4,state:'dash',route:[{x:300,y:100}],aim:{x:300,y:100},until:20};g.enemies=[e];g.updateEnemy(e,.1);assert.equal(e.state,'idle');assert.equal(e.y,100);const x=e.x;g.updateEnemy(e,.2);assert.equal(e.x,x);
+});
+test('nerd brakes near the player and dies when the body moves into it',()=>{
+ const g=fresh();g.food=[];g.body=[{x:200,y:100}];const e={x:100,y:100,kind:4,born:0,state:'dash',route:[{x:250,y:100}],until:20};g.enemies=[e];g.updateEnemy(e,.2);assert.equal(e.state,'idle');assert(e.x<=150);assert(!g.dead);
+ g.age=3;g.body=[{x:500,y:500},{x:e.x-20,y:e.y},{x:e.x+20,y:e.y}];g.length=g.goalLength=1000;g.step(.001);assert(!g.dead);assert(!g.enemies.includes(e));
 });

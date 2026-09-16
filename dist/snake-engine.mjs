@@ -1,3 +1,4 @@
+import {planRoute} from './navigation.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
 export const TAU=Math.PI*2;
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -23,7 +24,7 @@ export class SnakeGame{
   get hasBoss(){return this.enemies.some(e=>e.kind===6);}
   blocked(p,r){return p.x<r+2||p.y<r+2||p.x>this.width-r-2||p.y>this.height-r-2||this.obstacles.some(b=>touches(p,r,b));}
   enemyRadius(e){return e.kind===6?36:10;}
-  enemyDiscs(e,p=e){return e.kind===4?[{x:p.x,y:p.y,r:10},{x:p.x-23,y:p.y+1,r:6}]:[{x:p.x,y:p.y,r:this.enemyRadius(e)}];}
+  enemyDiscs(e,p=e){return [{x:p.x,y:p.y,r:this.enemyRadius(e)}];}
   freePoint(minDistance=60,radius=16){
     for(let i=0;i<700;i++){
       const p={x:18+this.random()*(this.width-36),y:18+this.random()*(this.height-36)};
@@ -96,7 +97,7 @@ export class SnakeGame{
     this.ensureKnife();this.updateBlade();
     for(const e of [...this.enemies]){
       if(!this.enemies.includes(e)||this.age-e.born<1)continue;
-      if(e.kind===4){const contact=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);if(contact&&!this.invincible){this.fail('적에게 잡혔어요.');return;}if((contact&&this.invincible)||this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}}
+      if(e.kind===4){if(this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}this.updateEnemy(e,dt);if(this.nerdBodyHit(e))this.killEnemy(e,'body');continue;}
       this.updateEnemy(e,dt);if(this.dead)return;
       const hit=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
       if(hit&&!this.invincible){this.fail('적에게 잡혔어요.');return;}
@@ -135,28 +136,45 @@ export class SnakeGame{
     this.projectiles.push({type,...from,from,to,born:this.age,duration:type==='boomerang'?1.6:type==='shoe'?.72:.88,owner:e});this.events.push({type:'throw',attack:type,x:e.x,y:e.y});
   }
   dropBomb(e){if(this.bombs.length>=20)return;for(let i=0;i<12;i++){const a=i*TAU/12,p={x:e.x+Math.cos(a)*27,y:e.y+Math.sin(a)*27};if(!this.blocked(p,11)&&!this.enemies.some(o=>this.enemyDiscs(o).some(d=>distance(p,d)<11+d.r))&&!this.food.some(o=>distance(p,o)<22)&&!this.bombs.some(o=>distance(p,o)<24)){this.bombs.push({...p,born:this.age,armed:null});return;}}}
-  nerdBodyHit(e){return this.enemyDiscs(e).some(c=>this.body.slice(1).some(b=>distance(c,b)<c.r+4));}
-  nerdAim(e,reuse=false){
+  nerdBodyHit(e){
+    if(distance(e,this.body[0])<14)return true;
+    for(let i=1;i<this.body.length;i++){const a=this.body[i-1],b=this.body[i],dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((e.x-a.x)*dx+(e.y-a.y)*dy)/(dx*dx+dy*dy||1)));if(distance(e,{x:a.x+t*dx,y:a.y+t*dy})<14)return true;}return false;
+  }
+  nerdAim(e){
     const h=this.body[0];
     for(let i=0;i<40;i++){
-      const side=reuse&&i===0&&e.side>=Math.PI/2&&e.side<=Math.PI*1.5?e.side:Math.PI/2+this.random()*Math.PI,a=this.angle+side;
-      const p={x:h.x+Math.cos(a)*43,y:h.y+Math.sin(a)*43};
-      if(!this.enemyBlocked(e,p)){e.side=side;e.aim=p;return true;}
+      const a=this.angle+Math.PI/2+this.random()*Math.PI,p={x:h.x+Math.cos(a)*48,y:h.y+Math.sin(a)*48};
+      if(!this.enemyBlocked(e,p)){e.aim=p;return true;}
     }return false;
+  }
+  stopNerd(e){e.state='idle';e.route=null;e.until=this.age+10+this.random()*14;}
+  rushNerd(e,dt){
+    if(!e.route?.length||this.age>=e.until){this.stopNerd(e);return;}
+    let left=620*dt;
+    while(left>0&&e.route.length){
+      if(this.nerdBodyHit(e)){this.killEnemy(e,'body');return;}
+      if(distance(e,this.body[0])<=50){this.stopNerd(e);return;}
+      const to=e.route[0],d=distance(e,to),step=Math.min(2,left,d);
+      if(d<.01){e.route.shift();continue;}
+      const p={x:e.x+(to.x-e.x)*step/d,y:e.y+(to.y-e.y)*step/d};
+      if(this.nerdBodyHit(p)){this.killEnemy(e,'body');return;}
+      if(distance(p,this.body[0])<=50||this.enemyBlocked(e,p)){this.stopNerd(e);return;}
+      e.x=p.x;e.y=p.y;left-=step;if(step>=d-.001)e.route.shift();
+    }
+    if(!e.route.length)this.stopNerd(e);
   }
   updateEnemy(e,dt){
     const h=this.body[0],d=distance(e,h),age=this.age;e.state||='idle';e.until??=age;
     if(e.kind===0){this.moveEnemy(e,h,(this.speed+Math.min(Math.max(0,this.score)*1.2,32))*.94,dt);return;}
     if(e.kind===6){this.updateBoss(e,dt);return;}
     if(e.kind===4){
-      if(e.state==='dash'){
-        if(!this.nerdAim(e,true)){e.state='idle';e.until=age+10;return;}
-        const moved=this.moveEnemy(e,e.aim,620,dt);
-        e.stuck=moved?0:(e.stuck||0)+dt;
-        if(distance(e,e.aim)<9||age>=e.until||e.stuck>.12){e.state='idle';e.until=age+10+this.random()*14;}
-      }else if(age>=e.until){
-        if(this.nerdAim(e)){e.state='dash';e.stuck=0;e.until=age+distance(e,e.aim)/620+2;this.events.push({type:'nerd',x:e.x,y:e.y});}
-        if(e.state!=='dash')e.until=age+10;
+      if(e.state==='dash'){this.rushNerd(e,dt);return;}
+      if(age>=e.until){
+        if(d<=50||!this.nerdAim(e)){this.stopNerd(e);return;}
+        e.route=planRoute(e,e.aim,p=>this.enemyBlocked(e,p),this.width,this.height);
+        if(!e.route){this.stopNerd(e);return;}
+        let length=0,previous=e;for(const point of e.route){length+=distance(previous,point);previous=point;}
+        e.state='dash';e.until=age+length/620+1;this.events.push({type:'nerd',x:e.x,y:e.y});
       }return;
     }
     if(e.kind===5){if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{x:e.x,y:e.y};e.roamUntil=age+3;}this.moveEnemy(e,e.aim,56,dt);if(age>=e.until){this.dropBomb(e);e.until=age+3+this.random()*3;}return;}
