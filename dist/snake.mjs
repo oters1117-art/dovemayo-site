@@ -1,8 +1,8 @@
-import {TouchSteering} from './touch-steering.mjs?v=1';
+import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=3';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=22';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=23';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -195,16 +195,6 @@ function drawMusicPads(){
     ctx.restore();
   }
 }
-function drawTouchControl(){
-  if(mode!=='playing'||!stick.origin)return;
-  const o=stick.origin,t=stick.tip,dx=t.x-o.x,dy=t.y-o.y,length=Math.hypot(dx,dy);
-  ctx.save();ctx.strokeStyle='rgba(36,36,36,.48)';ctx.lineWidth=1.4;ctx.setLineDash([3,4]);
-  ctx.beginPath();ctx.arc(o.x,o.y,24,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-  if(length>=6){const angle=Math.atan2(dy,dx),distance=Math.min(76,length),x=o.x+Math.cos(angle)*distance,y=o.y+Math.sin(angle)*distance;
-    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(x,y);
-    ctx.moveTo(x-Math.cos(angle-.55)*8,y-Math.sin(angle-.55)*8);ctx.lineTo(x,y);ctx.lineTo(x-Math.cos(angle+.55)*8,y-Math.sin(angle+.55)*8);ctx.stroke();
-  }ctx.restore();
-}
 function drawMusicLabels(){
   for(const p of game.musicPads?.labels||[]){
     const t=Math.min(1,(game.age-p.born)/.85);
@@ -254,18 +244,17 @@ function draw(){
   const h=game.body[0];ctx.beginPath();ctx.arc(h.x,h.y,4,0,Math.PI*2);ctx.fill();
   if(game.age>.2){for(const s of [-1,1]){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(h.x+Math.cos(game.angle)*1.5+Math.sin(game.angle)*s*1.8,h.y+Math.sin(game.angle)*1.5-Math.cos(game.angle)*s*1.8,1,0,Math.PI*2);ctx.fill();}}
   for(const p of particles){ctx.globalAlpha=p.life/.35;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
-  drawMusicLabels();drawTouchControl();
+  drawMusicLabels();
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 touchSurface.addEventListener('pointerdown',e=>{
   if(mode!=='playing'||!stick.begin(e.pointerId,e.clientX,e.clientY))return;
-  e.preventDefault();held.clear();touchSurface.setPointerCapture(e.pointerId);
+  e.preventDefault();held.clear();game.touchTarget=stick.target;touchSurface.setPointerCapture(e.pointerId);
 });
 touchSurface.addEventListener('pointermove',e=>{
-  if(mode!=='playing')return;const angle=stick.move(e.pointerId,e.clientX,e.clientY);
-  if(angle!==null&&game.buffKind!=='purple')game.target=angle;
+  if(mode==='playing'&&stick.move(e.pointerId,e.clientX,e.clientY))game.touchTarget=stick.target;
 });
-function releaseTouch(e){if(stick.release(e.pointerId)&&mode==='playing')game.target=game.angle;}
+function releaseTouch(e){stick.release(e.pointerId);}
 for(const type of ['pointerup','pointercancel','lostpointercapture'])touchSurface.addEventListener(type,releaseTouch);
 document.addEventListener('click',e=>{if(mode!=='idle'&&e.target.closest('a,.snake-start')){e.preventDefault();e.stopPropagation();}},true);
 document.addEventListener('contextmenu',e=>{if(mode!=='idle'&&e.target.closest('a,.snake-touch'))e.preventDefault();});
@@ -279,7 +268,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();end();return;}
   if(e.key===' '){e.preventDefault();return;}
   if(e.key.toLowerCase()==='m'){toggleSound();return;}
-  if(e.key in directions){e.preventDefault();if(mode==='playing'){held.add(e.key);steer();}}
+  if(e.key in directions){e.preventDefault();if(mode==='playing'){game.touchTarget=null;stick.reset();held.add(e.key);steer();}}
 });
 window.addEventListener('keyup',e=>{if(e.key in directions){held.delete(e.key);steer();}});
 window.addEventListener('blur',()=>{stick.reset();held.clear();steer();});

@@ -27,7 +27,7 @@ listeners.keydown({key:'Enter',ctrlKey:true,preventDefault(){throw Error('Modifi
 listeners.keydown({key:'Enter',preventDefault(){}});assert.equal(t.get().mode,'idle');
 
 t.set(game);const touch=t.get().touchSurface;
-touch.listeners.pointerdown({pointerId:1,clientX:100,clientY:100,preventDefault(){}});touch.listeners.pointermove({pointerId:1,clientX:100,clientY:150});assert.equal(game.target,Math.PI/2);
-touch.listeners.pointerup({pointerId:1});assert.equal(game.target,game.angle);assert.equal(t.get().stick.origin,null);
+touch.listeners.pointerdown({pointerId:1,clientX:100,clientY:100,preventDefault(){}});touch.listeners.pointermove({pointerId:1,clientX:100,clientY:150});assert.equal(game.touchTarget.x,100);assert.equal(game.touchTarget.y,150);
+touch.listeners.pointerup({pointerId:1});assert.equal(game.touchTarget.y,150);assert.equal(t.get().stick.id,null);
 let prevented=false;listeners.click({target:{closest:()=>true},preventDefault(){prevented=true},stopPropagation(){}});assert(prevented);t.end();prevented=false;listeners.click({target:{closest:()=>true},preventDefault(){prevented=true},stopPropagation(){}});assert(!prevented);
 console.log('Touch gestures drive heading and gameplay blocks link clicks: passed');

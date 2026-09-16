@@ -96,6 +96,7 @@ export class SnakeGame{
     for(const p of this.puddles)if(p.until>this.age&&distance(this.body[0],p)<p.radius+this.radius)this.setBuff('green',8);
     this.puddles=this.puddles.filter(p=>p.until>this.age);
     const wobble=this.buffKind==='orange'?Math.sin(this.age*4.2)*.5+Math.sin(this.age*7.1)*.12:0;
+    if(this.touchTarget&&!frozen&&this.buffKind!=='purple'){const h=this.body[0],p=this.touchTarget;if(distance(h,p)>8)this.target=Math.atan2(p.y-h.y,p.x-h.x);else {this.touchTarget=null;this.target=this.angle;}}
     if(frozen||this.buffKind==='purple')this.target=this.angle;
     else this.angle=turnToward(this.angle,this.target+wobble,4.6*dt);
     const speed=this.currentSpeed;let head={x:this.body[0].x+Math.cos(this.angle)*speed*dt,y:this.body[0].y+Math.sin(this.angle)*speed*dt};
