@@ -337,3 +337,11 @@ test('nerd finger cannot kill the head and rainbow still protects head contact',
  const g=fresh();g.age=3;g.enemies=[{x:g.body[0].x+23,y:g.body[0].y-1,kind:4,born:0,until:30}];g.step(.001);assert(!g.dead);
  const h=fresh();h.age=3;h.setBuff('rainbow',10);h.enemies=[{...h.body[0],kind:4,born:0,until:30}];h.step(.001);assert(!h.dead);assert.equal(h.enemies.length,0);
 });
+
+
+test('eggplant locks heading and resumes along its original direction without queued turns',()=>{
+ const g=fresh();g.food=[];g.nextRefill=Infinity;g.nextEnemy=Infinity;g.angle=g.target=.37;g.setBuff('purple',1.1);const origin={...g.body[0]};
+ for(let i=0;i<100;i++){g.target=2;g.step(.01);assert.equal(g.angle,.37);}assert.deepEqual(g.body[0],origin);
+ g.step(.12);assert.equal(g.angle,.37);assert.equal(g.target,.37);assert(g.body[0].x>origin.x);
+ g.target=1;g.step(.03);assert(g.angle>.37);
+});

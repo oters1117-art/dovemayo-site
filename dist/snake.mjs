@@ -1,7 +1,7 @@
 import {PadMusicPlayer} from './music-pads.mjs?v=3';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=21';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=22';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -25,7 +25,7 @@ const music=new PadMusicPlayer({onStop:()=>{if(mode==='playing')game?.musicPads.
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Math.PI/2};
 const held=new Set();
-function steer(){if(mode==='playing'&&game)game.target=headingFromKeys(held,game.angle);}
+function steer(){if(mode==='playing'&&game&&game.buffKind!=='purple')game.target=headingFromKeys(held,game.angle);}
 const say=t=>{live.textContent=t;};
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
@@ -244,6 +244,7 @@ function draw(){
   drawMusicLabels();
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
+document.querySelector('.snake-start')?.addEventListener('click',()=>{if(mode==='idle'&&!pending){held.clear();start(0);}});
 window.addEventListener('keydown',e=>{
   if(mode==='dead'){if(e.key==='Enter'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();if(!e.repeat&&performance.now()>=deathReadyAt)end();}return;}
   if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;

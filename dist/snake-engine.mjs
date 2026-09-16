@@ -91,11 +91,13 @@ export class SnakeGame{
   step(dt){let left=Math.max(0,Number.isFinite(dt)?dt:0);while(left>0&&!this.dead){const s=Math.min(left,1/120);this.tick(s);left-=s;}}
   bodyHit(p,r){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&distance(p,this.body[i])<r)return true;}return false;}
   tick(dt){
+    const frozen=this.buffKind==='purple';
     this.age+=dt;this.slideFood();
     for(const p of this.puddles)if(p.until>this.age&&distance(this.body[0],p)<p.radius+this.radius)this.setBuff('green',8);
     this.puddles=this.puddles.filter(p=>p.until>this.age);
     const wobble=this.buffKind==='orange'?Math.sin(this.age*4.2)*.5+Math.sin(this.age*7.1)*.12:0;
-    this.angle=turnToward(this.angle,this.target+wobble,4.6*dt);
+    if(frozen||this.buffKind==='purple')this.target=this.angle;
+    else this.angle=turnToward(this.angle,this.target+wobble,4.6*dt);
     const speed=this.currentSpeed;let head={x:this.body[0].x+Math.cos(this.angle)*speed*dt,y:this.body[0].y+Math.sin(this.angle)*speed*dt};
     if(this.invincible)head=this.deflect(head,speed*dt);
     else if(this.blocked(head,this.radius)){this.fail('벽이나 글자, 카드에 부딪혔어요.');return;}
