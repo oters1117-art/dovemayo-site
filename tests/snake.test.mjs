@@ -37,7 +37,7 @@ test('enemy warns for one second and spawns away from player and obstacles',()=>
  const g=fresh();g.nextEnemy=0;g.step(.01);assert.equal(g.enemies.length,1);const e={...g.enemies[0]};g.step(.08);assert.equal(g.enemies[0].x,e.x);assert.equal(g.enemies[0].y,e.y);assert(!g.blocked(e,11));
 });
 test('movement is independent of rendering frame rate',()=>{
- const a=fresh(),b=fresh();a.food=[];b.food=[];
+ const a=fresh(),b=fresh();a.food=[];b.food=[];a.nextRefill=b.nextRefill=Infinity;
  for(let i=0;i<60;i++)a.step(1/60);for(let i=0;i<30;i++)b.step(1/30);
  assert(Math.abs(a.body[0].x-b.body[0].x)<.01);assert(Math.abs(a.length-b.length)<.01);
 });

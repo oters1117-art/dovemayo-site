@@ -1,6 +1,7 @@
+import {PadMusicPlayer} from './music-pads.mjs?v=1';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=16';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=17';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -10,13 +11,14 @@ const canvas=document.createElement('canvas');canvas.className='snake-canvas';ca
 const ctx=canvas.getContext('2d');
 const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수와 생존 시간');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
-const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='any key';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',end);
+const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='any key';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',()=>{if(performance.now()>=deathReadyAt)end();});
 const rings=new Map();
 document.body.append(canvas,score,live,escapeKey);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[]},particles=[],previousFocus=null,pending=false;
-let backgroundTimer=0,flashAnimation=null,textureAt=0;
+let backgroundTimer=0,flashAnimation=null,textureAt=0,deathReadyAt=0;
 const sound=new FoleySound();
 const routes=new RoutePlanner();
+const music=new PadMusicPlayer({onStop:()=>{if(mode==='playing')game?.musicPads.stop();}});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Math.PI/2};
 const held=new Set();
@@ -70,7 +72,7 @@ async function start(angle=0){
   const options=layout();
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
   positionScore();
-  game=new SnakeGame({...options,angle,routePlanner:s=>routes.request(s)});particles=[];mode='playing';pending=false;
+  game=new SnakeGame({...options,angle,musicVolume:music.volume,routePlanner:s=>routes.request(s)});particles=[];mode='playing';pending=false;
   document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   updateScore();steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
@@ -83,7 +85,7 @@ function positionEscape(){
   escapeKey.style.top=Math.max(8,Math.min(innerHeight-36,h.y-14))+'px';
 }
 function end(){
-  routes.cancel();stopMusic();clearInterval(backgroundTimer);pending=false;
+  routes.cancel();stopMusic();music.stop();clearInterval(backgroundTimer);pending=false;
   mode='idle';game=null;held.clear();cancelAnimationFrame(raf);
   flashAnimation?.cancel();flashAnimation=null;
   for(const [ring,animation] of rings){animation.cancel();ring.remove();}rings.clear();
@@ -94,7 +96,7 @@ function end(){
 }
 function failure(){
   if(mode!=='playing')return;
-  mode='dead';pending=false;held.clear();routes.cancel();stopMusic();
+  mode='dead';deathReadyAt=performance.now()+800;music.pause();pending=false;held.clear();routes.cancel();stopMusic();
   clearInterval(backgroundTimer);cancelAnimationFrame(raf);updateScore();
   for(const animation of rings.values())animation.pause();
   escapeKey.hidden=false;positionEscape();draw();
@@ -107,6 +109,9 @@ function advance(now){
   const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();
   const events=game.events.splice(0);
   for(const e of events){
+    if(e.type==='music-play')music.play(e.track);
+    if(e.type==='music-stop')music.stop();
+    if(e.type==='music-volume')music.setVolume(e.volume);
     if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':e.kind===FOOD.CHILI?'chili':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
     if(e.type==='penalty'){pop('penalty');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);updateScore();burst(e,'#9e7cba');}
     if(e.type==='defeat'){if(!e.silent)pop('defeat');burst(e,'#e4c361');}
@@ -167,8 +172,28 @@ function drawHazards(){
     if(fuse){ctx.save();ctx.filter='brightness(0) saturate(100%) invert(26%) sepia(88%) saturate(3200%) hue-rotate(344deg)';emoji('props',3,b.x+shake,b.y,fuse);ctx.restore();}
   }
 }
+function drawMusicPads(){
+  const pads=game.musicPads;if(!pads)return;
+  for(const p of pads.pads){
+    const lit=p.kind==='play'?pads.active:game.age<p.flashUntil;
+    const color=lit?(p.kind==='play'?'#6596dc':p.kind==='plus'?'#71ad5e':'#c97171'):'#686868';
+    ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.35;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.stroke();
+    if(p.kind==='play'){
+      ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(-3,-6);ctx.lineTo(4,-3);ctx.lineTo(4,6);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(-5,5,2.2,1.6,-.3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(2,6,2.2,1.6,-.3,0,Math.PI*2);ctx.fill();
+      if(pads.active){ctx.font='10px Arial';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(String(pads.track),16,0);}
+    }else{
+      ctx.beginPath();ctx.moveTo(-7,-2);ctx.lineTo(-4,-2);ctx.lineTo(0,-6);ctx.lineTo(0,6);ctx.lineTo(-4,2);ctx.lineTo(-7,2);ctx.closePath();ctx.stroke();
+      ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(8,0);if(p.kind==='plus'){ctx.moveTo(5.5,-2.5);ctx.lineTo(5.5,2.5);}ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
 function draw(){
   ctx.clearRect(0,0,innerWidth,innerHeight);if(!game)return;
+  drawMusicPads();
   drawHazards();
   for(const p of game.food){
     if(p.kind!==FOOD.GOLDEN_APPLE){emoji('food',p.kind,p.x,p.y);continue;}
@@ -210,7 +235,7 @@ function draw(){
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 window.addEventListener('keydown',e=>{
-  if(mode==='dead'){e.preventDefault();if(!e.repeat)end();return;}
+  if(mode==='dead'){e.preventDefault();if(!e.repeat&&performance.now()>=deathReadyAt)end();return;}
   if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
   if(mode==='idle'){
     if(['ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.repeat && !e.target.closest('a,button')){e.preventDefault();held.add(e.key);start(directions[e.key]);}return;
