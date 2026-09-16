@@ -1,5 +1,6 @@
-import {FoleySound} from './foley.mjs?v=5';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=14';
+import {RoutePlanner} from './route-client.mjs?v=1';
+import {FoleySound} from './foley.mjs?v=6';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=16';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -13,6 +14,7 @@ document.body.append(canvas,score,live);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[]},particles=[],previousFocus=null,pending=false;
 let backgroundTimer=0,flashAnimation=null,textureAt=0;
 const sound=new FoleySound();
+const routes=new RoutePlanner();
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Math.PI/2};
 const held=new Set();
@@ -52,7 +54,7 @@ function layout(){
   const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,(parseFloat(getComputedStyle(el.parentElement).columnGap)||12)*scale,(parseFloat(getComputedStyle(el.parentElement).rowGap)||18)*scale);})];
   return {width:innerWidth,height:innerHeight,origin:{x:d.x+d.w/2,y:d.y+d.h/2},obstacles};
 }
-function updateScore(){if(game){const t=Math.floor(game.age);score.textContent=game.score+'\n'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}}
+function updateScore(){if(game){const t=Math.floor(game.age);const text=game.score+'\n'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');if(score.textContent!==text)score.textContent=text;}}
 function positionScore(){
   if(score.hidden)return;const d=textBox(title,dot);score.style.left=Math.min(innerWidth-58,d.x+d.w+10)+'px';score.style.top=(d.y+d.h/2-30)+'px';
 }
@@ -60,24 +62,24 @@ function sizeCanvas(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Mat
 async function start(angle=0){
   if(pending)return;pending=true;if(mode==='idle')previousFocus=document.activeElement;unlockAudio();
   // Wait for the title font to establish the actual dot position.
-  try{await Promise.all([document.fonts.ready,sound.load()]);}catch{}
+  try{await Promise.all([document.fonts.ready,sound.loadOne('page-soft')]);}catch{}
   if(!pending)return;
   score.hidden=false;sizeCanvas();
   const options=layout();
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
   positionScore();
-  game=new SnakeGame({...options,angle});particles=[];mode='playing';pending=false;
+  game=new SnakeGame({...options,angle,routePlanner:s=>routes.request(s)});particles=[];mode='playing';pending=false;
   document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   updateScore();steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
   loadAssets();pop('start');last=performance.now();cancelAnimationFrame(raf);clearInterval(backgroundTimer);backgroundTimer=setInterval(()=>{if(document.hidden&&mode==='playing')advance(performance.now());},100);raf=requestAnimationFrame(frame);
 }
-function end(){stopMusic();clearInterval(backgroundTimer);pending=false;updateScore();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
+function end(){routes.cancel();stopMusic();clearInterval(backgroundTimer);pending=false;updateScore();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;dot.style.visibility='';document.body.classList.remove('snake-playing');}
 function failure(){
   pop('fail');end();say('게임 끝.');
   flashBackground(reduced?'#e7b9b9':'#ef6767',700);
 }
-function burst(p,color){if(reduced)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
+function burst(p,color){if(reduced||particles.length>=280)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
 function advance(now){
   if(mode!=='playing')return;
   const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();

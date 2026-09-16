@@ -304,3 +304,11 @@ test('nerd coming from the front plans around the player to its rear',()=>{
  for(let i=0;i<300&&e.state==='dash';i++){g.age+=.005;g.updateEnemy(e,.005);assert(Math.hypot(e.x-440,e.y-300)>50);}
  assert.equal(e.state,'idle');assert(e.x<440);assert(!g.dead);
 });
+
+test('failed food and knife placement retries are throttled',()=>{
+ const g=fresh();g.food=[];let attempts=0;g.freePoint=()=>{attempts++;return null;};g.refill();for(let i=0;i<100;i++)g.refill();assert.equal(attempts,1);g.age=.51;g.refill();assert.equal(attempts,2);
+ g.enemies=[{kind:6,x:100,y:100}];g.ensureKnife();const n=attempts;for(let i=0;i<100;i++)g.ensureKnife();assert.equal(attempts,n);
+});
+test('pending nerd route uses one snapshot and ignores a result after the nerd dies',async()=>{
+ let resolve,calls=0;const g=fresh({routePlanner:()=>{calls++;return new Promise(r=>resolve=r);}});g.food=[];g.age=3;const e={x:50,y:600,kind:4,born:0,until:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'planning');const aim={...e.aim};g.angle=Math.PI;for(let i=0;i<10;i++)g.updateEnemy(e,.01);assert.equal(calls,1);assert.deepEqual(e.aim,aim);g.killEnemy(e,'body');resolve([aim]);await Promise.resolve();assert(!g.enemies.includes(e));assert.notEqual(e.state,'dash');
+});

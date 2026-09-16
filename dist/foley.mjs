@@ -21,7 +21,7 @@ const profiles={
  texture:{bank:['cloth-0'],gain:.1,rate:.76,gap:.5}
 };
 export class FoleySound{
- constructor(){this.context=null;this.buffers=new Map();this.voices=new Set();this.previous=new Map();this.last=new Map();this.loading=null;this.ambience=null;}
+ constructor(){this.context=null;this.buffers=new Map();this.voices=new Set();this.previous=new Map();this.last=new Map();this.loading=null;this.ambience=null;this.inFlight=new Map();}
  unlock(){
   try{
    if(!this.context){
@@ -34,11 +34,15 @@ export class FoleySound{
    this.context.resume().catch(()=>{});this.load();
   }catch{}
  }
+ loadOne(name){
+  if(!this.context||this.buffers.has(name))return Promise.resolve();
+  if(this.inFlight.has(name))return this.inFlight.get(name);
+  const work=(async()=>{try{const r=await fetch('/audio/'+name+'.ogg',{signal:AbortSignal.timeout(5000)});if(!r.ok)return;const buffer=await this.context.decodeAudioData(await r.arrayBuffer());this.buffers.set(name,buffer);}catch{}})();
+  this.inFlight.set(name,work);work.finally(()=>this.inFlight.delete(name));return work;
+ }
  load(){
   if(!this.context)return Promise.resolve();
-  return this.loading ||= Promise.all(SOUND_FILES.map(async name=>{
-   try{const r=await fetch('/audio/'+name+'.ogg',{signal:AbortSignal.timeout(5000)});if(!r.ok)return;const buffer=await this.context.decodeAudioData(await r.arrayBuffer());this.buffers.set(name,buffer);}catch{}
-  }));
+  if(!this.loading){const files=['page-soft',...SOUND_FILES.filter(n=>n!=='page-soft')];let next=0;this.loading=Promise.all(Array.from({length:3},async()=>{while(next<files.length)await this.loadOne(files[next++]);}));}return this.loading;
  }
  play(type='eat'){
   const c=this.context;if(!c||c.state!=='running')return;
