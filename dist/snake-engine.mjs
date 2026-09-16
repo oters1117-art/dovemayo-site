@@ -110,6 +110,7 @@ export class SnakeGame{
     this.ensureKnife();this.updateBlade();
     for(const e of [...this.enemies]){
       if(!this.enemies.includes(e)||this.age-e.born<1)continue;
+      if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
       if(e.kind===4){if(this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}this.updateEnemy(e,dt);if(this.nerdBodyHit(e))this.killEnemy(e,'body');continue;}
       this.updateEnemy(e,dt);if(this.dead)return;
       const hit=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);

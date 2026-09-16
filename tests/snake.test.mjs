@@ -82,8 +82,8 @@ test('angry enemy charges before firing and the boomerang returns',()=>{
  const p=g.projectiles[0];g.body=[{x:800,y:650}];g.age=p.born+p.duration*.5;g.updateHazards(.01);assert(Math.abs(p.x-p.to.x)<.01);
  g.age=p.born+p.duration*.9;g.updateHazards(.01);assert(Math.hypot(p.x-e.x,p.y-e.y)<60);
 });
-test('nerd contact only kills the nerd and it runs quickly from far away',()=>{
- const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(!g.dead);assert(!g.enemies.includes(e));g.enemies=[e];
+test('nerd head contact kills player and it runs quickly from far away',()=>{
+ const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(g.dead);g.dead=false;g.enemies=[e];
  e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<65);
 });
 test('wink drops bombs; proximity arms, warns, then explodes',()=>{
@@ -331,4 +331,9 @@ test('boss drops three tomatoes that slide apart, slow down and stop outside car
  const g=fresh();g.food=[];g.obstacles=[{x:440,y:180,w:20,h:40}];const boss={x:400,y:200,kind:6};g.enemies=[boss];assert(g.killEnemy(boss,'knife'));assert.equal(g.food.length,3);assert(g.food.every(p=>p.kind===FOOD.TOMATO&&p.slide));
  g.age+=.2;g.slideFood();const first=g.food.map(p=>Math.hypot(p.x-400,p.y-200));assert(first.every(d=>d>0));g.age+=.2;g.slideFood();g.food.forEach((p,i)=>assert(Math.hypot(p.x-400,p.y-200)-first[i]<first[i]));
  g.age+=1;g.slideFood();assert(g.food.every(p=>!p.slide&&!g.blocked(p,12)));assert.equal(new Set(g.food.map(p=>p.x+','+p.y)).size,3);
+});
+
+test('nerd finger cannot kill the head and rainbow still protects head contact',()=>{
+ const g=fresh();g.age=3;g.enemies=[{x:g.body[0].x+23,y:g.body[0].y-1,kind:4,born:0,until:30}];g.step(.001);assert(!g.dead);
+ const h=fresh();h.age=3;h.setBuff('rainbow',10);h.enemies=[{...h.body[0],kind:4,born:0,until:30}];h.step(.001);assert(!h.dead);assert.equal(h.enemies.length,0);
 });
