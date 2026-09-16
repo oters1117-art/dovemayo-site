@@ -14,7 +14,7 @@ export class SnakeGame{
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;this.speed=125;
     this.age=0;this.score=0;this.kills=0;this.dead=false;this.events=[];
     this.food=[];this.enemies=[];this.projectiles=[];this.bombs=[];this.puddles=[];
-    this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=90;
+    this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=120;
     this.nextRefill=0;this.knife=null;this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.refill();
   }
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
@@ -61,7 +61,7 @@ export class SnakeGame{
   spawnBoss(){
     if(this.hasBoss)return false;
     const p=this.freePoint(170,46);if(!p)return false;
-    this.enemies.push({...p,kind:6,born:this.age,state:'idle',until:this.age+1.5});this.nextKnife=this.age;this.nextBoss=this.age+120;
+    this.enemies.push({...p,kind:6,born:this.age,state:'idle',until:this.age+1.5});this.nextKnife=this.age;this.nextBoss=(Math.floor(this.age/120)+1)*120;
     this.events.push({type:'boss',...p});this.ensureKnife();return true;
   }
   ensureKnife(){if(this.hasBoss&&!this.armed&&!this.knife&&this.age>=this.nextKnife){const p=this.freePoint(45);if(p)this.knife={...p};else this.nextKnife=this.age+.5;}}
@@ -71,14 +71,27 @@ export class SnakeGame{
     if(e.kind===6&&source!=='knife')return false;
     const i=this.enemies.indexOf(e);if(i<0)return false;
     this.enemies.splice(i,1);this.kills++;this.events.push({type:e.kind===6?'boss-defeat':'defeat',silent:source==='tooth',x:e.x,y:e.y});
-    if(e.kind===6){this.knife=null;this.nextBoss=this.age+120;}
+    if(e.kind===6){this.knife=null;this.dropBossTomatoes(e);}
     return true;
+  }
+  dropBossTomatoes(origin){
+    const rotation=this.random()*TAU;
+    for(let i=0;i<3;i++){
+      const angle=rotation+i*TAU/3;let to={x:origin.x,y:origin.y};
+      for(let r=2;r<=80;r+=2){const p={x:origin.x+Math.cos(angle)*r,y:origin.y+Math.sin(angle)*r};if(this.blocked(p,12))break;to=p;}
+      this.food.push({x:origin.x,y:origin.y,kind:FOOD.TOMATO,slide:{from:{x:origin.x,y:origin.y},to,born:this.age,duration:.7}});
+    }
+  }
+  slideFood(){
+    for(const p of this.food){if(!p.slide)continue;const s=p.slide,t=Math.min(1,(this.age-s.born)/s.duration),ease=1-(1-t)**3;
+      p.x=s.from.x+(s.to.x-s.from.x)*ease;p.y=s.from.y+(s.to.y-s.from.y)*ease;if(t>=1)delete p.slide;
+    }
   }
   fail(reason){if(this.dead)return;this.dead=true;this.events.push({type:'fail',reason});}
   step(dt){let left=Math.max(0,Number.isFinite(dt)?dt:0);while(left>0&&!this.dead){const s=Math.min(left,1/120);this.tick(s);left-=s;}}
   bodyHit(p,r){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&distance(p,this.body[i])<r)return true;}return false;}
   tick(dt){
-    this.age+=dt;
+    this.age+=dt;this.slideFood();
     for(const p of this.puddles)if(p.until>this.age&&distance(this.body[0],p)<p.radius+this.radius)this.setBuff('green',8);
     this.puddles=this.puddles.filter(p=>p.until>this.age);
     const wobble=this.buffKind==='orange'?Math.sin(this.age*4.2)*.5+Math.sin(this.age*7.1)*.12:0;
@@ -89,7 +102,7 @@ export class SnakeGame{
     if(!this.invincible&&this.bodyHit(head,this.radius*1.65)){this.fail('자기 몸에 부딪혔어요.');return;}
     if(distance(head,this.body[0])>0)this.body.unshift(head);this.length=Math.min(this.goalLength,this.length+dt*82);
     let used=0;for(let i=1;i<this.body.length;i++){const d=distance(this.body[i-1],this.body[i]);if(used+d>this.length){const t=(this.length-used)/d;this.body[i]={x:this.body[i-1].x+(this.body[i].x-this.body[i-1].x)*t,y:this.body[i-1].y+(this.body[i].y-this.body[i-1].y)*t};this.body.length=i+1;break;}used+=d;}
-    for(let i=this.food.length-1;i>=0;i--)if(distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
+    for(let i=this.food.length-1;i>=0;i--)if(!this.food[i].slide&&distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
     if(this.knife&&distance(head,this.knife)<17){this.knife=null;this.armed=true;this.events.push({type:'knife'});}
     this.refill();
     if(this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}

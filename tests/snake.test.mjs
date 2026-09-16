@@ -322,3 +322,13 @@ test('enemy spawning has no population ceiling for regular or bonus waves',()=>{
  for(let i=0;i<150;i++)assert(g.spawnEnemy(0,i%2===0));assert.equal(g.enemies.length,150);
  g.updateEnemy=()=>{};g.age=500;g.nextEnemy=0;g.nextBoss=Infinity;g.nextRefill=Infinity;g.musicPads.nextPlacement=Infinity;g.step(.01);assert.equal(g.enemies.length,151);
 });
+
+
+test('boss starts at two minutes and death does not postpone the next two-minute slot',()=>{
+ const g=fresh();assert.equal(g.nextBoss,120);g.age=120;assert(g.spawnBoss());assert.equal(g.nextBoss,240);g.age=160;g.killEnemy(g.enemies.find(e=>e.kind===6),'knife');assert.equal(g.nextBoss,240);
+});
+test('boss drops three tomatoes that slide apart, slow down and stop outside cards',()=>{
+ const g=fresh();g.food=[];g.obstacles=[{x:440,y:180,w:20,h:40}];const boss={x:400,y:200,kind:6};g.enemies=[boss];assert(g.killEnemy(boss,'knife'));assert.equal(g.food.length,3);assert(g.food.every(p=>p.kind===FOOD.TOMATO&&p.slide));
+ g.age+=.2;g.slideFood();const first=g.food.map(p=>Math.hypot(p.x-400,p.y-200));assert(first.every(d=>d>0));g.age+=.2;g.slideFood();g.food.forEach((p,i)=>assert(Math.hypot(p.x-400,p.y-200)-first[i]<first[i]));
+ g.age+=1;g.slideFood();assert(g.food.every(p=>!p.slide&&!g.blocked(p,12)));assert.equal(new Set(g.food.map(p=>p.x+','+p.y)).size,3);
+});
