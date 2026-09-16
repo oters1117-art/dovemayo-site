@@ -10,7 +10,7 @@ const canvas=document.createElement('canvas');canvas.className='snake-canvas';ca
 const ctx=canvas.getContext('2d');
 const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수와 생존 시간');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
-const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='esc';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',end);
+const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='any key';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',end);
 const rings=new Map();
 document.body.append(canvas,score,live,escapeKey);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[]},particles=[],previousFocus=null,pending=false;
@@ -79,7 +79,7 @@ async function start(angle=0){
 function positionEscape(){
   if(!game||escapeKey.hidden)return;
   const h=game.body[0];
-  escapeKey.style.left=Math.max(8,Math.min(innerWidth-48,h.x+14))+'px';
+  escapeKey.style.left=Math.max(8,Math.min(innerWidth-68,h.x+14))+'px';
   escapeKey.style.top=Math.max(8,Math.min(innerHeight-36,h.y-14))+'px';
 }
 function end(){
@@ -98,7 +98,7 @@ function failure(){
   clearInterval(backgroundTimer);cancelAnimationFrame(raf);updateScore();
   for(const animation of rings.values())animation.pause();
   escapeKey.hidden=false;positionEscape();draw();
-  pop('fail');say('게임 끝. Escape를 누르면 처음 화면으로 돌아갑니다.');
+  pop('fail');say('게임 끝. 아무 키나 누르면 처음 화면으로 돌아갑니다.');
   flashBackground(reduced?'#e7b9b9':'#ef6767',700);
 }
 function burst(p,color){if(reduced||particles.length>=280)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
@@ -210,6 +210,7 @@ function draw(){
 }
 function toggleSound(){muted=!muted;if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 window.addEventListener('keydown',e=>{
+  if(mode==='dead'){e.preventDefault();if(!e.repeat)end();return;}
   if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
   if(mode==='idle'){
     if(['ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.repeat && !e.target.closest('a,button')){e.preventDefault();held.add(e.key);start(directions[e.key]);}return;

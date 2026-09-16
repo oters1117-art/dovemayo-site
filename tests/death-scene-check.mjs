@@ -16,6 +16,8 @@ const game={age:65,score:9,body:[{x:200,y:200},{x:190,y:200}],angle:0,food:[],en
 t.set(game);t.explosion({x:100,y:100});t.failure();
 let state=t.get();assert.equal(state.mode,'dead');assert.equal(state.game,game);assert.equal(state.score.textContent,'9\n01:05');assert.equal(state.escapeKey.hidden,false);assert.equal(state.canvas.hidden,false);assert.equal(state.dot.style.visibility,'hidden');assert.equal(strokes.at(-1),'#929294');assert.ok(animations.slice(0,3).every(a=>a.paused));assert.equal(animations.at(-1).paused,false);
 t.advance(2000);listeners.visibilitychange();listeners.blur();t.updateMusic();assert.equal(state.sound.underwater,false);assert.equal(game.target,undefined);
-listeners.keydown({key:'ArrowRight',target:{closest:()=>false},preventDefault(){}});assert.equal(t.get().mode,'dead');
-listeners.keydown({key:'Escape',target:{closest:()=>false},preventDefault(){}});state=t.get();assert.equal(state.mode,'idle');assert.equal(state.game,null);assert.equal(state.score.hidden,true);assert.equal(state.score.textContent,'');assert.equal(state.escapeKey.hidden,true);assert.equal(state.canvas.hidden,true);assert.equal(state.dot.style.visibility,'');assert.ok(animations.every(a=>a.cancelled));assert.equal(stopped,2);
-console.log('Death scene freezes, gray snake, paused effects, no background resume, Escape fully resets: passed');
+listeners.keydown({key:'ArrowRight',repeat:true,target:{closest:()=>false},preventDefault(){}});assert.equal(t.get().mode,'dead');
+listeners.keydown({key:'a',target:{closest:()=>false},preventDefault(){}});state=t.get();assert.equal(state.mode,'idle');assert.equal(state.game,null);assert.equal(state.score.hidden,true);assert.equal(state.score.textContent,'');assert.equal(state.escapeKey.hidden,true);assert.equal(state.canvas.hidden,true);assert.equal(state.dot.style.visibility,'');assert.ok(animations.every(a=>a.cancelled));assert.equal(stopped,2);
+console.log('Death scene freezes, gray snake, paused effects, no background resume, Any key fully resets: passed');
+
+for(const key of ['ArrowRight','Escape',' ','Shift','m']){t.set(game);t.failure();listeners.keydown({key,target:{closest:()=>false},preventDefault(){}});assert.equal(t.get().mode,'idle');assert.equal(t.get().score.textContent,'');}
