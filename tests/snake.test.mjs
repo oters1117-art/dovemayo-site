@@ -55,8 +55,8 @@ test('diagonal holds and release preserve a non-cardinal heading',()=>{
 test('background elapsed time continues all the way to death instead of freezing',()=>{
  const g=fresh();g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
 });
-test('food quantity and enemy spawn frequency scale with elapsed time',()=>{
- const g=fresh();g.age=100;g.refill();assert.equal(g.food.length,8);
+test('food quantity scales with score while enemy frequency scales with time',()=>{
+ const g=fresh();g.age=100;g.refill();assert.equal(g.food.length,3);g.score=25;g.refill();assert.equal(g.food.length,8);
  g.nextEnemy=0;g.step(.01);assert(g.nextEnemy-g.age<6.6);
 });
 test('cowboy throws immediately at a random nearby point then flees',()=>{
@@ -311,4 +311,14 @@ test('failed food and knife placement retries are throttled',()=>{
 });
 test('pending nerd route uses one snapshot and ignores a result after the nerd dies',async()=>{
  let resolve,calls=0;const g=fresh({routePlanner:()=>{calls++;return new Promise(r=>resolve=r);}});g.food=[];g.age=3;const e={x:50,y:600,kind:4,born:0,until:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'planning');const aim={...e.aim};g.angle=Math.PI;for(let i=0;i<10;i++)g.updateEnemy(e,.01);assert.equal(calls,1);assert.deepEqual(e.aim,aim);g.killEnemy(e,'body');resolve([aim]);await Promise.resolve();assert(!g.enemies.includes(e));assert.notEqual(e.state,'dash');
+});
+
+
+test('untriggered bombs persist beyond the previous lifetime',()=>{
+ const g=fresh();g.age=300;const bomb={x:50,y:650,born:0,armed:null};g.bombs=[bomb];g.updateHazards(.01);assert.equal(g.bombs[0],bomb);assert.equal(bomb.armed,null);
+});
+test('enemy spawning has no population ceiling for regular or bonus waves',()=>{
+ const g=fresh();g.freePoint=()=>({x:50,y:600});
+ for(let i=0;i<150;i++)assert(g.spawnEnemy(0,i%2===0));assert.equal(g.enemies.length,150);
+ g.updateEnemy=()=>{};g.age=500;g.nextEnemy=0;g.nextBoss=Infinity;g.nextRefill=Infinity;g.musicPads.nextPlacement=Infinity;g.step(.01);assert.equal(g.enemies.length,151);
 });

@@ -1,4 +1,4 @@
-import {MusicPads} from './music-pads.mjs?v=1';
+import {MusicPads} from './music-pads.mjs?v=2';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
 export const TAU=Math.PI*2;
@@ -32,7 +32,7 @@ export class SnakeGame{
       if(!this.musicPads?.pads.some(o=>distance(p,o)<radius+18)&&!this.blocked(p,radius)&&distance(p,this.body[0])>minDistance&&!this.body.some(b=>distance(p,b)<radius+8)&&!this.food.some(b=>distance(p,b)<radius+18)&&!this.enemies.some(b=>this.enemyDiscs(b).some(d=>distance(p,d)<radius+d.r+8))&&!this.bombs.some(b=>distance(p,b)<radius+18)&&(!this.knife||distance(p,this.knife)>radius+18))return p;
     }return null;
   }
-  refill(){if(this.age<this.nextRefill)return;while(this.food.length<Math.min(12,3+Math.floor(this.age/20))){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.food.push({...p,kind:Math.floor(this.random()*47)});}}
+  refill(){if(this.age<this.nextRefill)return;while(this.food.length<Math.min(12,3+Math.floor(this.score/5))){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.food.push({...p,kind:Math.floor(this.random()*47)});}}
   setBuff(kind,duration){if(this.buffKind==='rainbow'&&kind!=='rainbow')return false;this.buff={kind,until:this.age+duration};if(kind==='rainbow')this.graceUntil=this.buff.until+1.5;return true;}
   eatFood(p){
     this.score+=p.kind===FOOD.GOLDEN_APPLE?5:1;this.goalLength+=p.kind===FOOD.GOLDEN_APPLE?120:24;
@@ -54,7 +54,6 @@ export class SnakeGame{
   }
   chooseEnemyKind(){const r=this.random();return r<.5?0:r<.6?1:r<.7?2:r<.8?3:r<.9?4:5;}
   spawnEnemy(kind=this.chooseEnemyKind(),bonus=false){
-    if(this.enemies.length>=(bonus?96:32))return false;
     const p=this.freePoint(150,kind===4?31:16);if(!p)return false;
     this.enemies.push({...p,kind,born:this.age,state:'idle',until:this.age+(kind===4?10+this.random()*12:0)});
     this.events.push({type:'enemy',...p});return true;
@@ -93,7 +92,7 @@ export class SnakeGame{
     for(let i=this.food.length-1;i>=0;i--)if(distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
     if(this.knife&&distance(head,this.knife)<17){this.knife=null;this.armed=true;this.events.push({type:'knife'});}
     this.refill();
-    if(this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.enemies.length<Math.min(24,3+Math.floor(this.age/15))){if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}}
+    if(this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
     if(this.age>=this.nextBoss){if(!this.spawnBoss())this.nextBoss=this.age+5;}
     this.ensureKnife();this.updateBlade();
     for(const e of [...this.enemies]){
@@ -293,7 +292,6 @@ export class SnakeGame{
       if(!this.bombs.includes(b))continue;
       if(b.armed===null&&this.age-b.born>.5&&distance(h,b)<82)b.armed=this.age;
       if(b.armed!==null&&this.age-b.armed>=.95){this.explode(b);if(this.dead)return;}
-      else if(this.age-b.born>30)this.bombs.splice(this.bombs.indexOf(b),1);
     }
     this.finalizeShots();
   }

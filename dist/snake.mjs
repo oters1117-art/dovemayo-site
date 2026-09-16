@@ -1,7 +1,7 @@
-import {PadMusicPlayer} from './music-pads.mjs?v=1';
+import {PadMusicPlayer} from './music-pads.mjs?v=2';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=17';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=18';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -18,7 +18,10 @@ let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],e
 let backgroundTimer=0,flashAnimation=null,textureAt=0,deathReadyAt=0;
 const sound=new FoleySound();
 const routes=new RoutePlanner();
-const music=new PadMusicPlayer({onStop:()=>{if(mode==='playing')game?.musicPads.stop();}});
+const music=new PadMusicPlayer({onStop:()=>{if(mode==='playing')game?.musicPads.stop();},onEnded:()=>{
+  if(mode!=='playing'||!game?.musicPads.active)return;
+  const pads=game.musicPads;pads.track=1+(pads.track+Math.floor(game.random()*5))%6;music.play(pads.track);
+}});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Math.PI/2};
 const held=new Set();
@@ -177,13 +180,11 @@ function drawMusicPads(){
   for(const p of pads.pads){
     const lit=p.kind==='play'?pads.active:game.age<p.flashUntil;
     const color=lit?(p.kind==='play'?'#6596dc':p.kind==='plus'?'#71ad5e':'#c97171'):'#686868';
-    ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.35;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=p.kind==='play'?1.35:1.65;ctx.lineCap='round';ctx.lineJoin='round';
     ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.stroke();
     if(p.kind==='play'){
-      ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(-3,-6);ctx.lineTo(4,-3);ctx.lineTo(4,6);ctx.stroke();
-      ctx.beginPath();ctx.ellipse(-5,5,2.2,1.6,-.3,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.ellipse(2,6,2.2,1.6,-.3,0,Math.PI*2);ctx.fill();
-      if(pads.active){ctx.font='10px Arial';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(String(pads.track),16,0);}
+      ctx.font='19px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('♪',pads.active?-4:0,1);
+      if(pads.active){ctx.font='9px Arial';ctx.fillText(String(pads.track),5.5,1);}
     }else{
       ctx.beginPath();ctx.moveTo(-7,-2);ctx.lineTo(-4,-2);ctx.lineTo(0,-6);ctx.lineTo(0,6);ctx.lineTo(-4,2);ctx.lineTo(-7,2);ctx.closePath();ctx.stroke();
       ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(8,0);if(p.kind==='plus'){ctx.moveTo(5.5,-2.5);ctx.lineTo(5.5,2.5);}ctx.stroke();

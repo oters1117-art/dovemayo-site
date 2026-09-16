@@ -25,3 +25,10 @@ test('failed music playback resets pad state',async()=>{
 test('golden apple grows five normal food lengths and gives five points',()=>{
  const g=new SnakeGame({width:900,height:700,origin:{x:100,y:100}});g.spawnEnemy=()=>true;const length=g.goalLength;g.eatFood({kind:FOOD.GOLDEN_APPLE});assert.equal(g.goalLength-length,120);assert.equal(g.score,5);
 });
+
+
+test('track end hands off to next playback without stopping or resetting volume',async()=>{
+ const handlers={};let plays=0,stops=0;const audio={addEventListener(k,f){handlers[k]=f},pause(){},play(){plays++;return Promise.resolve()},removeAttribute(){},load(){}};
+ const player=new PadMusicPlayer({createAudio:()=>audio,onStop:()=>stops++,onEnded:()=>player.play(4)});
+ player.setVolume(60);await player.play(1);handlers.ended();await Promise.resolve();assert.equal(plays,2);assert.equal(audio.src,'/music/4.mp3');assert.equal(audio.volume,.6);assert.equal(stops,0);
+});

@@ -30,9 +30,9 @@ export class MusicPads {
 
 // One streaming element, independent from effect volume. No music downloads before stepping on play.
 export class PadMusicPlayer {
-  constructor({createAudio=()=>new Audio(),onStop=()=>{},volume=80}={}){
-    this.audio=createAudio();this.audio.preload='none';this.audio.loop=false;this.volume=volume;this.onStop=onStop;this.generation=0;
-    this.audio.addEventListener('ended',()=>this.finish());this.audio.addEventListener('error',()=>this.finish());
+  constructor({createAudio=()=>new Audio(),onStop=()=>{},onEnded=null,volume=80}={}){
+    this.audio=createAudio();this.audio.preload='none';this.audio.loop=false;this.volume=volume;this.onStop=onStop;this.onEnded=onEnded;this.generation=0;
+    this.audio.addEventListener('ended',()=>{if(this.onEnded)this.onEnded();else this.finish();});this.audio.addEventListener('error',()=>this.finish());
     this.setVolume(volume);
   }
   setVolume(value){this.volume=Math.max(0,Math.min(100,value));this.audio.volume=this.volume/100;}
