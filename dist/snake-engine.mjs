@@ -143,7 +143,7 @@ export class SnakeGame{
   nerdAim(e){
     const h=this.body[0];
     for(let i=0;i<40;i++){
-      const a=this.angle+Math.PI/2+this.random()*Math.PI,p={x:h.x+Math.cos(a)*48,y:h.y+Math.sin(a)*48};
+      const a=this.angle+Math.PI/2+this.random()*Math.PI,p={x:h.x+Math.cos(a)*60,y:h.y+Math.sin(a)*60};
       if(!this.enemyBlocked(e,p)){e.aim=p;return true;}
     }return false;
   }
@@ -171,7 +171,7 @@ export class SnakeGame{
       if(e.state==='dash'){this.rushNerd(e,dt);return;}
       if(age>=e.until){
         if(d<=50||!this.nerdAim(e)){this.stopNerd(e);return;}
-        e.route=planRoute(e,e.aim,p=>this.enemyBlocked(e,p),this.width,this.height);
+        const startHead={...h};e.route=planRoute(e,e.aim,p=>distance(p,startHead)<56||this.enemyBlocked(e,p),this.width,this.height);
         if(!e.route){this.stopNerd(e);return;}
         let length=0,previous=e;for(const point of e.route){length+=distance(previous,point);previous=point;}
         e.state='dash';e.until=age+length/620+1;this.events.push({type:'nerd',x:e.x,y:e.y});

@@ -84,7 +84,7 @@ test('angry enemy charges before firing and the boomerang returns',()=>{
 });
 test('nerd contact only kills the nerd and it runs quickly from far away',()=>{
  const g=fresh();g.food=[];g.age=3;const e={...g.body[0],kind:4,born:0,until:5};g.enemies=[e];g.step(.01);assert(!g.dead);assert(!g.enemies.includes(e));g.enemies=[e];
- e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<55);
+ e.x=50;e.y=600;e.until=0;g.updateEnemy(e,.01);assert.equal(e.x,50);assert.equal(e.state,'dash');for(let i=0;i<300&&e.state==='dash';i++){const old={...e};g.age+=.01;g.updateEnemy(e,.01);assert(Math.hypot(e.x-old.x,e.y-old.y)<=6.201);assert(!g.enemyBlocked(e,e));}assert.equal(e.state,'idle');assert(Math.hypot(e.x-g.body[0].x,e.y-g.body[0].y)<65);
 });
 test('wink drops bombs; proximity arms, warns, then explodes',()=>{
  const g=fresh();g.age=3;const e={x:100,y:100,kind:5,born:0,until:0};g.updateEnemy(e,.01);assert.equal(g.bombs.length,1);
@@ -297,4 +297,10 @@ test('nerd stops instead of sliding around a new obstacle or continuing a chase'
 test('nerd brakes near the player and dies when the body moves into it',()=>{
  const g=fresh();g.food=[];g.body=[{x:200,y:100}];const e={x:100,y:100,kind:4,born:0,state:'dash',route:[{x:250,y:100}],until:20};g.enemies=[e];g.updateEnemy(e,.2);assert.equal(e.state,'idle');assert(e.x<=150);assert(!g.dead);
  g.age=3;g.body=[{x:500,y:500},{x:e.x-20,y:e.y},{x:e.x+20,y:e.y}];g.length=g.goalLength=1000;g.step(.001);assert(!g.dead);assert(!g.enemies.includes(e));
+});
+
+test('nerd coming from the front plans around the player to its rear',()=>{
+ const g=fresh();g.food=[];g.body=[{x:440,y:300}];g.angle=0;g.age=3;g.random=()=>.5;const e={x:650,y:300,kind:4,born:0,until:0};g.enemies=[e];g.updateEnemy(e,.01);assert.equal(e.state,'dash');assert(e.aim.x<440);
+ for(let i=0;i<300&&e.state==='dash';i++){g.age+=.005;g.updateEnemy(e,.005);assert(Math.hypot(e.x-440,e.y-300)>50);}
+ assert.equal(e.state,'idle');assert(e.x<440);assert(!g.dead);
 });
