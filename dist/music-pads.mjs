@@ -4,9 +4,11 @@ export class MusicPads {
     for(let i=0;i<8;i++){const p=game.freePoint(55,17);if(p&&this.pads.every(o=>Math.hypot(o.x-p.x,o.y-p.y)>44)){this.pads.push({...p,kind,contacts:new Set(),flashUntil:0});return;}}
   }
   stop(){this.active=false;this.track=0;this.pads=this.pads.filter(p=>p.kind==='play');}
+  get visibleKinds(){return ['play',...(this.active&&this.volume<100?['plus']:[]),...(this.active&&this.volume>0?['minus']:[])];}
   update(game){
+    this.pads=this.pads.filter(p=>this.visibleKinds.includes(p.kind));
     if(game.age>=this.nextPlacement){
-      for(const kind of this.active?['play','plus','minus']:['play'])if(!this.pads.some(p=>p.kind===kind))this.place(game,kind);
+      for(const kind of this.visibleKinds)if(!this.pads.some(p=>p.kind===kind))this.place(game,kind);
       this.nextPlacement=game.age+1;
     }
     for(const pad of [...this.pads]){
@@ -20,11 +22,12 @@ export class MusicPads {
           else {this.active=true;this.track=1+Math.floor(game.random()*6);this.nextPlacement=0;game.events.push({type:'music-play',track:this.track});}
         }else if(this.active){
           this.volume=Math.max(0,Math.min(100,this.volume+(pad.kind==='plus'?10:-10)));
-          pad.flashUntil=game.age+.3;game.events.push({type:'music-volume',volume:this.volume});
+          this.nextPlacement=0;pad.flashUntil=game.age+.3;game.events.push({type:'music-volume',volume:this.volume});
         }
       }
       pad.contacts=contacts;
     }
+    this.pads=this.pads.filter(p=>this.visibleKinds.includes(p.kind));
   }
 }
 

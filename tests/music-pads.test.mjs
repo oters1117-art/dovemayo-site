@@ -32,3 +32,11 @@ test('track end hands off to next playback without stopping or resetting volume'
  const player=new PadMusicPlayer({createAudio:()=>audio,onStop:()=>stops++,onEnded:()=>player.play(4)});
  player.setVolume(60);await player.play(1);handlers.ended();await Promise.resolve();assert.equal(plays,2);assert.equal(audio.src,'/music/4.mp3');assert.equal(audio.volume,.6);assert.equal(stops,0);
 });
+
+
+test('volume limit hides only the saturated pad and restores it after reverse adjustment',()=>{
+ for(const [volume,hidden,other] of [[100,'plus','minus'],[0,'minus','plus']]){
+  const {pads,game,step}=fixture();pads.active=true;pads.volume=volume;pads.pads.push({kind:hidden,x:200,y:200,contacts:new Set(),flashUntil:0},{kind:other,x:250,y:250,contacts:new Set(),flashUntil:0});step();assert(!pads.pads.some(p=>p.kind===hidden));
+  game.body[0]={x:250,y:250};step();assert.equal(pads.volume,volume===100?90:10);game.freePoint=()=>({x:400,y:400});step();assert(pads.pads.some(p=>p.kind===hidden));assert(pads.pads.some(p=>p.kind===other));
+ }
+});
