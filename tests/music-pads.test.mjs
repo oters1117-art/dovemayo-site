@@ -53,3 +53,8 @@ test('music waits for placement cue; stop or death pause cancels pending playbac
  const pending=p.play(1,()=>new Promise(r=>finish=r));assert.equal(plays,0);finish();await pending;assert.equal(plays,1);
  for(const cancel of ['stop','pause']){const waiting=p.play(2,()=>new Promise(r=>finish=r));p[cancel]();finish();await waiting;assert.equal(plays,1);}
 });
+
+test('delayed music stop allows lift cue and cannot stop a newer playback',async()=>{
+ let pauses=0;const a={addEventListener(){},pause(){pauses++},play(){return Promise.resolve()},removeAttribute(){},load(){}};const p=new PadMusicPlayer({createAudio:()=>a});await p.play(1);const before=pauses;const off=p.stopAfter(10);assert.equal(pauses,before);await off;assert.equal(pauses,before+1);
+ const old=p.stopAfter(10);await p.play(2);const playing=pauses;await old;assert.equal(pauses,playing);
+});

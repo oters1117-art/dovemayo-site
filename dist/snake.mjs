@@ -1,8 +1,8 @@
 import {TouchSteering} from './touch-steering.mjs?v=2';
-import {PadMusicPlayer} from './music-pads.mjs?v=4';
+import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=8';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=24';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=25';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -116,7 +116,7 @@ function advance(now){
   const events=game.events.splice(0);
   for(const e of events){
     if(e.type==='music-play')music.play(e.track,async isCurrent=>{await sound.loadOne('lp-start-pixabay');if(!isCurrent()||mode!=='playing'||!game?.musicPads.active)return;if(!muted){sound.play('music-on');await new Promise(resolve=>setTimeout(resolve,1000));}});
-    if(e.type==='music-stop'){music.stop();pop('music-off');}
+    if(e.type==='music-stop'){pop('music-off');music.stopAfter(150);}
     if(e.type==='music-volume')music.setVolume(e.volume);
     if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':e.kind===FOOD.CHILI?'chili':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
     if(e.type==='penalty'){pop('penalty');flashBackground(reduced?'#d4c4df':'#9b74c5',1000);updateScore();burst(e,'#9e7cba');}

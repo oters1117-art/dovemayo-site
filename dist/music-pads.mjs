@@ -45,6 +45,7 @@ export class PadMusicPlayer {
     const generation=++this.generation;this.audio.pause();this.audio.src='/music/'+track+'.mp3';
     try{if(beforePlay)await beforePlay(()=>generation===this.generation);if(generation!==this.generation)return;await this.audio.play();}catch{if(generation===this.generation)this.finish();}
   }
+  stopAfter(delay=150){const generation=++this.generation;return new Promise(resolve=>setTimeout(()=>{if(generation===this.generation)this.stop();resolve();},delay));}
   pause(){this.generation++;this.audio.pause();}
   stop(){this.generation++;this.audio.pause();this.audio.removeAttribute('src');this.audio.load();}
   finish(){this.stop();this.onStop();}
