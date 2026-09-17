@@ -1,7 +1,7 @@
 import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=4';
 import {RoutePlanner} from './route-client.mjs?v=1';
-import {FoleySound} from './foley.mjs?v=7';
+import {FoleySound} from './foley.mjs?v=8';
 import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=24';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
@@ -91,7 +91,7 @@ function positionEscape(){
   escapeKey.style.top=Math.max(8,Math.min(innerHeight-36,h.y-14))+'px';
 }
 function end(){
-  routes.cancel();stopMusic();music.stop();clearInterval(backgroundTimer);pending=false;
+  routes.cancel();stopMusic();sound.stopMusicCue();music.stop();clearInterval(backgroundTimer);pending=false;
   touchSurface.hidden=true;stick.reset();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);
   flashAnimation?.cancel();flashAnimation=null;
   for(const [ring,animation] of rings){animation.cancel();ring.remove();}rings.clear();
@@ -102,7 +102,7 @@ function end(){
 }
 function failure(){
   if(mode!=='playing')return;
-  touchSurface.hidden=true;stick.reset();mode='dead';deathReadyAt=performance.now()+800;music.pause();pending=false;held.clear();routes.cancel();stopMusic();
+  touchSurface.hidden=true;stick.reset();mode='dead';deathReadyAt=performance.now()+800;sound.stopMusicCue();music.pause();pending=false;held.clear();routes.cancel();stopMusic();
   clearInterval(backgroundTimer);cancelAnimationFrame(raf);updateScore();
   for(const animation of rings.values())animation.pause();
   escapeKey.hidden=false;positionEscape();draw();
@@ -115,7 +115,7 @@ function advance(now){
   const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();
   const events=game.events.splice(0);
   for(const e of events){
-    if(e.type==='music-play')music.play(e.track,async isCurrent=>{await sound.loadOne('lp-place');if(!isCurrent()||mode!=='playing'||!game?.musicPads.active)return;if(!muted){const duration=sound.play('music-on')||0;await new Promise(resolve=>setTimeout(resolve,duration*1000));}});
+    if(e.type==='music-play')music.play(e.track,async isCurrent=>{await sound.loadOne('lp-start-pixabay');if(!isCurrent()||mode!=='playing'||!game?.musicPads.active)return;if(!muted){const duration=sound.play('music-on')||0;await new Promise(resolve=>setTimeout(resolve,duration*1000));}});
     if(e.type==='music-stop'){music.stop();pop('music-off');}
     if(e.type==='music-volume')music.setVolume(e.volume);
     if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':e.kind===FOOD.CHILI?'chili':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}

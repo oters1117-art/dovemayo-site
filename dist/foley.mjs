@@ -1,8 +1,8 @@
-// Recorded CC0 foley, locally hosted. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-place','lp-lift'];
+// Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
+export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
- 'music-on':{bank:['lp-place'],gain:.95,rate:1,gap:0},
- 'music-off':{bank:['lp-lift'],gain:.9,rate:1,gap:0},
+ 'music-on':{bank:['lp-start-pixabay'],gain:.95,rate:1,gap:0},
+ 'music-off':{bank:['lp-end-pixabay'],gain:.9,rate:1,gap:0},
  eat:{bank:['bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5'],gain:.85,rate:1,gap:.035},
  special:{bank:['ice-0','ice-1','ice-2'],gain:.88,rate:.94,gap:.05},
  blue:{bank:['bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5'],gain:.42,rate:1.12,gap:.09},
@@ -44,23 +44,25 @@ export class FoleySound{
  }
  load(){
   if(!this.context)return Promise.resolve();
-  if(!this.loading){const first=['page-soft','lp-place','lp-lift'],files=[...first,...SOUND_FILES.filter(n=>!first.includes(n))];let next=0;this.loading=Promise.all(Array.from({length:3},async()=>{while(next<files.length)await this.loadOne(files[next++]);}));}return this.loading;
+  if(!this.loading){const first=['page-soft','lp-start-pixabay','lp-end-pixabay'],files=[...first,...SOUND_FILES.filter(n=>!first.includes(n))];let next=0;this.loading=Promise.all(Array.from({length:3},async()=>{while(next<files.length)await this.loadOne(files[next++]);}));}return this.loading;
  }
  play(type='eat'){
   const c=this.context;if(!c||c.state!=='running')return;
+  if(type==='music-on'||type==='music-off')this.stopMusicCue();
   const p=profiles[type]||profiles.eat,now=c.currentTime;
   if(now-(this.last.get(type)??-100)<p.gap)return;
   if(this.voices.size>=10){if(type==='throw'||type==='texture'||type==='impact')return;this.stopVoice(this.voices.values().next().value);}
   const bank=p.bank.filter(n=>this.buffers.has(n));if(!bank.length)return;
   const options=bank.filter(n=>n!==this.previous.get(type)),pool=options.length?options:bank,name=pool[Math.floor(Math.random()*pool.length)];
   this.previous.set(type,name);this.last.set(type,now);
-  const source=c.createBufferSource(),gain=c.createGain(),pan=c.createStereoPanner();source.buffer=this.buffers.get(name);source.playbackRate.value=p.rate*(.96+Math.random()*.08);pan.pan.value=(Math.random()-.5)*.18;
+  const source=c.createBufferSource(),gain=c.createGain(),pan=c.createStereoPanner();source.buffer=this.buffers.get(name);source.playbackRate.value=p.rate*(type.startsWith('music-')?1:.96+Math.random()*.08);pan.pan.value=(Math.random()-.5)*.18;
   const length=source.buffer.duration/source.playbackRate.value,level=p.gain/Math.sqrt(1+this.voices.size*.3);
   gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(level,now+.006);gain.gain.setValueAtTime(level,now+Math.max(.007,length-.04));gain.gain.linearRampToValueAtTime(0,now+length);
   source.connect(gain);gain.connect(pan);pan.connect(this.low);
   const voice={source,gain,pan,type};this.voices.add(voice);
   source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(now);return length;
  }
+ stopMusicCue(){for(const v of [...this.voices])if(v.type==='music-on'||v.type==='music-off')this.stopVoice(v);}
  stopVoice(v){if(!v)return;try{const t=this.context.currentTime;v.gain.gain.cancelScheduledValues(t);v.gain.gain.setTargetAtTime(0,t,.012);v.source.stop(t+.05);}catch{}this.voices.delete(v);}
  setUnderwater(active){
   const c=this.context;
