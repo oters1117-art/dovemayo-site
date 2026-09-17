@@ -41,11 +41,11 @@ export class PadMusicPlayer {
     this.setVolume(volume);
   }
   setVolume(value){this.volume=Math.max(0,Math.min(100,value));this.audio.volume=this.volume/100;}
-  async play(track){
+  async play(track,beforePlay=null){
     const generation=++this.generation;this.audio.pause();this.audio.src='/music/'+track+'.mp3';
-    try{await this.audio.play();}catch{if(generation===this.generation)this.finish();}
+    try{if(beforePlay)await beforePlay(()=>generation===this.generation);if(generation!==this.generation)return;await this.audio.play();}catch{if(generation===this.generation)this.finish();}
   }
-  pause(){this.audio.pause();}
+  pause(){this.generation++;this.audio.pause();}
   stop(){this.generation++;this.audio.pause();this.audio.removeAttribute('src');this.audio.load();}
   finish(){this.stop();this.onStop();}
 }

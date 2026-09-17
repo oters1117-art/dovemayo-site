@@ -28,3 +28,5 @@ Beer pour: water-pour-01 from Fantasy Sound Effects (Tinysized SFX), CC0: https:
 Chili: Catching fire, CC0: https://opengameart.org/content/catching-fire
 Page-soft: prior OwlStorm source, softened EQ and longer fade-in.
 Bubble-deep and tooth-soft: prior ristooooo1 water-bubble source, pitch/filter/envelope edits.
+
+LP-style cues: lp-place and lp-lift are designed from the existing CC0 Kenney cloth, book-close and footstep recordings above; layered, band-limited, softly faded. They are a designed turntable handling impression, not a literal turntable recording.

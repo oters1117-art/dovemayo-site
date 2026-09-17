@@ -45,3 +45,11 @@ test('volume limit hides only the saturated pad and restores it after reverse ad
 test('default volume is fifty and volume labels survive disappearing pads then expire',()=>{
  assert.equal(new MusicPads().volume,50);const {pads,game,step}=fixture();pads.active=true;pads.volume=90;pads.pads.push({kind:'plus',x:200,y:200,contacts:new Set(),flashUntil:0});game.body[0]={x:200,y:200};step();assert.equal(pads.labels[0].volume,100);assert.equal(pads.labels[0].color,'#71ad5e');assert(!pads.pads.some(p=>p.kind==='plus'));game.age+=1;step();assert.equal(pads.labels.length,0);
 });
+
+
+test('music waits for placement cue; stop or death pause cancels pending playback',async()=>{
+ let plays=0;const audio={addEventListener(){},pause(){},play(){plays++;return Promise.resolve()},removeAttribute(){},load(){}};
+ const p=new PadMusicPlayer({createAudio:()=>audio});let finish;
+ const pending=p.play(1,()=>new Promise(r=>finish=r));assert.equal(plays,0);finish();await pending;assert.equal(plays,1);
+ for(const cancel of ['stop','pause']){const waiting=p.play(2,()=>new Promise(r=>finish=r));p[cancel]();finish();await waiting;assert.equal(plays,1);}
+});
