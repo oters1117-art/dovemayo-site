@@ -22,7 +22,7 @@ listeners.keydown({key:'Enter',preventDefault(){}});assert.equal(t.get().mode,'d
 listeners.keydown({key:'Enter',target:{closest:()=>false},preventDefault(){}});state=t.get();assert.equal(state.mode,'idle');assert.equal(state.game,null);assert.equal(state.score.hidden,true);assert.equal(state.score.textContent,'');assert.equal(state.escapeKey.hidden,true);assert.equal(state.canvas.hidden,true);assert.equal(state.dot.style.visibility,'');assert.ok(animations.every(a=>a.cancelled));assert.equal(stopped,2);
 console.log('Death scene freezes, gray snake, paused effects, no background resume, Enter fully resets: passed');
 
-for(const key of ['ArrowRight','Escape',' ','Shift','m','PrintScreen','Meta','s']){t.set(game);t.failure();now+=800;listeners.keydown({key,target:{closest:()=>false},preventDefault(){throw Error('Capture keys must remain available')}});assert.equal(t.get().mode,'dead');assert.equal(t.get().score.textContent,'9\n01:05');}
+for(const key of ['ArrowRight',' ','Shift','m','PrintScreen','Meta','s']){t.set(game);t.failure();now+=800;listeners.keydown({key,target:{closest:()=>false},preventDefault(){throw Error('Capture keys must remain available')}});assert.equal(t.get().mode,'dead');assert.equal(t.get().score.textContent,'9\n01:05');}
 listeners.keydown({key:'Enter',ctrlKey:true,preventDefault(){throw Error('Modified Enter should not reset')}});assert.equal(t.get().mode,'dead');
 listeners.keydown({key:'Enter',preventDefault(){}});assert.equal(t.get().mode,'idle');
 
@@ -31,3 +31,5 @@ touch.listeners.pointerdown({pointerId:1,clientX:100,clientY:100,preventDefault(
 touch.listeners.pointerup({pointerId:1});assert.equal(game.touchTarget.y,150);assert.equal(t.get().stick.id,null);
 let prevented=false;listeners.click({target:{closest:()=>true},preventDefault(){prevented=true},stopPropagation(){}});assert(prevented);t.end();prevented=false;listeners.click({target:{closest:()=>true},preventDefault(){prevented=true},stopPropagation(){}});assert(!prevented);
 console.log('Touch gestures drive heading and gameplay blocks link clicks: passed');
+
+t.set(game);t.failure();now+=800;listeners.keydown({key:'Escape',preventDefault(){}});assert.equal(t.get().mode,'idle');

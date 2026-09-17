@@ -106,7 +106,7 @@ function failure(){
   clearInterval(backgroundTimer);cancelAnimationFrame(raf);updateScore();
   for(const animation of rings.values())animation.pause();
   escapeKey.hidden=false;positionEscape();draw();
-  pop('fail');say('게임 끝. Enter를 누르면 처음 화면으로 돌아갑니다.');
+  pop('fail');say('게임 끝. Enter 또는 Escape를 누르면 처음 화면으로 돌아갑니다.');
   flashBackground(reduced?'#e7b9b9':'#ef6767',700);
 }
 function burst(p,color){if(reduced||particles.length>=280)return;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*34,vy:Math.sin(a)*34,life:.35,color});}}
@@ -260,7 +260,7 @@ document.addEventListener('click',e=>{if(mode!=='idle'&&e.target.closest('a,.sna
 document.addEventListener('contextmenu',e=>{if(mode!=='idle'&&e.target.closest('a,.snake-touch'))e.preventDefault();});
 document.querySelector('.snake-start')?.addEventListener('click',()=>{if(mode==='idle'&&!pending){held.clear();start(0);}});
 window.addEventListener('keydown',e=>{
-  if(mode==='dead'){if(e.key==='Enter'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();if(!e.repeat&&performance.now()>=deathReadyAt)end();}return;}
+  if(mode==='dead'){if(['Enter','Escape'].includes(e.key)&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();if(!e.repeat&&performance.now()>=deathReadyAt)end();}return;}
   if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
   if(mode==='idle'){
     if(['ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.repeat && !e.target.closest('a,button')){e.preventDefault();held.add(e.key);start(directions[e.key]);}return;
