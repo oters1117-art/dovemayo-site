@@ -115,7 +115,7 @@ function advance(now){
   const dt=Math.max(0,(now-last)/1000);last=now;game.step(dt);updateScore();
   const events=game.events.splice(0);
   for(const e of events){
-    if(e.type==='music-play')music.play(e.track,async isCurrent=>{await sound.loadOne('lp-start-pixabay');if(!isCurrent()||mode!=='playing'||!game?.musicPads.active)return;if(!muted){const duration=sound.play('music-on')||0;await new Promise(resolve=>setTimeout(resolve,duration*1000));}});
+    if(e.type==='music-play')music.play(e.track,async isCurrent=>{await sound.loadOne('lp-start-pixabay');if(!isCurrent()||mode!=='playing'||!game?.musicPads.active)return;if(!muted){sound.play('music-on');await new Promise(resolve=>setTimeout(resolve,1000));}});
     if(e.type==='music-stop'){music.stop();pop('music-off');}
     if(e.type==='music-volume')music.setVolume(e.volume);
     if(e.type==='eat'){pop(e.kind===FOOD.GOLDEN_APPLE?'apple':e.kind===FOOD.BEER?'beer':e.kind===FOOD.CHILI?'chili':Object.values(FOOD).includes(e.kind)?'special':'eat');if(e.kind===FOOD.GOLDEN_APPLE)flashBackground(reduced?'#eee0b1':'#f5d873',900);updateScore();burst(e,'#bdb39d');}
