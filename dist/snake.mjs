@@ -72,7 +72,7 @@ function sizeCanvas(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Mat
 async function start(angle=0){
   if(pending)return;pending=true;if(mode==='idle')previousFocus=document.activeElement;unlockAudio();
   // Wait for the title font to establish the actual dot position.
-  try{await Promise.all([document.fonts.ready,sound.loadOne('page-soft')]);}catch{}
+  try{await document.fonts.ready;}catch{}
   if(!pending)return;
   score.hidden=false;sizeCanvas();
   const options=layout();
