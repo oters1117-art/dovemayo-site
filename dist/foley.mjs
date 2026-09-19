@@ -1,6 +1,14 @@
 // Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
+export const SOUND_FILES=['roll-soft','zap-soft','phone-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
+ roll:{bank:['roll-soft'],gain:.55,rate:1,gap:.4},
+ zap:{bank:['zap-soft'],gain:.32,rate:1,gap:.12},
+ phone:{bank:['phone-soft'],gain:.38,rate:1,gap:.2},
+ chime:{bank:['chime-soft'],gain:.6,rate:1,gap:.3},
+ wind:{bank:['wind-soft'],gain:.3,rate:1,gap:.8},
+ hammer:{bank:['cloth-0','cloth-1'],gain:.5,rate:.8,gap:.3},
+ fuse:{bank:['chili-flame'],gain:.35,rate:.8,gap:.3},
+ enhance:{bank:['bubble-clear-2'],gain:.35,rate:1.2,gap:.2},
  'music-on':{bank:['lp-start-pixabay'],gain:.95,rate:1,gap:0},
  'music-off':{bank:['lp-end-pixabay'],gain:.9,rate:1,gap:0},
  eat:{bank:['bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5'],gain:.85,rate:1,gap:.035},

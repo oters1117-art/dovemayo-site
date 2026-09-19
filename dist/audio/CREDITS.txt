@@ -35,3 +35,5 @@ User-selected LP replacements (Pixabay Content License, https://pixabay.com/serv
 Vinyl Needle Drop — u_xg7ssi08yr, https://pixabay.com/sound-effects/vinyl-needle-drop-572432/
 059550_Record Player — freesound_community, https://pixabay.com/sound-effects/059550-record-player-90330/
 Supplied by user as lp start.mp3 (5.747 s) and lp end.mp3 (1.368 s). Converted to Ogg without trimming or pitch changes. Playback uses existing softened game audio bus.
+
+Boss preview: roll-soft combines existing credited cloth with synthesized rounded contacts. zap-soft, phone-soft, chime-soft, wind-soft are locally synthesized, gently filtered original effects (scripts/make-boss-audio.py).

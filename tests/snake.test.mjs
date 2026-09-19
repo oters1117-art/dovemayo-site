@@ -135,9 +135,9 @@ test('angry enemy orbits and visibly winds up before random shots',()=>{
  const shot=g.projectiles[0];assert(Math.hypot(shot.to.x-g.body[0].x,shot.to.y-g.body[0].y)>=36);
 });
 
-test('boss spawns with a knife and only the knife can kill it',()=>{
- const g=fresh();g.food=[];assert(g.spawnBoss());assert(g.hasBoss);assert(g.knife);
- const boss=g.enemies.find(e=>e.kind===6);assert(!g.killEnemy(boss,'body'));assert(!g.killEnemy(boss,'blast'));assert(!g.killEnemy(boss,'projectile'));
+test('boss spawns with a knife; body and weak projectiles cannot kill it',()=>{
+ const g=fresh();g.arena.order=[6,7,8,9];g.food=[];assert(g.spawnBoss());assert(g.hasBoss);assert(g.knife);
+ const boss=g.enemies.find(e=>e.kind===6);assert(!g.killEnemy(boss,'body'));assert(!g.killEnemy(boss,'projectile'));
  g.armed=true;const blade=g.blade();boss.x=blade.x;boss.y=blade.y;g.updateBlade();assert(!g.hasBoss);assert(!g.armed);
 });
 test('knife is one-use and regenerates while a boss remains',()=>{
@@ -152,10 +152,10 @@ test('boss is blocked by the old snake body and emits persistent teeth',()=>{
  const tooth={type:'tooth',x:50,y:50,vx:10,vy:0,born:0};g.projectiles=[tooth];g.age=100;g.updateHazards(.1);assert(g.projectiles.includes(tooth));assert.equal(tooth.x,51);
  tooth.x=895;g.updateHazards(.1);assert(!g.projectiles.includes(tooth));
 });
-test('bomb destroys enemies items projectiles and chain bombs, but never a boss',()=>{
+test('bomb destroys enemies and bosses, preserving fresh reward drops',()=>{
  const g=fresh();g.body=[{x:800,y:650}];g.food=[{x:100,y:100,kind:0}];const boss={x:150,y:110,kind:6,born:0},mob={x:110,y:100,kind:0,born:0};g.enemies=[boss,mob];g.projectiles=[{type:'tooth',x:100,y:110,vx:1,vy:0,born:0}];
  const bomb={x:100,y:100,born:0,armed:0};g.bombs=[bomb,{x:160,y:100,born:0,armed:null}];g.explode(bomb);g.finalizeShots();
- assert.equal(g.food.length,0);assert.equal(g.projectiles.length,0);assert.equal(g.bombs.length,0);assert(!g.enemies.includes(mob));assert(g.enemies.includes(boss));assert(!g.dead);
+ assert(g.food.every(f=>f.kind===FOOD.TOMATO));assert.equal(g.projectiles.length,0);assert.equal(g.bombs.length,0);assert(!g.enemies.includes(mob));assert(!g.enemies.includes(boss));assert(!g.dead);
 });
 test('shots cancel each other and destroy food or ordinary enemies on contact',()=>{
  for(const target of ['shot','food','enemy']){
@@ -226,12 +226,12 @@ test('blueberry periodically fires forward bullets that do not hurt the player',
  g.projectiles=[{type:'blue',...g.body[0],vx:0,vy:0,born:g.age}];g.updateHazards(.01);assert(!g.dead);
  g.age=8.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
 });
-test('blue bullets defeat ordinary enemies and cancel enemy attacks, but bosses require knives',()=>{
+test('blue bullets defeat ordinary enemies but lose to attacks and cannot kill bosses',()=>{
  for(const target of ['enemy','shot','boss']){
  const g=fresh();g.food=[];g.projectiles=[{type:'blue',x:100,y:100,vx:0,vy:0,born:0}];
  if(target==='shot')g.projectiles.push({type:'tooth',x:100,y:100,vx:0,vy:0,born:0});
  else g.enemies=[{x:100,y:100,kind:target==='boss'?6:0,born:0}];
- g.updateHazards(.001);assert.equal(g.projectiles.length,0);assert.equal(g.enemies.length,target==='boss'?1:0);
+ g.updateHazards(.001);assert.equal(g.projectiles.length,target==='shot'?1:0);assert.equal(g.enemies.length,target==='boss'?1:0);
  }
 });
 test('boss cycles radial barrage, orbit machine gun and aimed fan',()=>{
@@ -265,11 +265,12 @@ test('all ordinary colored effects replace both color and mechanics',()=>{
  const kinds=['red','blue','orange','purple','green'];
  for(const from of kinds)for(const to of kinds){const g=fresh();g.setBuff(from,8);g.setBuff(to,8);assert.equal(g.buffKind,to);assert.equal(g.slowUntil>g.age,to==='green');assert.equal(g.freezeUntil>g.age,to==='purple');if(to!=='purple')assert(g.currentSpeed>0);}
 });
-test('rainbow rejects all other colors and preserves its full duration',()=>{
- const g=fresh();g.setBuff('rainbow',10);const until=g.buff.until;
- for(const kind of ['red','blue','orange','purple','green']){assert.equal(g.setBuff(kind,8),false);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,until);assert(g.currentSpeed>125);}
- g.age=10.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
+test('rainbow combines with food colors, resets duration, and still rejects potion',()=>{
+ const g=fresh();g.setBuff('rainbow',10);g.age=2;
+ for(const kind of ['red','blue','orange','purple']){assert.equal(g.setBuff(kind,8),true);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,12);assert.equal(g.combo,kind);assert(g.currentSpeed>125);}
+ assert.equal(g.setBuff('green',8),false);g.age=12.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
 });
+
 test('potion pools cancel blue fire and eggplant freezing',()=>{
  for(const kind of ['blue','purple','red','orange']){const g=fresh();g.food=[];g.setBuff(kind,8);g.puddles=[{...g.body[0],radius:52,until:12}];g.step(.01);assert.equal(g.buffKind,'green');assert.equal(g.freezeUntil,0);assert.equal(g.projectiles.length,0);assert(g.currentSpeed>0&&g.currentSpeed<100);}
 });
@@ -324,8 +325,8 @@ test('enemy spawning has no population ceiling for regular or bonus waves',()=>{
 });
 
 
-test('boss starts at two minutes and death does not postpone the next two-minute slot',()=>{
- const g=fresh();assert.equal(g.nextBoss,120);g.age=120;assert(g.spawnBoss());assert.equal(g.nextBoss,240);g.age=160;g.killEnemy(g.enemies.find(e=>e.kind===6),'knife');assert.equal(g.nextBoss,240);
+test('boss starts at two minutes and death does not postpone the next ninety-second slot',()=>{
+ const g=fresh();g.arena.order=[6,7,8,9];assert.equal(g.nextBoss,120);g.age=120;assert(g.spawnBoss());assert.equal(g.nextBoss,210);g.age=160;g.killEnemy(g.enemies.find(e=>e.kind===6),'knife');assert.equal(g.nextBoss,210);
 });
 test('boss drops three tomatoes that slide apart, slow down and stop outside cards',()=>{
  const g=fresh();g.food=[];g.obstacles=[{x:440,y:180,w:20,h:40}];const boss={x:400,y:200,kind:6};g.enemies=[boss];assert(g.killEnemy(boss,'knife'));assert.equal(g.food.length,3);assert(g.food.every(p=>p.kind===FOOD.TOMATO&&p.slide));
