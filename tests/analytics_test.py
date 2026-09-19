@@ -38,4 +38,12 @@ class AnalyticsTest(unittest.TestCase):
   self.assertEqual(data['timeRanking'][0]['value'],427)
   self.assertAlmostEqual(data['averagePlayerSeconds'],1050/27)
   page=requests.get(self.url+'/admin').text;self.assertNotIn('플레이 횟수',page)
+ def test_07_pageviews_and_referrer_hosts(self):
+  session=requests.Session();start=session.get(self.url+'/api/admin/stats').json()['pageviews'];page=str(uuid.uuid4())
+  for _ in range(2):session.post(self.url+'/api/visit',json={'pageId':page,'referrer':'https://example.org/private?token=secret'})
+  session.post(self.url+'/api/visit',json={'pageId':str(uuid.uuid4()),'referrer':''})
+  data=session.get(self.url+'/api/admin/stats').json();self.assertEqual(data['pageviews'],start+2)
+  self.assertTrue(any(r['source']=='example.org' and r['views']==1 for r in data['referrers']))
+  self.assertNotIn('secret',str(data['referrers']))
+  self.assertGreaterEqual(data['todayViews'],2)
 if __name__=='__main__':unittest.main()

@@ -1,15 +1,16 @@
 // Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
+export const SOUND_FILES=['chime-user','church-user','blackhole-hum','church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
+ 'ball-break':{bank:['billiard-soft'],gain:.8,rate:1.2,gap:.04},
  dynamite:{bank:['firework-soft'],gain:1,rate:.88,gap:.1},
  roll:{bank:['roll-soft'],gain:.55,rate:1,gap:.4},
  zap:{bank:['zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4'],gain:.36,rate:1,gap:.07},
  phone:{bank:['phone-soft-0','phone-soft-1','phone-soft-2'],gain:.38,rate:1,gap:.2},
- chime:{bank:['chime-soft'],gain:.6,rate:1,gap:.3},
+ chime:{bank:['chime-user'],gain:.85,rate:1,gap:.3},
  wind:{bank:['wind-soft'],gain:.3,rate:1,gap:.8},
  hammer:{bank:['cloth-0','cloth-1'],gain:.5,rate:.8,gap:.3},
  fuse:{bank:['fuse-soft'],gain:.35,rate:.8,gap:.3},
- enhance:{bank:['church-bell'],gain:.42,rate:1,gap:.3},
+ enhance:{bank:['church-user'],gain:.42,rate:1,gap:.3},
  billiard:{bank:['billiard-soft'],gain:.7,rate:1,gap:.08},
  slime:{bank:['slime-soft'],gain:.7,rate:1,gap:.1},
  'air-pop':{bank:['air-soft'],gain:.65,rate:1,gap:.2},
@@ -70,10 +71,11 @@ export class FoleySound{
   const source=c.createBufferSource(),gain=c.createGain(),pan=c.createStereoPanner();source.buffer=this.buffers.get(name);source.playbackRate.value=p.rate*((type.startsWith('music-')||['zap','phone','chime','enhance'].includes(type))?1:.96+Math.random()*.08);pan.pan.value=(Math.random()-.5)*.18;
   const length=source.buffer.duration/source.playbackRate.value,level=p.gain/Math.sqrt(1+this.voices.size*.3);
   gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(level,now+.006);gain.gain.setValueAtTime(level,now+Math.max(.007,length-.04));gain.gain.linearRampToValueAtTime(0,now+length);
-  source.connect(gain);gain.connect(pan);pan.connect(this.low);
+  source.connect(gain);gain.connect(pan);pan.connect(['chime','enhance'].includes(type)?this.compressor:this.low);
   const voice={source,gain,pan,type};this.voices.add(voice);
   source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(now);return length;
  }
+ playMidi(note,duration=.25){const c=this.context;if(!c||c.state!=='running'||!Number.isFinite(note))return;const source=c.createOscillator(),gain=c.createGain(),pan=c.createStereoPanner(),t=c.currentTime,life=Math.max(.12,Math.min(.7,duration));source.type='triangle';source.frequency.value=440*2**((note-69)/12);pan.pan.value=(note-64)/60;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.2/Math.sqrt(1+this.voices.size*.2),t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+life);source.connect(gain);gain.connect(pan);pan.connect(this.low);const voice={source,gain,pan,type:'midi'};if(this.voices.size>=14)this.stopVoice(this.voices.values().next().value);this.voices.add(voice);source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(t);source.stop(t+life+.01);}
  stopMusicCue(){for(const v of [...this.voices])if(v.type==='music-on'||v.type==='music-off')this.stopVoice(v);}
  stopVoice(v){if(!v)return;try{const t=this.context.currentTime;v.gain.gain.cancelScheduledValues(t);v.gain.gain.setTargetAtTime(0,t,.012);v.source.stop(t+.05);}catch{}this.voices.delete(v);}
  setUnderwater(active){

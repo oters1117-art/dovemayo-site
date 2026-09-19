@@ -40,7 +40,8 @@ export class PadMusicPlayer {
     this.audio.addEventListener('ended',()=>{if(this.onEnded)this.onEnded();else this.finish();});this.audio.addEventListener('error',()=>this.finish());
     this.setVolume(volume);
   }
-  setVolume(value){this.volume=Math.max(0,Math.min(100,value));this.audio.volume=this.volume/100;}
+  setVolume(value){this.volume=Math.max(0,Math.min(100,value));this.audio.volume=this.ducked?0:this.volume/100;}
+  setDucked(value){this.ducked=value;this.setVolume(this.volume);}
   async play(track,beforePlay=null){
     const generation=++this.generation;this.audio.pause();this.audio.src='/music/'+track+'.mp3';
     try{if(beforePlay)await beforePlay(()=>generation===this.generation);if(generation!==this.generation)return;await this.audio.play();}catch{if(generation===this.generation)this.finish();}

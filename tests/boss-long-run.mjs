@@ -6,7 +6,7 @@ g.graceUntil=1000;g.selfPhase=true;let maxEnemies=0,maxShots=0,bossKinds=new Set
 for(let i=0;i<4200;i++){
  g.target=g.angle+.14;
  const began=performance.now();g.step(.1);frameTimes.push(performance.now()-began);
- for(const e of [...g.enemies])if(e.kind>=6&&e.kind<=10){bossKinds.add(e.kind);if(g.age-e.born>22)g.killEnemy(e,e.kind===10?'dynamite':'knife');}
+ for(const e of [...g.enemies])if(e.kind>=6&&e.kind<=10){bossKinds.add(e.kind);if(g.age-e.born>22)g.killEnemy(e,e.kind===10?'dynamite':e.kind===7?'ball':'knife');}
  for(const p of [...g.enemies,...g.projectiles,...g.food,...g.body])assert(Number.isFinite(p.x)&&Number.isFinite(p.y));
  assert(!g.dead);maxEnemies=Math.max(maxEnemies,g.enemies.length);maxShots=Math.max(maxShots,g.projectiles.length);
 }
