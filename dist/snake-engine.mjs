@@ -1,3 +1,4 @@
+import {cakeFootprint} from './cake-finale.mjs';
 import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=1';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
@@ -15,7 +16,7 @@ export class SnakeGame{
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;this.speed=125;
     this.age=0;this.score=0;this.kills=0;this.bossKills=0;this.dead=false;this.events=[];
     this.food=[];this.enemies=[];this.projectiles=[];this.bombs=[];this.puddles=[];
-    this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=120;
+    this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=90;
     this.nextRefill=0;this.knife=null;this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();
   }
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
@@ -36,7 +37,7 @@ export class SnakeGame{
   freePoint(minDistance=60,radius=16){
     for(let i=0;i<700;i++){
       const p={x:18+this.random()*(this.width-36),y:18+this.random()*(this.height-36)};
-      if(!this.musicPads?.pads.some(o=>distance(p,o)<radius+18)&&!this.blocked(p,radius)&&distance(p,this.body[0])>minDistance&&!this.body.some(b=>distance(p,b)<radius+8)&&!this.food.some(b=>distance(p,b)<radius+18)&&!this.enemies.some(b=>this.enemyDiscs(b).some(d=>distance(p,d)<radius+d.r+8))&&!this.bombs.some(b=>distance(p,b)<radius+18)&&(!this.knife||distance(p,this.knife)>radius+18))return p;
+      if(!this.musicPads?.pads.some(o=>distance(p,o)<radius+18)&&!this.blocked(p,radius)&&!this.cakeBlocks(p,radius)&&distance(p,this.body[0])>minDistance&&!this.body.some(b=>distance(p,b)<radius+8)&&!this.food.some(b=>distance(p,b)<radius+18)&&!this.enemies.some(b=>this.enemyDiscs(b).some(d=>distance(p,d)<radius+d.r+8))&&!this.bombs.some(b=>distance(p,b)<radius+18)&&(!this.knife||distance(p,this.knife)>radius+18))return p;
     }return null;
   }
   refill(){if(this.age<this.nextRefill)return;while(this.food.length<3+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.food.push({...p,kind:Math.floor(this.random()*47)});}}
@@ -160,8 +161,9 @@ export class SnakeGame{
     this.angle+=Math.PI/2;this.target=this.angle;return {...h};
   }
   isFlying(p){return['shoe','potion','hammer'].includes(p.type)&&this.age-p.born<p.duration;}
+  cakeBlocks(p,r=0){const c=this.arena.cake;return !!c?.landed&&cakeFootprint(p,c,r);}
   enemyBlocked(e,p){
-    return this.enemyDiscs(e,p).some(c=>this.blocked(c,c.r)||this.enemies.some(o=>o!==e&&this.enemyDiscs(o).some(d=>distance(c,d)<c.r+d.r+1))||this.food.some(f=>distance(c,f)<c.r+10)||this.bombs.some(b=>!b.held&&!b.thrown&&distance(c,b)<c.r+10)||(this.knife&&distance(c,this.knife)<c.r+10))||(e.kind>=6&&e.kind<=10&&this.enemyDiscs(e,p).some(c=>this.bodyHit(c,c.r+4)))||(e.kind===4&&this.enemyDiscs(e,p).some(c=>this.body.some(b=>distance(c,b)<c.r+7)));
+    return this.enemyDiscs(e,p).some(c=>this.blocked(c,c.r)||this.cakeBlocks(c,c.r)||this.enemies.some(o=>o!==e&&this.enemyDiscs(o).some(d=>distance(c,d)<c.r+d.r+1))||this.food.some(f=>distance(c,f)<c.r+10)||this.bombs.some(b=>!b.held&&!b.thrown&&distance(c,b)<c.r+10)||(this.knife&&distance(c,this.knife)<c.r+10))||(e.kind>=6&&e.kind<=10&&this.enemyDiscs(e,p).some(c=>this.bodyHit(c,c.r+4)))||(e.kind===4&&this.enemyDiscs(e,p).some(c=>this.body.some(b=>distance(c,b)<c.r+7)));
   }
   moveEnemy(e,target,speed,dt,away=false){
     if(e.enhanced&&(e.kind===0||e.kind===11))speed*=1.4;
@@ -262,7 +264,7 @@ export class SnakeGame{
   }
   updateBlade(){
     if(!this.armed)return;const p=this.blade();
-    for(const e of this.enemies)if(e.state!=='egg'&&e.state!=='jump'&&this.age>=(e.safeUntil||0)&&this.hitsEnemy(p,e,10)){this.killEnemy(e,'knife');this.consumeKnife();return;}
+    for(const e of this.enemies)if(e.state!=='egg'&&e.state!=='jump'&&this.hitsEnemy(p,e,10)){this.killEnemy(e,'knife');this.consumeKnife();return;}
     for(const shot of this.projectiles)if(!shot.dead&&shot.type!=='blue'&&!this.isFlying(shot)&&distance(shot,p)<16){shot.dead=true;this.consumeKnife();return;}
     for(const b of this.bombs)if(distance(b,p)<17){this.consumeKnife();this.explode(b);return;}
   }

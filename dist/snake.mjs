@@ -165,7 +165,7 @@ function advance(now){
     if(e.type==='cake-prepare')finaleMusic.prepare();
     if(e.type==='cake-arrival'){finaleMusic.setMuted(muted);finaleMusic.play();}
     if(e.type==='cake-land'){finaleMusic.stop();pop('cake-land');}
-    if(e.type==='celebration'){pop('chime');flashBackground('#f2cbe5',950);}
+    if(e.type==='celebration'){pop('dynamite');flashBackground('#f2cbe5',950);}
     if(e.type==='cake-star'){pop('blast');starBurst(e);}
     if(e.type==='cake-resume')finaleMusic.stop();
     if(e.type==='brain-cast'){brainPulse(e);pop('brain-cast');}
@@ -254,6 +254,15 @@ function drawMusicLabels(){
     ctx.fillText(p.volume+'%',p.x,p.y-16-(reduced?0:19*(1-(1-t)*(1-t))));ctx.restore();
   }
 }
+function pickupSparkles(p){
+    if(reduced){sparkle(p.x-15,p.y-10,.7,3);sparkle(p.x+15,p.y+7,.6,2.4);}
+    else{
+      p.sparkles??=[];
+      if(game.age>=(p.nextSparkle||0)){const a=Math.random()*Math.PI*2,r=15+Math.random()*5;p.sparkles.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r,born:game.age,duration:.13+Math.random()*.14,white:(p.sparkleIndex=(p.sparkleIndex||0)+1)%2===0,size:2.5+Math.random()*1.6});p.nextSparkle=game.age+.06+Math.random()*.12;}
+      p.sparkles=p.sparkles.filter(s=>game.age-s.born<s.duration);
+      for(const s of p.sparkles){const t=(game.age-s.born)/s.duration;sparkle(s.x,s.y,Math.sin(t*Math.PI),s.size,s.white);}
+    }
+}
 function draw(){
   document.body.style.backgroundColor=comboPaper(mode==='playing'?game:null);
   document.body.style.backgroundImage=game?.arena?.celebration?'linear-gradient('+(125+Math.sin(game.age*.6)*25)+'deg,#f6d8e9,#e4dcf7,#ffe5f2,#e4f0f0,#f5d2e7)':'';
@@ -263,16 +272,10 @@ function draw(){
   drawHazards();
   drawExpansion(ctx,game,emoji,reduced);
   for(const p of game.food){
-    if(p.kind>=47){emoji('expansion',p.kind===47?4:10,p.x,p.y,1,27);continue;}
+    if(p.kind>=47){emoji('expansion',p.kind===47?4:10,p.x,p.y,1,27);pickupSparkles(p);continue;}
     if(p.kind!==FOOD.GOLDEN_APPLE){emoji('food',p.kind,p.x,p.y);continue;}
     emoji('food',p.kind,p.x,p.y,1,24);
-    if(reduced){sparkle(p.x-15,p.y-10,.7,3);sparkle(p.x+15,p.y+7,.6,2.4);}
-    else{
-      p.sparkles??=[];
-      if(game.age>=(p.nextSparkle||0)){const a=Math.random()*Math.PI*2,r=15+Math.random()*5;p.sparkles.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r,born:game.age,duration:.13+Math.random()*.14,white:(p.sparkleIndex=(p.sparkleIndex||0)+1)%2===0,size:2.5+Math.random()*1.6});p.nextSparkle=game.age+.06+Math.random()*.12;}
-      p.sparkles=p.sparkles.filter(s=>game.age-s.born<s.duration);
-      for(const s of p.sparkles){const t=(game.age-s.born)/s.duration;sparkle(s.x,s.y,Math.sin(t*Math.PI),s.size,s.white);}
-    }
+    pickupSparkles(p);
   }
   for(const e of game.enemies){
     if(e.kind===7)continue;
@@ -294,7 +297,7 @@ function draw(){
     ctx.save();ctx.translate(p.x,p.y-(p.type==='tooth'?8:0));ctx.rotate(p.type==='tooth'?Math.atan2(p.vy,p.vx)+Math.PI/2:p.type==='boomerang'?t*20:t*4);
     if(p.type==='tooth')emoji('boss',3,0,0,1,20);else emoji('props',p.type==='shoe'?0:p.type==='potion'?1:2,0,0);ctx.restore();
   }
-  if(game.knife)emoji('boss',4,game.knife.x,game.knife.y,1,27);
+  if(game.knife){emoji('boss',4,game.knife.x,game.knife.y,1,27);pickupSparkles(game.knife);}
   if(game.armed){const blade=game.blade();ctx.save();ctx.translate(blade.x,blade.y);ctx.rotate(game.angle+Math.PI*5/4);emoji('boss',4,0,0,1,30);ctx.restore();}
   const snakeHead=game.body[0];if(game.shield&&mode!=='dead'){const pulse=reduced?.65:.45+.3*(Math.sin(game.age*1.4)+1)/2;ctx.save();ctx.globalAlpha=pulse;ctx.strokeStyle='#f2bf35';ctx.lineWidth=2;ctx.beginPath();ctx.arc(snakeHead.x,snakeHead.y,13,0,Math.PI*2);ctx.stroke();ctx.restore();}
   const buff=mode==='dead'?null:game.buffKind;
@@ -317,6 +320,7 @@ function draw(){
   drawCake(ctx,game,emoji,reduced);
   drawMusicLabels();
   drawDynamite(ctx,game,emoji);
+  for(const r of game.arena?.relics||[])if(!r.attached&&!r.blackholeArmed)pickupSparkles(r);
   drawClouds(ctx,game,emoji);
 }
 function toggleSound(){muted=!muted;finaleMusic.setMuted(muted);if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}

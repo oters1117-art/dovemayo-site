@@ -49,3 +49,5 @@ Local preview refinements: phone-key-0..11 are original standard DTMF keypad ton
 church-short.ogg: supplied churchBell strike cropped to 240 ms with an exponential tail fade. cake-heavy.ogg: original low sine / filtered-noise synthesis for a cushioned heavy landing.
 
 Blackhole dial: locally synthesized soft DTMF 697/1209 Hz, 1.3 seconds. Church short: user-provided churchBell strike, 0.6-second rounded decay.
+
+blackhole-dial replaced with user-provided blackholePre.mp3, source 0.68–2.92 s (beeps 2–5), softened level. Church strike extended to 1.25 s with trailing room decay removed.

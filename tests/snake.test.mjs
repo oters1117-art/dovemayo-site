@@ -325,8 +325,8 @@ test('enemy spawning has no population ceiling for regular or bonus waves',()=>{
 });
 
 
-test('boss starts at two minutes and death does not postpone the next ninety-second slot',()=>{
- const g=fresh();g.arena.order=[6,7,8,9];assert.equal(g.nextBoss,120);g.age=120;assert(g.spawnBoss());assert.equal(g.nextBoss,210);g.age=160;g.killEnemy(g.enemies.find(e=>e.kind===6),'knife');assert.equal(g.nextBoss,210);
+test('boss starts at ninety seconds and death does not postpone the next ninety-second slot',()=>{
+ const g=fresh();g.arena.order=[6,7,8,9];assert.equal(g.nextBoss,90);g.age=90;assert(g.spawnBoss());assert.equal(g.nextBoss,180);g.age=160;g.killEnemy(g.enemies.find(e=>e.kind===6),'knife');assert.equal(g.nextBoss,180);
 });
 test('boss drops three tomatoes that slide apart, slow down and stop outside cards',()=>{
  const g=fresh();g.food=[];g.obstacles=[{x:440,y:180,w:20,h:40}];const boss={x:400,y:200,kind:6};g.enemies=[boss];assert(g.killEnemy(boss,'knife'));assert.equal(g.food.length,3);assert(g.food.every(p=>p.kind===FOOD.TOMATO&&p.slide));

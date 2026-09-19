@@ -12,7 +12,7 @@ export class BossArena{
   this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
  }
  spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??this.order[this.spawned%4],p=g.freePoint(160,kind===9?42:46);if(!p)return false;
-  const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?120+this.spawned*90:Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
+  const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?90+this.spawned*90:Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
   if(kind===8)this.spawnSatellites(e);
   if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;}
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
@@ -20,7 +20,7 @@ export class BossArena{
  }
  hit(e,source){const g=this.g;
   if(e.kind===8&&e.state==='egg')return source==='egg-wall';
-  if(e.kind===7){if(source==='ball'){e.until=Math.min(e.until,g.age+.25);return false;}if(e.state==='jump'||g.age<(e.safeUntil||0))return false;}
+  if(e.kind===7){if(source==='ball'){e.until=Math.min(e.until,g.age+.25);return false;}if(e.state==='jump')return false;}
   if(e.kind===10&&source!=='dynamite'&&source!=='celebration')return false;
   if(e.kind>=6&&e.kind<=9&&source!=='knife')return false;
   if(e.kind===8){e.state='egg';e.eggAt=g.age;e.until=g.age+12;delete e.gust;this.clearOwner(e);g.knife=null;g.events.push({type:'egg',x:e.x,y:e.y});g.events.push({type:'brain-defeat'});return false;}return true;
@@ -37,7 +37,7 @@ export class BossArena{
   this.checkCake();
  }
  spawnCake(debug=false){return spawnCake(this,debug);}
- checkCake(){if(this.defeated.size!==4||this.cake||this.cakeClaimed||this.g.enemies.some(e=>e.kind===9||e.kind===10))return;if(this.cakeAt===undefined){this.cakeAt=this.g.age+30;this.g.events.push({type:'cake-prepare'});}if(this.g.age>=this.cakeAt)this.spawnCake();}
+ checkCake(){if(this.defeated.size!==4||this.cake||this.cakeClaimed||this.g.enemies.some(e=>e.kind===9||e.kind===10))return;if(this.cakeAt===undefined){this.cakeAt=this.g.age+7;this.g.events.push({type:'cake-prepare'});}if(this.g.age>=this.cakeAt)this.spawnCake();}
  spawnSatellites(owner){const g=this.g;for(let i=0;i<5;i++){const angle=i*TAU/5;let p;for(let n=0;n<30;n++){const a=angle+n*.21,q={x:owner.x+Math.cos(a)*76,y:owner.y+Math.sin(a)*76};if(!g.blocked(q,11)&&!g.enemies.some(o=>g.hitsEnemy(q,o,12))){p=q;break;}}p??=g.nearPoint(owner,60,115);if(p)g.enemies.push({...p,kind:12,owner,orbitPhase:angle,born:g.age,state:'orbit'});}}
  clearOwner(e){for(const child of [...this.g.enemies])if(child.kind===12&&child.owner===e)this.g.killEnemy(child,'owner');if(this.hazards.some(h=>h.owner===e&&h.type==='tornado'))this.g.attraction=null;this.hazards=this.hazards.filter(h=>h.owner!==e);}
  drop(kind,origin){const g=this.g,to=g.nearPoint(origin,45,115)||g.freePoint(25)||{x:clamp(origin.x,18,g.width-18),y:clamp(origin.y,18,g.height-18)};
@@ -48,7 +48,7 @@ export class BossArena{
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
    if(e.state==='jump'){const t=clamp((age-e.jumpAt)/(e.jumpDuration||1.65),0,1);e.x=e.from.x+(e.aim.x-e.from.x)*t;e.y=e.from.y+(e.aim.y-e.from.y)*t;e.lift=Math.sin(Math.pow(t,.8)*Math.PI)*250;if(e.retreat&&age>=(e.nextAirHammer||0)&&t<.9){hammer(this,e,g.random()*TAU);e.nextAirHammer=age+.09;}
-    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;e.safeUntil=age+.48;this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}return;}
+    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}return;}
    if(e.state==='hammer-charge'){if(age>=e.until){if(e.rapid){e.state='hammer-stream';e.left=30;e.nextHammer=age;}else{const offset=g.random()*TAU;for(let i=0;i<28;i++)hammer(this,e,offset+i*TAU/28);e.state='idle';e.until=age+.8;}}return;}
    if(e.state==='hammer-stream'){if(age>=e.nextHammer){hammer(this,e,g.random()*TAU);e.left--;e.nextHammer=age+.05;if(!e.left){e.state='idle';e.until=age+.7;}}return;}
    if(e.state==='land'&&age>=e.until){e.state='idle';e.until=age;}
@@ -60,9 +60,9 @@ export class BossArena{
    const pattern=Math.floor(g.random()*3);e.until=age+9;
    if(pattern===0)spawnCloudScore(this,e);
    if(pattern===1){e.until=age+2.35;const a=Math.atan2(h.y-e.y,h.x-e.x);this.hazards.push({type:'laser',x:e.x,y:e.y,angle:a,born:age,until:age+1.6,lockAt:age+1.2,beeps:0,owner:e});}
-   if(pattern===2&&!this.hazards.some(h=>h.type==='tornado'&&h.until>age)){for(let i=0;i<1;i++){const p=g.freePoint(85)||g.randomAim();this.hazards.push({...p,type:'tornado',born:age,activeAt:age+1.8,until:age+7.3,owner:e});}e.castAt=age;g.events.push({type:'brain-cast',x:e.x,y:e.y,pattern:'blackhole'});}return;
+   if(pattern===2&&!this.hazards.some(h=>h.type==='tornado'&&h.until>age)){for(let i=0;i<1;i++){const p=g.freePoint(85)||g.randomAim();this.hazards.push({...p,type:'tornado',born:age,activeAt:age+2.6,until:age+8.1,owner:e});}e.castAt=age;g.events.push({type:'brain-cast',x:e.x,y:e.y,pattern:'blackhole'});}return;
   }
-  if(e.kind===12){if(!g.enemies.includes(e.owner)||e.owner.state==='egg'){g.killEnemy(e,'owner');return;}const count=g.enemies.filter(o=>o.kind===12&&o.owner===e.owner).length;if(count<3)e.orbitPhase+=dt*(count===1?4.4:2.5);const angle=e.orbitPhase;g.moveEnemy(e,{x:e.owner.x+Math.cos(angle)*76,y:e.owner.y+Math.sin(angle)*76},count===1?350:count===2?225:150,dt);return;}
+  if(e.kind===12){if(!g.enemies.includes(e.owner)||e.owner.state==='egg'){g.killEnemy(e,'owner');return;}const siblings=g.enemies.filter(o=>o.kind===12&&o.owner===e.owner),count=siblings.length,speed=count===1?4.4:count===2?2.2:count===3?.6:count===4?.45:.35,owner=e.owner;if(owner.formationAt!==age){owner.formationAngle=(owner.formationAngle||0)+speed*dt;owner.formationAt=age;}const target=owner.formationAngle+siblings.indexOf(e)*TAU/count,delta=Math.atan2(Math.sin(target-e.orbitPhase),Math.cos(target-e.orbitPhase));e.orbitPhase+=delta*Math.min(1,dt*7);const angle=e.orbitPhase;g.moveEnemy(e,{x:owner.x+Math.cos(angle)*76,y:owner.y+Math.sin(angle)*76},count===1?350:count===2?225:150,dt);return;}
   if(e.kind===9){kingMove(this,e,dt);return;}
   if(e.kind===10){if(age>=e.until){e.until=age+3.2;const before=g.enemies.length;g.spawnEnemy(g.random()<.45?11:g.chooseEnemyKind());const child=g.enemies[before];if(child){const p=g.nearPoint(e,55,85);if(p){child.x=p.x;child.y=p.y;}child.king=g.enemies.find(k=>k.kind===9&&k.serial===e.serial);child.castle=e;child.guardAnchor=g.random()<.5&&child.king?child.king:e;child.guardCheckAt=age+6;}}return;}
   if(e.kind===11){const anchors=g.enemies.filter(o=>o.kind===9||o.kind===10);if(!anchors.includes(e.guardAnchor)||age>=(e.guardCheckAt||0)){const near=anchors.sort((p,q)=>dist(p,e)-dist(q,e))[0];if(!e.guardAnchor||!anchors.includes(e.guardAnchor)||near&&dist(near,e)+75<dist(e.guardAnchor,e))e.guardAnchor=near;e.guardCheckAt=age+3;}const anchor=e.guardAnchor;if(anchor){e.orbitAngle=(e.orbitAngle??Math.atan2(e.y-anchor.y,e.x-anchor.x))+dt*.8;g.moveEnemy(e,{x:anchor.x+Math.cos(e.orbitAngle)*95,y:anchor.y+Math.sin(e.orbitAngle)*95},82,dt);}else g.moveEnemy(e,h,105,dt);}
