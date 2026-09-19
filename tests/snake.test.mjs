@@ -243,8 +243,8 @@ test('boss randomly selects radial barrage, orbit machine gun and aimed fan',()=
 test('teeth and blue bullets are silent on terrain collisions',()=>{
  for(const type of ['tooth','blue']){const g=fresh({obstacles:[{x:100,y:90,w:20,h:30}]});g.food=[];g.projectiles=[{type,x:101,y:100,vx:0,vy:0,born:0}];g.updateHazards(.01);assert.equal(g.projectiles.length,0);assert(g.events.filter(e=>e.type==='impact').every(e=>e.silent));}
 });
-test('teeth destroy enemies silently while blue shots retain destruction audio',()=>{
- for(const type of ['tooth','blue']){const g=fresh();g.food=[];g.enemies=[{x:100,y:100,kind:0,born:0}];g.projectiles=[{type,x:100,y:100,vx:0,vy:0,born:0}];g.updateHazards(.01);assert.equal(g.enemies.length,0);assert.equal(g.events.find(e=>e.type==='defeat').silent,type==='tooth');}
+test('teeth and blue shots both retain enemy destruction audio',()=>{
+ for(const type of ['tooth','blue']){const g=fresh();g.food=[];g.enemies=[{x:100,y:100,kind:0,born:0}];g.projectiles=[{type,x:100,y:100,vx:0,vy:0,born:0}];g.updateHazards(.01);assert.equal(g.enemies.length,0);assert.equal(g.events.find(e=>e.type==='defeat').silent,false);}
 });
 test('blue and boss fire emit distinct firing cues; shoe emits one landing cue',()=>{
  const g=fresh();g.food=[];g.eatFood({kind:FOOD.BLUEBERRY});g.step(.01);assert(g.events.some(e=>e.type==='blue-shot'));

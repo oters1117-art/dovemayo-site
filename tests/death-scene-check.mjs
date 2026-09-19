@@ -1,3 +1,4 @@
+import {DebugKeys} from '../dist/debug-keys.mjs';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {TouchSteering} from '../dist/touch-steering.mjs';
@@ -8,7 +9,7 @@ function element(){return {style:{getPropertyValue:()=>1,setProperty(){}},classL
 const elements=new Map(),body=element();
 const document={body,fonts:{ready:Promise.resolve()},querySelector(s){if(!elements.has(s))elements.set(s,element());return elements.get(s)},createElement:element,addEventListener(k,f){listeners[k]=f}};
 let stopped=0,now=100;
-const sandbox={comboPaper:()=> '#f1eeee',shockLift:()=>0,comboInk:()=>null,GameMetrics:class{end(){}},drawClouds(){},drawDynamite(){},FinaleMusic:class{pause(){}stop(){}setMuted(){}},drawExpansion(){},drawExpansionEnemy(){return false},drawExpansionShot(){return false},drawEnhancement(){},TouchSteering,document,window:{addEventListener(k,f){listeners[k]=f}},innerWidth:1000,innerHeight:800,devicePixelRatio:1,matchMedia:()=>({matches:false}),PadMusicPlayer:class{pause(){}stop(){}},FoleySound:class{stopMusicCue(){}setUnderwater(x){this.underwater=x}play(){}unlock(){}},RoutePlanner:class{cancel(){stopped++}},clearInterval(){},cancelAnimationFrame(){},headingFromKeys:()=>99,performance:{now:()=>now},console};
+const sandbox={DebugKeys,location:{hostname:'localhost'},drawCake(){},drawCakeAtmosphere(){},comboPaper:()=> '#f1eeee',shockLift:()=>0,comboInk:()=>null,GameMetrics:class{end(){}},drawClouds(){},drawDynamite(){},FinaleMusic:class{pause(){}stop(){}setMuted(){}},drawExpansion(){},drawExpansionEnemy(){return false},drawExpansionShot(){return false},drawEnhancement(){},TouchSteering,document,window:{addEventListener(k,f){listeners[k]=f}},innerWidth:1000,innerHeight:800,devicePixelRatio:1,matchMedia:()=>({matches:false}),PadMusicPlayer:class{pause(){}stop(){}},FoleySound:class{stopMusicCue(){}setUnderwater(x){this.underwater=x}play(){}unlock(){}},RoutePlanner:class{cancel(){stopped++}},clearInterval(){},cancelAnimationFrame(){},headingFromKeys:()=>99,performance:{now:()=>now},console};
 vm.createContext(sandbox);
 const source=readFileSync(new URL('../dist/snake.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'');
 vm.runInContext(source+`;globalThis.test={set(g){game=g;mode='playing';score.hidden=false;dot.style.visibility='hidden';canvas.hidden=false},failure,end,advance,explosion,updateMusic,get(){return {game,mode,score,bossStars,escapeKey,canvas,dot,sound,touchSurface,stick}}};`,sandbox);

@@ -45,3 +45,5 @@ Local preview revision: church-bell uses Church Bell, Joseph SARDIN, CC0, https:
 User-supplied local-preview audio: chimeBell.mp3 -> chime-user.ogg, churchBell.mp3 -> church-user.ogg (original pitch, no EQ). Still Alive.mp3 is retained at music/still-alive.mp3 for this private local test only. Blackhole hum and MIDI-note cloud voice are original synthesis. Cloud scores are original short arrangements of public-domain Beethoven Ode to Joy, Twinkle Twinkle (Mozart variation theme), and traditional Greensleeves.
 
 Local preview refinements: phone-key-0..11 are original standard DTMF keypad tone synthesis (12 keys; four presses per laser). phase-soft is original filtered noise / sine synthesis. Cloud chords are original short progressions rendered with a softly band-limited electrical harmonic waveform.
+
+church-short.ogg: supplied churchBell strike cropped to 240 ms with an exponential tail fade. cake-heavy.ogg: original low sine / filtered-noise synthesis for a cushioned heavy landing.
