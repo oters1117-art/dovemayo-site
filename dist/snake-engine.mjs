@@ -21,6 +21,7 @@ export class SnakeGame{
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
   get invincible(){return this.buffKind==='rainbow'||this.age<this.graceUntil;}
   get timeStopped(){return this.buffKind==='rainbow'&&this.combo==='purple';}
+  get worldFrozen(){return this.timeStopped||this.age<this.arena.shockUntil;}
   get activeCombo(){return this.buffKind==='rainbow'?this.combo:null;}
   get slowUntil(){return this.buffKind==='green'?this.buff.until:0;}
   get freezeUntil(){return this.buffKind==='purple'?this.buff.until:0;}
@@ -32,7 +33,7 @@ export class SnakeGame{
   freePoint(minDistance=60,radius=16){
     for(let i=0;i<700;i++){
       const p={x:18+this.random()*(this.width-36),y:18+this.random()*(this.height-36)};
-      if(!this.musicPads?.pads.some(o=>distance(p,o)<radius+18)&&!this.blocked(p,radius)&&distance(p,this.body[0])>minDistance&&!this.body.some(b=>distance(p,b)<radius+8)&&!this.food.some(b=>distance(p,b)<radius+18)&&!this.enemies.some(b=>this.enemyDiscs(b).some(d=>distance(p,d)<radius+d.r+8))&&!this.bombs.some(b=>distance(p,b)<radius+18)&&(!this.knife||distance(p,this.knife)>radius+18))return p;
+      if(!this.arena?.hands.some(h=>distance(p,h)<radius+16)&&!this.musicPads?.pads.some(o=>distance(p,o)<radius+18)&&!this.blocked(p,radius)&&distance(p,this.body[0])>minDistance&&!this.body.some(b=>distance(p,b)<radius+8)&&!this.food.some(b=>distance(p,b)<radius+18)&&!this.enemies.some(b=>this.enemyDiscs(b).some(d=>distance(p,d)<radius+d.r+8))&&!this.bombs.some(b=>distance(p,b)<radius+18)&&(!this.knife||distance(p,this.knife)>radius+18))return p;
     }return null;
   }
   refill(){if(this.age<this.nextRefill)return;while(this.food.length<Math.min(12,3+Math.floor(this.score/5))){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.food.push({...p,kind:Math.floor(this.random()*47)});}}
@@ -75,13 +76,13 @@ export class SnakeGame{
     this.events.push({type:'enemy',...p});return true;
   }
   spawnBoss(debug=false){return this.arena.spawn(debug);}
-  ensureKnife(){if(this.hasBoss&&!this.armed&&!this.knife&&this.age>=this.nextKnife){const p=this.freePoint(45);if(p)this.knife={...p};else this.nextKnife=this.age+.5;}}
+  ensureKnife(){if(this.hasBoss&&!this.armed&&!this.knife&&this.age>=this.nextKnife){const p=(this.knifeAnchor?this.nearPoint(this.knifeAnchor,45,80):null)||this.freePoint(45);if(p){this.knife={...p};this.knifeAnchor=null;}else this.nextKnife=this.age+.5;}}
   blade(){const h=this.body[0];return{x:h.x+Math.cos(this.angle)*24,y:h.y+Math.sin(this.angle)*24};}
-  consumeKnife(){this.armed=false;this.nextKnife=this.age+6;this.events.push({type:'blade'});}
+  consumeKnife(){this.armed=false;this.nextKnife=this.immediateKnife?this.age:this.age+6;this.immediateKnife=false;this.events.push({type:'blade'});this.ensureKnife();}
   killEnemy(e,source='impact'){
     const i=this.enemies.indexOf(e);if(i<0)return false;
     if(!this.arena.hit(e,source))return false;
-    this.enemies.splice(i,1);this.kills++;this.events.push({type:e.kind>=6&&e.kind<=10?'boss-defeat':'defeat',silent:source==='tooth',x:e.x,y:e.y});
+    this.enemies.splice(i,1);this.kills++;this.events.push({type:e.kind>=6&&e.kind<=10?'boss-defeat':'defeat',kind:e.kind,silent:source==='tooth',x:e.x,y:e.y});
     if(e.kind>=6&&e.kind<=10)this.arena.defeatedBoss(e);
     return true;
   }
@@ -103,7 +104,7 @@ export class SnakeGame{
   bodyHit(p,r){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&distance(p,this.body[i])<r)return true;}return false;}
   tick(dt){
     const frozen=this.buffKind==='purple';
-    this.age+=dt;if(this.timeStopped){for(const p of this.food)if(p.slide)p.slide.born+=dt;if(this.arena.cake)this.arena.cake.born+=dt;}else this.slideFood();
+    this.age+=dt;if(this.worldFrozen){for(const p of this.food)if(p.slide)p.slide.born+=dt;if(this.arena.cake)this.arena.cake.born+=dt;}else this.slideFood();
     for(const p of this.puddles)if(p.until>this.age&&distance(this.body[0],p)<p.radius+this.radius)this.setBuff('green',8);
     this.puddles=this.puddles.filter(p=>p.until>this.age);
     const wobble=this.buffKind==='orange'?Math.sin(this.age*4.2)*.5+Math.sin(this.age*7.1)*.12:0;
@@ -119,13 +120,13 @@ export class SnakeGame{
     for(let i=this.food.length-1;i>=0;i--)if(!this.food[i].slide&&distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
     if(this.knife&&distance(head,this.knife)<17){this.knife=null;this.armed=true;this.events.push({type:'knife'});}
     this.refill();
-    if(!this.timeStopped&&this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
+    if(!this.worldFrozen&&this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
     if(this.age>=this.nextBoss){if(!this.spawnBoss())this.nextBoss=this.age+5;}
     this.ensureKnife();this.updateBlade();
-    if(this.timeStopped)this.arena.pause(dt);
+    if(this.worldFrozen)this.arena.pause(dt);
     for(const e of [...this.enemies]){
       if(!this.enemies.includes(e)||this.age-e.born<1||e.held)continue;
-      if(this.timeStopped){if(distance(e,head)<this.enemyRadius(e)+4&&e.kind<6)this.killEnemy(e,'body');continue;}
+      if(this.worldFrozen){if(distance(e,head)<this.enemyRadius(e)+4){if(this.invincible&&e.kind<6)this.killEnemy(e,'body');else if(!this.invincible)this.fail('적에게 부딪혔어요.');}continue;}
       if(e.thrown){this.arena.updateEnemy(e,dt);continue;}
       if(e.state==='jump'){this.updateEnemy(e,dt);continue;}
       if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
@@ -139,7 +140,7 @@ export class SnakeGame{
       this.nextBlueShot=this.age+.14;
       if(this.projectiles.length<180){for(const offset of this.activeCombo==='blue'?[-.15,0,.15]:[0]){const a=this.angle+offset;this.projectiles.push({type:'blue',volley:this.age,x:head.x+Math.cos(a)*14,y:head.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});}this.events.push({type:'blue-shot'});}
     }
-    if(!this.timeStopped){this.updateHazards(dt);if(!this.dead)this.arena.update(dt);}else this.updateFrozenBlue(dt);
+    if(!this.worldFrozen){this.updateHazards(dt);if(!this.dead)this.arena.update(dt);}else this.updateFrozenBlue(dt);
     if(!this.dead)this.musicPads.update(this);
   }
   deflect(next,step){
@@ -153,9 +154,9 @@ export class SnakeGame{
     }
     this.angle+=Math.PI/2;this.target=this.angle;return {...h};
   }
-  isFlying(p){return(p.type==='shoe'||p.type==='potion')&&this.age-p.born<p.duration;}
+  isFlying(p){return['shoe','potion','hammer'].includes(p.type)&&this.age-p.born<p.duration;}
   enemyBlocked(e,p){
-    return this.enemyDiscs(e,p).some(c=>this.blocked(c,c.r)||this.enemies.some(o=>o!==e&&this.enemyDiscs(o).some(d=>distance(c,d)<c.r+d.r+1))||this.food.some(f=>distance(c,f)<c.r+10)||this.bombs.some(b=>distance(c,b)<c.r+10)||(this.knife&&distance(c,this.knife)<c.r+10))||(e.kind>=6&&e.kind<=10&&this.bodyHit(p,this.enemyRadius(e)+4))||(e.kind===4&&this.enemyDiscs(e,p).some(c=>this.body.some(b=>distance(c,b)<c.r+7)));
+    return this.enemyDiscs(e,p).some(c=>this.blocked(c,c.r)||this.enemies.some(o=>o!==e&&this.enemyDiscs(o).some(d=>distance(c,d)<c.r+d.r+1))||this.food.some(f=>distance(c,f)<c.r+10)||this.bombs.some(b=>!b.held&&!b.thrown&&distance(c,b)<c.r+10)||this.arena.hands.some(b=>distance(c,b)<c.r+13)||(this.knife&&distance(c,this.knife)<c.r+10))||(e.kind>=6&&e.kind<=10&&this.bodyHit(p,this.enemyRadius(e)+4))||(e.kind===4&&this.enemyDiscs(e,p).some(c=>this.body.some(b=>distance(c,b)<c.r+7)));
   }
   moveEnemy(e,target,speed,dt,away=false){
     if(e.enhanced&&e.kind===0)speed*=1.4;
@@ -224,6 +225,10 @@ export class SnakeGame{
       }return;
     }
     if(e.kind===5){if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{x:e.x,y:e.y};e.roamUntil=age+3;}this.moveEnemy(e,e.aim,56,dt);if(age>=e.until){this.dropBomb(e);e.until=age+(e.enhanced?1:3)+this.random()*(e.enhanced?1:3);}return;}
+    if(e.kind===3&&e.enhanced){const a=Math.atan2(h.y-e.y,h.x-e.x),n=Math.ceil(d/10);let clear=true;for(let i=2;i<n;i++)if(this.blocked({x:e.x+(h.x-e.x)*i/n,y:e.y+(h.y-e.y)*i/n},6)){clear=false;break;}
+      if(!clear){this.orbit(e,dt);e.state='idle';return;}
+      if(e.state==='charge'&&age>=e.until){this.projectiles.push({type:'anger-ray',x:e.x+Math.cos(a)*23,y:e.y+Math.sin(a)*23,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:age,owner:e});e.state='recover';e.until=age+1.6;this.events.push({type:'throw'});}else if(e.state!=='charge'&&age>=e.until){e.state='charge';e.chargeAt=age;e.until=age+.45;}return;
+    }
     if(e.kind===3){this.orbit(e,dt);if(e.state==='charge'){if(age>=e.until){this.toss(e,'boomerang');e.state='recover';e.until=age+2.4;}}else if(age>=e.until&&d<(e.enhanced?480:300)){e.state='charge';e.chargeAt=age;e.until=age+.65;}return;}
     if(e.state==='flee'){this.moveEnemy(e,h,155,dt,true);if(age>=e.until)e.state='idle';return;}
     if(e.state==='recover'){if(d<175)this.moveEnemy(e,h,90,dt,true);if(age>=e.until)e.state='idle';return;}
@@ -252,7 +257,7 @@ export class SnakeGame{
   }
   updateBlade(){
     if(!this.armed)return;const p=this.blade();
-    for(const e of this.enemies)if(distance(e,p)<this.enemyRadius(e)+10){this.killEnemy(e,'knife');this.consumeKnife();return;}
+    for(const e of this.enemies)if(e.state!=='jump'&&this.age>=(e.safeUntil||0)&&distance(e,p)<this.enemyRadius(e)+10){this.killEnemy(e,'knife');this.consumeKnife();return;}
     for(const shot of this.projectiles)if(!shot.dead&&shot.type!=='blue'&&!this.isFlying(shot)&&distance(shot,p)<16){shot.dead=true;this.consumeKnife();return;}
     for(const b of this.bombs)if(distance(b,p)<17){this.consumeKnife();this.explode(b);return;}
   }
@@ -288,7 +293,8 @@ export class SnakeGame{
     const h=this.body[0];
     for(const p of this.projectiles){
       if(p.dead)continue;
-      if(['tooth','blue','hammer','ball'].includes(p.type)){p.x+=p.vx*dt;p.y+=p.vy*dt;}
+      p.previous={x:p.x,y:p.y};
+      if(['tooth','blue','anger-ray','ball'].includes(p.type)){p.x+=p.vx*dt;p.y+=p.vy*dt;}
       else{
         const t=(this.age-p.born)/p.duration;
         if(p.type==='boomerang'){
@@ -299,7 +305,7 @@ export class SnakeGame{
       }
       if(this.isFlying(p))continue;
       const outside=p.x<9||p.y<9||p.x>this.width-9||p.y>this.height-9;
-      if(outside||(p.type!=='ball'&&!p.airborne&&this.blocked(p,7))){p.dead=true;p.cancelSpill=outside;this.shotImpact(p,null,true);}
+      if(p.type!=='ball'&&(outside||(!p.airborne&&this.blocked(p,7)))){p.dead=true;p.cancelSpill=outside;this.shotImpact(p,null,true);}
     }
     this.updateBalls();
     // Stronger attacks survive weaker ones; equal ranks cancel each other.
@@ -326,8 +332,8 @@ export class SnakeGame{
     }
     this.finalizeShots();
     for(const b of [...this.bombs]){
-      if(!this.bombs.includes(b))continue;
-      if((this.buffKind==='rainbow'&&distance(h,b)<18)||this.enemies.some(e=>!e.thrown&&e.state!=='jump'&&distance(e,b)<this.enemyRadius(e)+10)||this.food.some(f=>distance(f,b)<17)||(this.knife&&distance(this.knife,b)<17)){this.explode(b);if(this.dead)return;continue;}
+      if(!this.bombs.includes(b)||b.held||b.thrown)continue;
+      if((distance(h,b)<18||this.bodyHit(b,14))||this.enemies.some(e=>!e.thrown&&e.state!=='jump'&&distance(e,b)<this.enemyRadius(e)+10)||this.food.some(f=>distance(f,b)<17)||(this.knife&&distance(this.knife,b)<17)){this.explode(b);if(this.dead)return;continue;}
       if(b.armed===null&&this.age-b.born>.5&&distance(h,b)<82)b.armed=this.age;
       if(b.armed!==null&&this.age-b.armed>=.95){this.explode(b);if(this.dead)return;}
     }
@@ -336,14 +342,18 @@ export class SnakeGame{
   enemyTarget(e){if(this.activeCombo!=='orange')return this.body[0];let target=this.body[0],best=distance(e,target);for(const o of this.enemies)if(o!==e&&distance(e,o)<best){target=o;best=distance(e,o);}return target;}
   updateFrozenBlue(dt){for(const p of this.projectiles)if(p.type==='blue'&&!p.dead){p.x+=p.vx*dt;p.y+=p.vy*dt;if(this.blocked(p,4))p.dead=true;for(const e of [...this.enemies])if(distance(p,e)<this.enemyRadius(e)+4){this.killEnemy(e,'blue');p.dead=true;break;}}this.projectiles=this.projectiles.filter(p=>!p.dead);}
   updateBalls(){for(const p of this.projectiles){if(p.type!=='ball'||p.dead)continue;
-    let collided=null;
-    for(const e of this.enemies)if(e!==p.owner&&distance(p,e)<this.enemyRadius(e)+11){collided=e;const a=Math.atan2(e.y-p.y,e.x-p.x),next={x:e.x+Math.cos(a)*5,y:e.y+Math.sin(a)*5};if(!this.blocked(next,this.enemyRadius(e))){e.x=next.x;e.y=next.y;}break;}
-    for(const f of [...this.food,...this.projectiles.filter(o=>o!==p&&!o.dead&&!this.isFlying(o))])if(distance(p,f)<20){collided=f;const a=Math.atan2(f.y-p.y,f.x-p.x);f.x+=Math.cos(a)*5;f.y+=Math.sin(a)*5;break;}
-    const bomb=this.bombs.find(b=>distance(p,b)<21);if(bomb){p.dead=true;this.explode(bomb);continue;}
     if(this.armed&&distance(p,this.blade())<20){p.dead=true;this.consumeKnife();continue;}
-    if(this.obstacles.some(b=>touches(p,11,b))&&!p.contact){p.vx*=-1;p.vy*=-1;p.contact=true;}else if(!this.obstacles.some(b=>touches(p,13,b)))p.contact=false;
-    if(collided&&p.lastHit!==collided){const nx=p.x-collided.x,ny=p.y-collided.y,n=Math.hypot(nx,ny)||1,dot=(p.vx*nx+p.vy*ny)/n;p.vx-=2*dot*nx/n;p.vy-=2*dot*ny/n;p.lastHit=collided;}if(!collided)p.lastHit=null;
-    if(distance(p,this.body[0])<16&&!this.invincible)this.fail('당구공에 맞았어요.');
+    const bomb=this.bombs.find(b=>!b.held&&!b.thrown&&distance(p,b)<21);if(bomb){p.dead=true;this.explode(bomb);continue;}
+    let hit=null,normal=null,key=null;
+    if(p.x<12||p.x>this.width-12){key='wall-x';normal={x:p.x<12?1:-1,y:0};p.x=Math.max(12,Math.min(this.width-12,p.x));}
+    else if(p.y<12||p.y>this.height-12){key='wall-y';normal={x:0,y:p.y<12?1:-1};p.y=Math.max(12,Math.min(this.height-12,p.y));}
+    else{const card=this.obstacles.find(b=>touches(p,11,b));if(card){key=card;normal={x:p.x-(card.x+card.w/2),y:p.y-(card.y+card.h/2)};}}
+    if(!key){hit=this.enemies.find(e=>e!==p.owner&&!e.held&&!e.thrown&&e.state!=='jump'&&distance(p,e)<this.enemyRadius(e)+11);if(hit){key=hit;this.killEnemy(hit,'ball');this.events.push({type:'impact',x:hit.x,y:hit.y});}}
+    if(!key){hit=this.food.find(f=>distance(p,f)<21);if(hit){key=hit;this.food.splice(this.food.indexOf(hit),1);this.events.push({type:'impact',x:hit.x,y:hit.y});}}
+    if(!key){hit=this.projectiles.find(o=>o!==p&&!o.dead&&!this.isFlying(o)&&distance(p,o)<18);if(hit){key=hit;hit.dead=true;}}
+    if(!key&&this.bodyHit(p,15)){key='body';hit=this.body.reduce((best,b)=>distance(p,b)<distance(p,best)?b:best,this.body[0]);}
+    if(distance(p,this.body[0])<16){if(!this.invincible)this.fail('당구공에 맞았어요.');key='head';hit=this.body[0];}
+    if(key&&key!==p.contact){normal??={x:p.x-hit.x,y:p.y-hit.y};let n=Math.hypot(normal.x,normal.y)||1,nx=normal.x/n,ny=normal.y/n;if(!normal.x&&!normal.y){nx=-p.vx/Math.hypot(p.vx,p.vy);ny=-p.vy/Math.hypot(p.vx,p.vy);}const dot=p.vx*nx+p.vy*ny;p.vx-=2*dot*nx;p.vy-=2*dot*ny;if(p.previous&&key!=='wall-x'&&key!=='wall-y'){p.x=p.previous.x;p.y=p.previous.y;}p.x+=nx*2;p.y+=ny*2;p.hits=(p.hits||0)+1;this.events.push({type:'billiard',x:p.x,y:p.y});if(p.hits>=3)p.dead=true;}
+    p.contact=key;
   }}
-
 }

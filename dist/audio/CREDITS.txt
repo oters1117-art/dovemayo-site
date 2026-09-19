@@ -37,3 +37,5 @@ Vinyl Needle Drop — u_xg7ssi08yr, https://pixabay.com/sound-effects/vinyl-need
 Supplied by user as lp start.mp3 (5.747 s) and lp end.mp3 (1.368 s). Converted to Ogg without trimming or pitch changes. Playback uses existing softened game audio bus.
 
 Boss preview: roll-soft combines existing credited cloth with synthesized rounded contacts. zap-soft, phone-soft, chime-soft, wind-soft are locally synthesized, gently filtered original effects (scripts/make-boss-audio.py).
+
+Boss refinement: phone-soft-0/1/2, billiard-soft, air-soft and revised chime/wind are locally synthesized gentle cues; roll-soft and slime-soft also reuse credited existing cloth/bubble recordings. See scripts/refine-boss-audio.py.
