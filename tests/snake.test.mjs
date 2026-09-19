@@ -152,10 +152,10 @@ test('boss is blocked by the old snake body and emits persistent teeth',()=>{
  const tooth={type:'tooth',x:50,y:50,vx:10,vy:0,born:0};g.projectiles=[tooth];g.age=100;g.updateHazards(.1);assert(g.projectiles.includes(tooth));assert.equal(tooth.x,51);
  tooth.x=895;g.updateHazards(.1);assert(!g.projectiles.includes(tooth));
 });
-test('bomb destroys enemies and bosses, preserving fresh reward drops',()=>{
+test('bomb destroys ordinary enemies but cannot kill a boss',()=>{
  const g=fresh();g.body=[{x:800,y:650}];g.food=[{x:100,y:100,kind:0}];const boss={x:150,y:110,kind:6,born:0},mob={x:110,y:100,kind:0,born:0};g.enemies=[boss,mob];g.projectiles=[{type:'tooth',x:100,y:110,vx:1,vy:0,born:0}];
  const bomb={x:100,y:100,born:0,armed:0};g.bombs=[bomb,{x:160,y:100,born:0,armed:null}];g.explode(bomb);g.finalizeShots();
- assert(g.food.every(f=>f.kind===FOOD.TOMATO));assert.equal(g.projectiles.length,0);assert.equal(g.bombs.length,0);assert(!g.enemies.includes(mob));assert(!g.enemies.includes(boss));assert(!g.dead);
+ assert(g.food.every(f=>f.kind===FOOD.TOMATO));assert.equal(g.projectiles.length,0);assert.equal(g.bombs.length,0);assert(!g.enemies.includes(mob));assert(g.enemies.includes(boss));assert(!g.dead);
 });
 test('shots cancel each other and destroy food or ordinary enemies on contact',()=>{
  for(const target of ['shot','food','enemy']){
@@ -234,10 +234,10 @@ test('blue bullets defeat ordinary enemies but lose to attacks and cannot kill b
  g.updateHazards(.001);assert.equal(g.projectiles.length,target==='shot'?1:0);assert.equal(g.enemies.length,target==='boss'?1:0);
  }
 });
-test('boss cycles radial barrage, orbit machine gun and aimed fan',()=>{
- const g=fresh();g.food=[];const e={x:200,y:300,kind:6,until:0};g.enemies=[e];g.updateBoss(e,.01);assert.equal(e.pattern,0);assert.equal(g.projectiles.length,14);
- g.age=6.1;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
- g.age=12.2;g.projectiles=[];g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
+test('boss randomly selects radial barrage, orbit machine gun and aimed fan',()=>{
+ const g=fresh();g.food=[];const e={x:200,y:300,kind:6,until:0};g.enemies=[e];g.random=()=>.05;g.updateBoss(e,.01);assert.equal(e.pattern,0);assert.equal(g.projectiles.length,14);
+ g.age=6.1;g.projectiles=[];g.random=()=>.4;g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
+ g.age=12.2;g.projectiles=[];g.random=()=>.75;g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
 });
 
 test('teeth and blue bullets are silent on terrain collisions',()=>{

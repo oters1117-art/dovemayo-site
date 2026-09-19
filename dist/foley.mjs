@@ -1,14 +1,16 @@
 // Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
+export const SOUND_FILES=['church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
+ firework:{bank:['firework-soft'],gain:.65,rate:1,gap:.06},
+ dynamite:{bank:['firework-soft'],gain:1,rate:.88,gap:.1},
  roll:{bank:['roll-soft'],gain:.55,rate:1,gap:.4},
- zap:{bank:['zap-soft'],gain:.32,rate:1,gap:.12},
+ zap:{bank:['zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4'],gain:.36,rate:1,gap:.07},
  phone:{bank:['phone-soft-0','phone-soft-1','phone-soft-2'],gain:.38,rate:1,gap:.2},
  chime:{bank:['chime-soft'],gain:.6,rate:1,gap:.3},
  wind:{bank:['wind-soft'],gain:.3,rate:1,gap:.8},
  hammer:{bank:['cloth-0','cloth-1'],gain:.5,rate:.8,gap:.3},
- fuse:{bank:['chili-flame'],gain:.35,rate:.8,gap:.3},
- enhance:{bank:['chime-soft'],gain:.26,rate:1.13,gap:.2},
+ fuse:{bank:['fuse-soft'],gain:.35,rate:.8,gap:.3},
+ enhance:{bank:['church-bell'],gain:.42,rate:1,gap:.3},
  billiard:{bank:['billiard-soft'],gain:.7,rate:1,gap:.08},
  slime:{bank:['slime-soft'],gain:.7,rate:1,gap:.1},
  'air-pop':{bank:['air-soft'],gain:.65,rate:1,gap:.2},
@@ -66,7 +68,7 @@ export class FoleySound{
   const bank=p.bank.filter(n=>this.buffers.has(n));if(!bank.length)return;
   const options=bank.filter(n=>n!==this.previous.get(type)),pool=options.length?options:bank,name=pool[Math.floor(Math.random()*pool.length)];
   this.previous.set(type,name);this.last.set(type,now);
-  const source=c.createBufferSource(),gain=c.createGain(),pan=c.createStereoPanner();source.buffer=this.buffers.get(name);source.playbackRate.value=p.rate*(type.startsWith('music-')?1:.96+Math.random()*.08);pan.pan.value=(Math.random()-.5)*.18;
+  const source=c.createBufferSource(),gain=c.createGain(),pan=c.createStereoPanner();source.buffer=this.buffers.get(name);source.playbackRate.value=p.rate*((type.startsWith('music-')||['zap','phone','chime','enhance'].includes(type))?1:.96+Math.random()*.08);pan.pan.value=(Math.random()-.5)*.18;
   const length=source.buffer.duration/source.playbackRate.value,level=p.gain/Math.sqrt(1+this.voices.size*.3);
   gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(level,now+.006);gain.gain.setValueAtTime(level,now+Math.max(.007,length-.04));gain.gain.linearRampToValueAtTime(0,now+length);
   source.connect(gain);gain.connect(pan);pan.connect(this.low);

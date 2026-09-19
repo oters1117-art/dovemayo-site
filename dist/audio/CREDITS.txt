@@ -39,3 +39,5 @@ Supplied by user as lp start.mp3 (5.747 s) and lp end.mp3 (1.368 s). Converted t
 Boss preview: roll-soft combines existing credited cloth with synthesized rounded contacts. zap-soft, phone-soft, chime-soft, wind-soft are locally synthesized, gently filtered original effects (scripts/make-boss-audio.py).
 
 Boss refinement: phone-soft-0/1/2, billiard-soft, air-soft and revised chime/wind are locally synthesized gentle cues; roll-soft and slime-soft also reuse credited existing cloth/bubble recordings. See scripts/refine-boss-audio.py.
+
+Local preview revision: church-bell uses Church Bell, Joseph SARDIN, CC0, https://bigsoundbank.com/church-bell-s0135.html (trimmed first strike, gentle lowpass and fade). firework-soft uses CC0 Firecracker with wick #4, https://bigsoundbank.com/firecracker-with-wick-4-s1140.html (softened attack, muffled tail and short reflections). fuse-soft uses CC0 Slow wick 1, Joseph SARDIN, https://bigsoundbank.com/slow-wick-1--s1306.html (loop excerpt, filtered). zap-note-0..4 are original synthesized pentatonic electrical tones.

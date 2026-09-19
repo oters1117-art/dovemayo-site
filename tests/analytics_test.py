@@ -26,4 +26,16 @@ class AnalyticsTest(unittest.TestCase):
  def test_05_other_visitor_cannot_update_play(self):
   a=requests.Session();a.post(self.url+'/api/visit',json={});pid=str(uuid.uuid4());a.post(self.url+'/api/play',json={'id':pid});b=requests.Session();b.post(self.url+'/api/visit',json={});b.post(self.url+'/api/end',json={'id':pid,'score':99999,'seconds':888,'active':888})
   with m.connect() as c:self.assertEqual(c.execute('select score from plays where id=?',(pid,)).fetchone()[0],0)
+ def test_06_player_averages_and_unique_top_twenty(self):
+  with m.connect() as c:
+   for i in range(25):
+    visitor=f'ranking-player-{i:02d}';c.execute('INSERT INTO visitors VALUES(?,?,?)',(visitor,10+i,10+i))
+    for attempt in range(3):c.execute('INSERT INTO plays VALUES(?,?,?,?,?,?,?)',(str(uuid.uuid4()),visitor,100,i*100+attempt,i*10+attempt,10,1))
+  data=requests.get(self.url+'/api/admin/stats').json()
+  self.assertEqual(len(data['scoreRanking']),20);self.assertEqual(len(data['timeRanking']),20)
+  self.assertEqual(len(set(r['player'] for r in data['scoreRanking'])),20)
+  self.assertEqual(data['scoreRanking'][0]['value'],2402)
+  self.assertEqual(data['timeRanking'][0]['value'],427)
+  self.assertAlmostEqual(data['averagePlayerSeconds'],1050/27)
+  page=requests.get(self.url+'/admin').text;self.assertNotIn('플레이 횟수',page)
 if __name__=='__main__':unittest.main()
