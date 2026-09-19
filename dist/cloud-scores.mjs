@@ -15,7 +15,7 @@ export function spawnCloudScore(arena,owner){
 }
 export function updateCloud(arena,h,dt){
  const g=arena.g,age=g.age,head=g.body[0],near=p=>((p.x-h.x)/31)**2+((p.y-h.y)/17)**2<1;
- if(!h.fired&&age<h.until-.18){const angle=h.chase?Math.atan2(head.y-h.y,head.x-h.x):0,step=(h.chase?95:9)*dt,p={x:h.x+Math.cos(angle)*step,y:h.y+Math.sin(angle)*step};
+ if(!h.fired&&age<h.until-.18){const angle=h.chase?Math.atan2(head.y-h.y,head.x-h.x):0,step=(h.chase?62:6)*dt,p={x:h.x+Math.cos(angle)*step,y:h.y+Math.sin(angle)*step};
   if(p.x>8&&p.x<g.width-8&&p.y>8&&p.y<g.height-8&&!arena.hazards.some(c=>c!==h&&c.type==='cloud'&&Math.hypot(c.x-p.x,c.y-p.y)<54)){h.x=p.x;h.y=p.y;}
  }
  if(age>=h.until&&!h.fired){h.fired=true;g.events.push({type:'zap',note:h.note,duration:h.noteDuration});}

@@ -13,6 +13,7 @@ export class BossArena{
  }
  spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??this.order[this.spawned%4],p=g.freePoint(160,kind===9?42:46);if(!p)return false;
   const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?120+this.spawned*90:Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
+  if(kind===8)this.spawnSatellites(e);
   if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;}
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
   return true;
@@ -36,7 +37,8 @@ export class BossArena{
  }
  spawnCake(debug=false){return spawnCake(this,debug);}
  checkCake(){if(this.defeated.size===4&&!this.cake&&!this.cakeClaimed&&!this.g.enemies.some(e=>e.kind===10))this.spawnCake();}
- clearOwner(e){if(this.hazards.some(h=>h.owner===e&&h.type==='tornado'))this.g.attraction=null;this.hazards=this.hazards.filter(h=>h.owner!==e);}
+ spawnSatellites(owner){const g=this.g;for(let i=0;i<5;i++){const angle=i*TAU/5;let p;for(let n=0;n<30;n++){const a=angle+n*.21,q={x:owner.x+Math.cos(a)*76,y:owner.y+Math.sin(a)*76};if(!g.blocked(q,11)&&!g.enemies.some(o=>g.hitsEnemy(q,o,12))){p=q;break;}}p??=g.nearPoint(owner,60,115);if(p)g.enemies.push({...p,kind:12,owner,orbitPhase:angle,born:g.age,state:'orbit'});}}
+ clearOwner(e){for(const child of [...this.g.enemies])if(child.kind===12&&child.owner===e)this.g.killEnemy(child,'owner');if(this.hazards.some(h=>h.owner===e&&h.type==='tornado'))this.g.attraction=null;this.hazards=this.hazards.filter(h=>h.owner!==e);}
  drop(kind,origin){const g=this.g,to=g.nearPoint(origin,45,115)||g.freePoint(25)||{x:clamp(origin.x,18,g.width-18),y:clamp(origin.y,18,g.height-18)};
   g.food.push({x:origin.x,y:origin.y,kind,slide:{from:{x:origin.x,y:origin.y},to,born:g.age,duration:.8}});}
  dropCarriedDynamite(){const g=this.g;for(const r of this.relics)if(r.carried){r.carried=false;Object.assign(r,{x:g.body[0].x,y:g.body[0].y,pickupAt:g.age+.8});}}
@@ -52,13 +54,14 @@ export class BossArena{
    if(e.state==='idle'){this.keepDistance(e,180,105,dt);if(age>=e.until){const pattern=Math.floor(g.random()*6);if(pattern===0||pattern===5){e.retreat=pattern===5;e.aim=this.landingPoint(e,e.retreat);e.state='jump';e.jumpAt=age;e.from={x:e.x,y:e.y};e.jumpDuration=1.65;e.until=age+e.jumpDuration;g.events.push({type:'throw'});}else if(pattern===1||pattern===4){e.state='hammer-charge';e.chargeAt=age;e.rapid=pattern===4;e.until=age+.32;}else{const ground={x:e.x,y:e.y+40},angle=Math.atan2(h.y-ground.y,h.x-ground.x);let radius=15;while(radius<52&&g.hitsEnemy({x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius},e,12))radius++;g.projectiles.push({type:'ball',x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius,vx:Math.cos(angle)*205,vy:Math.sin(angle)*205,born:age,owner:e,leftOwner:true,hits:0});g.events.push({type:'roll'});e.until=age+.7;}}}return;
   }
   if(e.kind===8){
-   if(e.state==='egg'){if(age>=e.until){e.state='idle';e.until=age+1;e.born=age-.7;delete e.gust;g.nextKnife=age;g.ensureKnife();g.events.push({type:'egg-hatch',x:e.x,y:e.y});}return;}
+   if(e.state==='egg'){if(age>=e.until){e.state='idle';e.until=age+1;e.born=age-.7;delete e.gust;this.spawnSatellites(e);g.nextKnife=age;g.ensureKnife();g.events.push({type:'egg-hatch',x:e.x,y:e.y});}return;}
    if(!this.hazards.some(p=>p.owner===e&&p.type==='laser'&&age<p.until+.6))brainRoam(this,e,dt);if(age<e.until)return;
    const pattern=Math.floor(g.random()*3);e.until=age+9;
    if(pattern===0)spawnCloudScore(this,e);
    if(pattern===1){e.until=age+2.35;const a=Math.atan2(h.y-e.y,h.x-e.x);this.hazards.push({type:'laser',x:e.x,y:e.y,angle:a,born:age,until:age+1.6,lockAt:age+1.2,beeps:0,owner:e});}
-   if(pattern===2&&!this.hazards.some(h=>h.type==='tornado'&&h.until>age)){for(let i=0;i<1;i++){const p=g.freePoint(85)||g.randomAim();this.hazards.push({...p,type:'tornado',born:age,until:age+5.5,owner:e});}e.castAt=age;g.events.push({type:'brain-cast',x:e.x,y:e.y,pattern:'blackhole'});g.events.push({type:'wind'});}return;
+   if(pattern===2&&!this.hazards.some(h=>h.type==='tornado'&&h.until>age)){for(let i=0;i<1;i++){const p=g.freePoint(85)||g.randomAim();this.hazards.push({...p,type:'tornado',born:age,activeAt:age+.72,beeps:0,until:age+6.22,owner:e});}e.castAt=age;g.events.push({type:'brain-cast',x:e.x,y:e.y,pattern:'blackhole'});}return;
   }
+  if(e.kind===12){if(!g.enemies.includes(e.owner)||e.owner.state==='egg'){g.killEnemy(e,'owner');return;}const angle=e.orbitPhase+age*2.7;g.moveEnemy(e,{x:e.owner.x+Math.cos(angle)*76,y:e.owner.y+Math.sin(angle)*76},225,dt);return;}
   if(e.kind===9){kingMove(this,e,dt);return;}
   if(e.kind===10){if(age>=e.until){e.until=age+3.2;const before=g.enemies.length;g.spawnEnemy(g.random()<.45?11:g.chooseEnemyKind());const child=g.enemies[before];if(child){const p=g.nearPoint(e,55,85);if(p){child.x=p.x;child.y=p.y;}child.king=g.enemies.find(k=>k.kind===9&&k.serial===e.serial);child.castle=e;child.guardAnchor=g.random()<.5&&child.king?child.king:e;child.guardCheckAt=age+6;}}return;}
   if(e.kind===11){const anchors=g.enemies.filter(o=>o.kind===9||o.kind===10);if(!anchors.includes(e.guardAnchor)||age>=(e.guardCheckAt||0)){const near=anchors.sort((p,q)=>dist(p,e)-dist(q,e))[0];if(!e.guardAnchor||!anchors.includes(e.guardAnchor)||near&&dist(near,e)+75<dist(e.guardAnchor,e))e.guardAnchor=near;e.guardCheckAt=age+3;}const anchor=e.guardAnchor;if(anchor){e.orbitAngle=(e.orbitAngle??Math.atan2(e.y-anchor.y,e.x-anchor.x))+dt*.8;g.moveEnemy(e,{x:anchor.x+Math.cos(e.orbitAngle)*95,y:anchor.y+Math.sin(e.orbitAngle)*95},82,dt);}else g.moveEnemy(e,h,105,dt);}
@@ -97,12 +100,11 @@ export class BossArena{
   for(const r of [...this.relics]){
    if(r.carried){Object.assign(r,g.blade());const target=g.enemies.find(e=>e.state!=='jump'&&dist(r,e)<g.enemyRadius(e)+(e.kind===10?30:12))||g.bombs.find(b=>!b.thrown&&dist(r,b)<18)||g.projectiles.find(p=>!p.dead&&!g.isFlying(p)&&dist(r,p)<18);if(target){r.attached=target;r.carried=false;r.installed=age;r.fuse=age+2.4;g.events.push({type:'fuse'});}continue;}
    if(r.attached){const offset=r.attached.kind===10?18:r.attached.kind>=6&&r.attached.kind<=9?14:6;r.x=r.attached.x+offset;r.y=r.attached.y+offset;if(age>=r.fuse){r.warnAt??=age;if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;this.area(r,150,'dynamite');}}continue;}
-   if(age>=(r.pickupAt||0)&&dist(r,g.body[0])<18){if(g.armed){g.armed=false;g.knife={x:r.x,y:r.y,pickupAt:age+.8};}r.carried=true;continue;}if(age<(r.pickupAt||0))continue;
-   const target=g.enemies.find(e=>dist(r,e)<g.enemyRadius(e)+(e.kind===10?30:12))||g.projectiles.find(p=>!p.dead&&!g.isFlying(p)&&dist(r,p)<18)||g.bombs.find(b=>!b.thrown&&dist(r,b)<18);
-   if(target){r.attached=target;r.installed=age;r.fuse=age+2.4;g.events.push({type:'fuse'});}
+   if(age>=(r.pickupAt||0)&&dist(r,g.body[0])<18){if(g.armed){g.armed=false;g.knife={x:r.x,y:r.y,pickupAt:age+.8};}r.carried=true;continue;}
   }
 
  }
- pauseEnemies(dt){for(const e of this.g.enemies)if(e.kind!==8)for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
+ pauseGroundEnemies(dt){for(const e of this.g.enemies)if(this.g.grounded(e))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
+ pauseEnemies(dt){for(const e of this.g.enemies)if(![8,12].includes(e.kind))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
  pause(dt){const g=this.g;for(const f of this.fireworks)f.at+=dt;for(const o of [...g.enemies,...g.projectiles,...g.bombs,...g.puddles,...this.hazards,...this.hands,...this.relics])for(const k of ['born','until','armed','patternUntil','nextShot','chargeAt','jumpAt','landAt','eggAt','roamUntil','fuse','lockAt','pickupAt'])if(typeof o[k]==='number'&&!(this.g.age<this.shockUntil&&o===this.shockOwner))o[k]+=dt;}
 }
