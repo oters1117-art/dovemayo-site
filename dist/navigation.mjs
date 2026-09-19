@@ -1,14 +1,14 @@
 // One-shot navigation. Every edge is swept, including diagonals and shortcuts.
-export function planRoute(start,goal,blocked,width,height){
+export function planRoute(start,goal,blocked,width,height,options={}){
  const clear=(a,b)=>{const d=Math.hypot(b.x-a.x,b.y-a.y),n=Math.max(1,Math.ceil(d/2));for(let i=1;i<=n;i++)if(blocked({x:a.x+(b.x-a.x)*i/n,y:a.y+(b.y-a.y)*i/n}))return false;return true;};
  if(blocked(goal))return null;if(clear(start,goal))return [{...goal}];
- const cell=8,cols=Math.ceil(width/cell),rows=Math.ceil(height/cell),heap=[],best=new Map(),seen=new Set(),cache=new Map();
+ const cell=options.cell||8,cols=Math.ceil(width/cell),rows=Math.ceil(height/cell),heap=[],best=new Map(),seen=new Set(),cache=new Map();
  const push=n=>{heap.push(n);let i=heap.length-1;while(i){const p=(i-1)>>1;if(heap[p].f<=n.f)break;heap[i]=heap[p];i=p;}heap[i]=n;};
  const pop=()=>{const n=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1].f<heap[j].f)j++;if(heap[j].f>=last.f)break;heap[i]=heap[j];i=j;}heap[i]=last;}return n;};
  const h=p=>Math.hypot(p.x-goal.x,p.y-goal.y);
  const first={...start,key:-1,g:0,f:h(start),parent:null};push(first);best.set(-1,0);
  let visits=0;
- while(heap.length&&visits++<50000){
+ while(heap.length&&visits++<(options.maxVisits||50000)){
   const n=pop();if(seen.has(n.key))continue;seen.add(n.key);
   if(h(n)<=cell*2&&clear(n,goal)){
    const path=[{...goal}];for(let a=n;a.parent;a=a.parent)path.push({x:a.x,y:a.y});path.reverse();

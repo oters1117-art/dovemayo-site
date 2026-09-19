@@ -11,6 +11,9 @@ class AnalyticsTest(unittest.TestCase):
   self.assertEqual(requests.get(self.url+'/api/admin/stats').status_code,200)
   page=requests.get(self.url+'/admin').text
   self.assertNotIn('type="password"',page)
+  self.assertLess(page.index('홈페이지 통계'),page.index('유입 사이트'))
+  self.assertLess(page.index('유입 사이트'),page.index('게임 통계'))
+  self.assertLess(page.index('게임 통계'),page.index('최고 점수'))
   self.assertIn('noindex,nofollow',page)
   self.assertNotIn('/admin',requests.get(self.url+'/').text)
  def test_02_metrics_deduplicated(self):
