@@ -47,3 +47,5 @@ User-supplied local-preview audio: chimeBell.mp3 -> chime-user.ogg, churchBell.m
 Local preview refinements: phone-key-0..11 are original standard DTMF keypad tone synthesis (12 keys; four presses per laser). phase-soft is original filtered noise / sine synthesis. Cloud chords are original short progressions rendered with a softly band-limited electrical harmonic waveform.
 
 church-short.ogg: supplied churchBell strike cropped to 240 ms with an exponential tail fade. cake-heavy.ogg: original low sine / filtered-noise synthesis for a cushioned heavy landing.
+
+Blackhole dial: locally synthesized soft DTMF 697/1209 Hz, 1.3 seconds. Church short: user-provided churchBell strike, 0.6-second rounded decay.

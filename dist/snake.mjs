@@ -80,7 +80,7 @@ function layout(){
 }
 function updateScore(){if(game){const t=Math.floor(game.age);const text=game.score+'\n'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');if(score.textContent!==text)score.textContent=text;const stars='★'.repeat(game.bossKills);if(bossStars.textContent!==stars)bossStars.textContent=stars;bossStars.hidden=!game.bossKills;}}
 function positionScore(){
-  if(score.hidden)return;const d=textBox(title,dot);score.style.left=Math.min(innerWidth-58,d.x+d.w+10)+'px';score.style.top=(d.y+d.h/2-30)+'px';const glyphs=glyphBoxes(title,title.firstChild),o=glyphs[1],dHead=glyphs[0];if(o&&dHead){bossStars.style.left=(o.x+o.w/2)+'px';bossStars.style.top=(dHead.y+dHead.h*.35-7)+'px';}
+  if(score.hidden)return;const d=textBox(title,dot);score.style.left=Math.min(innerWidth-58,d.x+d.w+10)+'px';score.style.top=(d.y+d.h/2-30)+'px';const glyphs=glyphBoxes(title,title.firstChild),o=glyphs[1],dHead=glyphs[0];if(o&&dHead){bossStars.style.left=o.x+'px';bossStars.style.top=(dHead.y+dHead.h*.35-7)+'px';}
 }
 function sizeCanvas(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
 async function start(angle=0){
@@ -160,10 +160,11 @@ function advance(now){
     if(e.type==='combo'&&['purple','orange'].includes(e.kind))flashBackground(e.kind==='purple'?'#bdc3e9':'#f3c45f',650);
     if(e.type==='laser'){pop('chime');flashBackground(reduced?'#ead0c9':'#f1a092',320);}
     if(e.type==='zap'&&!muted){if(e.note!==undefined)sound.playMidi(e.note,e.duration);else pop('zap');}
-    if(['roll','phone','blackhole-phone','hammer','fuse','enhance','billiard','slime'].includes(e.type))pop(e.type);
+    if(['roll','phone','blackhole-dial','hammer','fuse','enhance','billiard','slime'].includes(e.type))pop(e.type);
     if(['shield-pickup','shield-break','amulet','egg','egg-hatch'].includes(e.type)){pop(e.type==='shield-break'?'splash':e.type==='egg-hatch'?'eat':e.type==='egg'?'slime':e.type==='amulet'?'cloak':'special');burst(e,'#d59b55');}
+    if(e.type==='cake-prepare')finaleMusic.prepare();
     if(e.type==='cake-arrival'){finaleMusic.setMuted(muted);finaleMusic.play();}
-    if(e.type==='cake-land'){finaleMusic.stop();pop('cake-land');explosion({...e,wind:true,colors:['#fff','#e6e4df','#fff']});}
+    if(e.type==='cake-land'){finaleMusic.stop();pop('cake-land');}
     if(e.type==='celebration'){pop('chime');flashBackground('#f2cbe5',950);}
     if(e.type==='cake-star'){pop('blast');starBurst(e);}
     if(e.type==='cake-resume')finaleMusic.stop();

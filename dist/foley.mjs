@@ -1,5 +1,5 @@
 // Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
-export const SOUND_FILES=['church-short','cake-heavy','phase-soft','phone-key-0','phone-key-1','phone-key-2','phone-key-3','phone-key-4','phone-key-5','phone-key-6','phone-key-7','phone-key-8','phone-key-9','phone-key-10','phone-key-11','chime-user','church-user','blackhole-hum','church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
+export const SOUND_FILES=['blackhole-dial','church-short','cake-heavy','phase-soft','phone-key-0','phone-key-1','phone-key-2','phone-key-3','phone-key-4','phone-key-5','phone-key-6','phone-key-7','phone-key-8','phone-key-9','phone-key-10','phone-key-11','chime-user','church-user','blackhole-hum','church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
  'cake-land':{bank:['cake-heavy'],gain:.85,rate:1,gap:.3},
  'tooth-break':{bank:['paper-0','paper-1'],gain:.20,rate:1.1,gap:.12},
@@ -14,13 +14,13 @@ const profiles={
  dynamite:{bank:['firework-soft'],gain:1,rate:.88,gap:.1},
  roll:{bank:['roll-soft'],gain:.55,rate:1,gap:.4},
  zap:{bank:['zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4'],gain:.36,rate:1,gap:.07},
- 'blackhole-phone':{bank:Array.from({length:12},(_,i)=>'phone-key-'+i),gain:.33,rate:1,gap:.07},
+ 'blackhole-dial':{bank:['blackhole-dial'],gain:.32,rate:1,gap:1},
  phone:{bank:['phone-key-0','phone-key-1','phone-key-2','phone-key-3','phone-key-4','phone-key-5','phone-key-6','phone-key-7','phone-key-8','phone-key-9','phone-key-10','phone-key-11'],gain:.38,rate:1,gap:.2},
  chime:{bank:['chime-user'],gain:.85,rate:1,gap:.3},
  wind:{bank:['wind-soft'],gain:.3,rate:1,gap:.8},
  hammer:{bank:['cloth-0','cloth-1'],gain:.5,rate:.8,gap:.3},
  fuse:{bank:['fuse-soft'],gain:.35,rate:.8,gap:.3},
- enhance:{bank:['church-short'],gain:.62,rate:1,gap:.3},
+ enhance:{bank:['church-short'],gain:.95,rate:1,gap:.3},
  billiard:{bank:['billiard-soft'],gain:.7,rate:1,gap:.08},
  slime:{bank:['slime-soft'],gain:.7,rate:1,gap:.1},
  'air-pop':{bank:['air-soft'],gain:.65,rate:1,gap:.2},
