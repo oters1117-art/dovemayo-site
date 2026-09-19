@@ -1,7 +1,6 @@
 // Recorded foley, locally hosted; CC0 and Pixabay Content License. Sources and edits: /audio/CREDITS.txt.
 export const SOUND_FILES=['church-bell','firework-soft','fuse-soft','zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4','roll-soft','zap-soft','phone-soft','phone-soft-0','phone-soft-1','phone-soft-2','billiard-soft','slime-soft','air-soft','chime-soft','wind-soft','ice-0','ice-1','ice-2','paper-0','paper-1','paper-2','cloth-0','cloth-1','soft','bubble-clear-0','bubble-clear-1','bubble-clear-2','bubble-clear-3','bubble-clear-4','bubble-clear-5','apple-crunch','chili-flame','beer-pour','bubble-deep','page-soft','wine-clear','tooth-soft','shoe','underwater-clear','lp-start-pixabay','lp-end-pixabay'];
 const profiles={
- firework:{bank:['firework-soft'],gain:.65,rate:1,gap:.06},
  dynamite:{bank:['firework-soft'],gain:1,rate:.88,gap:.1},
  roll:{bank:['roll-soft'],gain:.55,rate:1,gap:.4},
  zap:{bank:['zap-note-0','zap-note-1','zap-note-2','zap-note-3','zap-note-4'],gain:.36,rate:1,gap:.07},

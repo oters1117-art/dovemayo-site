@@ -142,7 +142,7 @@ function advance(now){
     if(e.type==='dynamite-blast'){pop('dynamite');explosion(e);}
     if(e.type==='press'){pop('blast');explosion({...e,ellipse:true});}
     if(e.type==='firework'){pop('impact');explosion({...e,radius:25});}
-    if(e.type==='royal-firework'){pop('firework');explosion({...e,radius:25});}
+    if(e.type==='royal-firework'){pop('blast');explosion({...e,radius:25});}
     if(e.type==='air-pop'){pop('air-pop');explosion({...e,radius:75});}
     if(e.type==='enemy')say('적이 나타났어요.');
     if(e.type==='boss'){say((e.name||'보스')+' 등장. 칼을 찾아보세요.');pop('fail');}
