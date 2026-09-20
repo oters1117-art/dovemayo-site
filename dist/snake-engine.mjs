@@ -1,5 +1,5 @@
-import {cakeFootprint} from './cake-finale.mjs';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=1';
+import {cakeFootprint} from './cake-finale.mjs?v=20260920-royal2';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20260920-royal2';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});

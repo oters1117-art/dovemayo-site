@@ -18,6 +18,9 @@ document.querySelector('#refresh').onclick=load;load();</script></html>'''
 
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT/'dist'),**kw)
+ def end_headers(self):
+  self.send_header("Cache-Control","no-store")
+  super().end_headers()
  def log_message(self,*a):pass
  def cookie(self,name):
   try:return SimpleCookie(self.headers.get('Cookie','')).get(name).value
@@ -49,6 +52,7 @@ class Handler(SimpleHTTPRequestHandler):
   # Only public assets are served; no directory listing or project source escape.
   target=Path(self.translate_path(self.path)).resolve()
   if not target.is_relative_to((ROOT/'dist').resolve()) or (target.is_dir() and path!='/'):return self.response(404,{})
+  if "If-Modified-Since" in self.headers:del self.headers["If-Modified-Since"]
   return super().do_GET()
  def do_POST(self):
   if not self.valid_host():return self.response(403,{})
