@@ -226,12 +226,12 @@ test('blueberry periodically fires forward bullets that do not hurt the player',
  g.projectiles=[{type:'blue',...g.body[0],vx:0,vy:0,born:g.age}];g.updateHazards(.01);assert(!g.dead);
  g.age=8.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
 });
-test('blue bullets defeat ordinary enemies but lose to attacks and cannot kill bosses',()=>{
+test('blue bullets destroy teeth and ordinary enemies but cannot kill bosses',()=>{
  for(const target of ['enemy','shot','boss']){
  const g=fresh();g.food=[];g.projectiles=[{type:'blue',x:100,y:100,vx:0,vy:0,born:0}];
  if(target==='shot')g.projectiles.push({type:'tooth',x:100,y:100,vx:0,vy:0,born:0});
  else g.enemies=[{x:100,y:100,kind:target==='boss'?6:0,born:0}];
- g.updateHazards(.001);assert.equal(g.projectiles.length,target==='shot'?1:0);assert.equal(g.enemies.length,target==='boss'?1:0);
+ g.updateHazards(.001);assert.equal(g.projectiles.length,0);assert.equal(g.enemies.length,target==='boss'?1:0);
  }
 });
 test('boss randomly selects radial barrage, orbit machine gun and aimed fan',()=>{

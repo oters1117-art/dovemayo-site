@@ -8,7 +8,7 @@ export function updateCake(a){const g=a.g,age=g.age,c=a.cake;
    for(const p of [...g.food,...g.projectiles])if(cakeFootprint(p,c,9)){g.breakObject(p,p.type||'food');p.dead=true;p.cancelSpill=true;}g.food=g.food.filter(p=>!p.dead);g.finalizeShots();
    for(const b of [...g.bombs])if(cakeFootprint(b,c,10))g.explode(b);
    for(const list of [a.relics,a.hazards,g.puddles])for(let i=list.length-1;i>=0;i--)if(!list[i].carried&&cakeFootprint(list[i],c,10)){g.breakObject(list[i],list[i].type||'object');list.splice(i,1);}
-   if(g.knife&&cakeFootprint(g.knife,c,10)){g.breakObject(g.knife,'knife');g.knife=null;g.nextKnife=age+3;}
+   for(const k of [...g.knives])if(cakeFootprint(k,c,10)){g.breakObject(k,'knife');g.removeKnife(k);g.nextKnife=age+3;}
    if(g.body.some(p=>cakeFootprint(p,c,4)))g.fail('케이크에 깔렸어요.');
    if(g.dead)return;
   }

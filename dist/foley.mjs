@@ -7,7 +7,7 @@ const profiles={
  'brain-cast':{bank:['air-soft','bubble-deep'],gain:.46,rate:1.2,gap:.2},
  grab:{bank:['bubble-clear-1','bubble-clear-3'],gain:.55,rate:1.16,gap:.15},
  'king-throw':{bank:['cloth-1'],gain:.55,rate:1.2,gap:.15},
- cloak:{bank:['phase-soft'],gain:1,rate:1,gap:.15},
+ cloak:{bank:['cloth-0','cloth-1'],gain:.8,rate:.78,gap:.15},
  'egg-break':{bank:['ice-0','ice-2'],gain:.85,rate:.78,gap:.1},
  'hammer-break':{bank:['shoe'],gain:.5,rate:1.3,gap:.08},
  'ball-break':{bank:['billiard-soft'],gain:.8,rate:1.2,gap:.04},
@@ -85,7 +85,7 @@ export class FoleySound{
   const voice={source,gain,pan,type};this.voices.add(voice);
   source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(now);return length;
  }
- playMidi(note,duration=.25){const c=this.context;if(!c||c.state!=='running'||!Number.isFinite(note))return;const source=c.createOscillator(),gain=c.createGain(),pan=c.createStereoPanner(),t=c.currentTime,life=Math.max(.12,Math.min(.7,duration));if(c.createPeriodicWave){const real=new Float32Array(7),imag=new Float32Array([0,1,.28,.2,.07,.035,.015]);source.setPeriodicWave(c.createPeriodicWave(real,imag));}else source.type='triangle';source.frequency.value=440*2**((note-69)/12);pan.pan.value=(note-64)/60;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.17/Math.sqrt(1+this.voices.size*.2),t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+life);source.connect(gain);gain.connect(pan);pan.connect(this.low);const voice={source,gain,pan,type:'midi'};if(this.voices.size>=14)this.stopVoice(this.voices.values().next().value);this.voices.add(voice);source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(t);source.stop(t+life+.01);}
+ playMidi(note,duration=.25){const c=this.context;if(!c||c.state!=='running'||!Number.isFinite(note))return;const source=c.createOscillator(),gain=c.createGain(),pan=c.createStereoPanner(),t=c.currentTime,life=Math.max(.12,Math.min(.7,duration));if(c.createPeriodicWave){const real=new Float32Array(13),imag=new Float32Array([0,1,.62,.42,.31,.24,.19,.15,.12,.09,.07,.05,.035]);source.setPeriodicWave(c.createPeriodicWave(real,imag));}else source.type='sawtooth';source.frequency.value=440*2**((note-69)/12);pan.pan.value=(note-64)/60;gain.gain.setValueAtTime(0,t);const level=.115/Math.sqrt(1+this.voices.size*.2);gain.gain.linearRampToValueAtTime(level,t+.008);for(let at=.014;at<life*.65;at+=.014){gain.gain.linearRampToValueAtTime(level*.48,t+at);gain.gain.linearRampToValueAtTime(level,t+at+.006);}gain.gain.exponentialRampToValueAtTime(.0001,t+life);source.connect(gain);gain.connect(pan);pan.connect(this.low);const voice={source,gain,pan,type:'midi'};if(this.voices.size>=14)this.stopVoice(this.voices.values().next().value);this.voices.add(voice);source.onended=()=>{this.voices.delete(voice);source.disconnect();gain.disconnect();pan.disconnect();};source.start(t);source.stop(t+life+.01);}
  stopMusicCue(){for(const v of [...this.voices])if(v.type==='music-on'||v.type==='music-off')this.stopVoice(v);}
  stopVoice(v){if(!v)return;try{const t=this.context.currentTime;v.gain.gain.cancelScheduledValues(t);v.gain.gain.setTargetAtTime(0,t,.012);v.source.stop(t+.05);}catch{}this.voices.delete(v);}
  setUnderwater(active){

@@ -14,16 +14,16 @@ export class BossArena{
  spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??this.order[this.spawned%4],p=g.freePoint(160,kind===9?42:46);if(!p)return false;
   const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?90+this.spawned*90:Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
   if(kind===8)this.spawnSatellites(e);
-  if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;}
+  if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;const castle=g.enemies.at(-1);for(let i=0;i<3;i++)this.spawnCastleMob(castle,true);}
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
   return true;
  }
  hit(e,source){const g=this.g;
   if(e.kind===8&&e.state==='egg')return source==='egg-wall';
   if(e.kind===7){if(source==='ball'){e.until=Math.min(e.until,g.age+.25);return false;}if(e.state==='jump')return false;}
-  if(e.kind===10&&source!=='dynamite'&&source!=='celebration')return false;
+  if(e.kind===10&&source!=='attached-dynamite'&&source!=='celebration')return false;
   if(e.kind>=6&&e.kind<=9&&source!=='knife')return false;
-  if(e.kind===8){e.state='egg';e.eggAt=g.age;e.until=g.age+12;delete e.gust;this.clearOwner(e);g.knife=null;g.events.push({type:'egg',x:e.x,y:e.y});g.events.push({type:'brain-defeat'});return false;}return true;
+  if(e.kind===8){e.state='egg';e.eggAt=g.age;e.until=g.age+12;delete e.gust;this.clearOwner(e,true);g.events.push({type:'egg',x:e.x,y:e.y});g.events.push({type:'brain-defeat'});return false;}return true;
  }
  pushEgg(e,dt){const g=this.g,near=g.body.reduce((p,q)=>dist(q,e)<dist(p,e)?q:p,g.body[0]);if(dist(near,e)<28)g.pushObject(e,near,180);}
  completeBoss(e){if(e.clearCounted)return;e.clearCounted=true;this.g.bossKills++;if(e.serial>=0&&e.serial<4)this.defeated.add(e.serial);}
@@ -39,11 +39,12 @@ export class BossArena{
  spawnCake(debug=false){return spawnCake(this,debug);}
  checkCake(){if(this.defeated.size!==4||this.cake||this.cakeClaimed||this.g.enemies.some(e=>e.kind===9||e.kind===10))return;if(this.cakeAt===undefined){this.cakeAt=this.g.age+7;this.g.events.push({type:'cake-prepare'});}if(this.g.age>=this.cakeAt)this.spawnCake();}
  spawnSatellites(owner){const g=this.g;for(let i=0;i<5;i++){const angle=i*TAU/5;let p;for(let n=0;n<30;n++){const a=angle+n*.21,q={x:owner.x+Math.cos(a)*76,y:owner.y+Math.sin(a)*76};if(!g.blocked(q,11)&&!g.enemies.some(o=>g.hitsEnemy(q,o,12))){p=q;break;}}p??=g.nearPoint(owner,60,115);if(p)g.enemies.push({...p,kind:12,owner,orbitPhase:angle,born:g.age,state:'orbit'});}}
- clearOwner(e){for(const child of [...this.g.enemies])if(child.kind===12&&child.owner===e)this.g.killEnemy(child,'owner');if(this.hazards.some(h=>h.owner===e&&h.type==='tornado'))this.g.attraction=null;this.hazards=this.hazards.filter(h=>h.owner!==e);}
+ clearOwner(e,preserveHazards=false){for(const child of [...this.g.enemies])if(child.kind===12&&child.owner===e)this.g.killEnemy(child,'owner');if(preserveHazards){this.hazards=this.hazards.filter(h=>h.owner!==e||['cloud','tornado'].includes(h.type));return;}if(this.hazards.some(h=>h.owner===e&&h.type==='tornado'))this.g.attraction=null;this.hazards=this.hazards.filter(h=>h.owner!==e);}
  drop(kind,origin){const g=this.g,to=g.nearPoint(origin,45,115)||g.freePoint(25)||{x:clamp(origin.x,18,g.width-18),y:clamp(origin.y,18,g.height-18)};
   g.food.push({x:origin.x,y:origin.y,kind,slide:{from:{x:origin.x,y:origin.y},to,born:g.age,duration:.8}});}
  dropCarriedDynamite(){const g=this.g;for(const r of this.relics)if(r.carried){r.carried=false;Object.assign(r,{x:g.body[0].x,y:g.body[0].y,pickupAt:g.age+.8});}}
- ensureDynamite(){const g=this.g;if(g.enemies.some(e=>e.kind===10)&&!this.relics.some(r=>r.type==='dynamite')&&g.age>=this.nextDynamite){const p=g.freePoint(45);if(p)this.relics.push({...p,type:'dynamite',born:g.age});}}
+ ensureDynamite(){const g=this.g;if(g.age<this.nextDynamite)return;const needed=g.enemies.filter(e=>e.kind===10).length;for(let i=this.relics.filter(r=>r.type==='dynamite').length;i<needed;i++){const p=g.freePoint(45);if(!p)break;this.relics.push({...p,type:'dynamite',born:g.age});}}
+ spawnCastleMob(castle,opening=false){const g=this.g,p=g.nearPoint(castle,60,100)||g.freePoint(40,12);if(!p)return;const kind=g.random()<.45?11:g.chooseEnemyKind(),e={...p,kind,born:opening?g.age-1:g.age,state:'idle',until:g.age+(kind===4?12:2),king:castle.king,castle,guardAnchor:castle,guardCheckAt:g.age+6};if(opening){e.thrown={from:{x:castle.x,y:castle.y},to:p,born:g.age};e.x=castle.x;e.y=castle.y;}g.enemies.push(e);}
  updateEnemy(e,dt){const g=this.g,h=g.enemyTarget(e),age=g.age;
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
@@ -76,13 +77,13 @@ export class BossArena{
   for(const p of g.projectiles)if(!g.isFlying(p)&&inside(p,8)){p.dead=true;p.cancelSpill=true;}
   g.food=g.food.filter(f=>{if(f.slide?.born===g.age||!inside(f,8))return true;g.breakObject(f,'food');return false;});g.puddles=g.puddles.filter(f=>{if(!inside(f,f.radius))return true;g.breakObject(f,'puddle');return false;});
   for(const b of [...g.bombs])if(g.bombs.includes(b)&&inside(b,10))g.explode(b);
-  if(g.knife&&inside(g.knife)){g.breakObject(g.knife,'knife');g.knife=null;g.nextKnife=g.age+3;}
+  for(const k of [...g.knives])if(!k.held&&!k.thrown&&inside(k)){g.breakObject(k,'knife');g.removeKnife(k);g.nextKnife=g.age+3;}
   if(inside(g.body[0],4)&&!g.invincible)g.fail('보스의 범위 공격에 맞았어요.');
  }
  update(dt){const g=this.g,age=g.age;this.ensureDynamite();this.checkCake();updateCake(this);
   hands(this,dt);gusts(this,dt);
   for(const f of this.fireworks)if(!f.done&&age>=f.at){f.done=true;const target=f.target;if(g.enemies.includes(target)){g.killEnemy(target,'royal');g.events.push({type:'royal-firework',x:target.x,y:target.y});}}this.fireworks=this.fireworks.filter(f=>!f.done);
-  for(const b of g.bombs)if(b.thrown)thrown(this,b);
+  for(const b of [...g.bombs,...g.knives])if(b.thrown)thrown(this,b);
   for(const h of this.hazards){if(age<h.born)continue;
    if(h.type==='cloud')updateCloud(this,h,dt);
    if(h.type==='laser'){const t=age-h.born;if(!h.fired&&age<(h.lockAt??h.until-.5)){const target=g.enemyTarget(h.owner),desired=Math.atan2(target.y-h.owner.y,target.x-h.owner.x),delta=Math.atan2(Math.sin(desired-h.angle),Math.cos(desired-h.angle));h.angle+=clamp(delta,-dt*.6,dt*.6);h.x=h.owner.x+Math.cos(h.angle)*48;h.y=h.owner.y+Math.sin(h.angle)*48;}
@@ -92,17 +93,18 @@ export class BossArena{
      for(const e of [...g.enemies])if(e!==h.owner&&hit(e)&&g.killEnemy(e,'laser'))g.events.push({type:'firework',x:e.x,y:e.y});
      for(const p of [...g.food,...g.projectiles])if(hit(p)&&!p.laserHit){p.laserHit=true;p.dead=true;g.events.push({type:'firework',x:p.x,y:p.y});}g.food=g.food.filter(p=>!p.laserHit);
      for(const b of [...g.bombs])if(hit(b))g.explode(b);
-     if(g.knife&&hit(g.knife)){g.events.push({type:'firework',...g.knife});g.knife=null;g.nextKnife=age+2;}
+     for(const k of [...g.knives])if(!k.held&&!k.thrown&&hit(k)){g.events.push({type:'firework',...k});g.removeKnife(k);g.nextKnife=age+2;}
     }
    }
    if(h.type==='tornado')tornado(this,h,dt);
   }
   this.hazards=this.hazards.filter(h=>age<h.until+(h.type==='cloud'?.8:h.type==='laser'?.6:.05));
   for(const r of [...this.relics]){
+   if(r.held)continue;if(r.thrown){thrown(this,r);continue;}
    if(r.blackholeArmed){if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;this.area(r,150,'dynamite');}continue;}
    if(r.carried){Object.assign(r,g.blade());const target=g.enemies.find(e=>e.state!=='jump'&&dist(r,e)<g.enemyRadius(e)+(e.kind===10?30:12))||g.bombs.find(b=>!b.thrown&&dist(r,b)<18)||g.projectiles.find(p=>!p.dead&&!g.isFlying(p)&&dist(r,p)<18);if(target){r.attached=target;r.carried=false;r.installed=age;r.fuse=age+2.4;g.events.push({type:'fuse'});}continue;}
-   if(r.attached){const offset=r.attached.kind===10?18:r.attached.kind>=6&&r.attached.kind<=9?14:6;r.x=r.attached.x+offset;r.y=r.attached.y+offset;if(age>=r.fuse){r.warnAt??=age;if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;this.area(r,150,'dynamite');}}continue;}
-   if(age>=(r.pickupAt||0)&&dist(r,g.body[0])<18){if(g.armed){g.armed=false;g.knife={x:r.x,y:r.y,pickupAt:age+.8};}r.carried=true;continue;}
+   if(r.attached){const offset=r.attached.kind===10?18:r.attached.kind>=6&&r.attached.kind<=9?14:6;r.x=r.attached.x+offset;r.y=r.attached.y+offset;if(age>=r.fuse){r.warnAt??=age;if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;if(r.attached?.kind===10&&g.enemies.includes(r.attached))g.killEnemy(r.attached,'attached-dynamite');this.area(r,150,'dynamite');}}continue;}
+   if(age>=(r.pickupAt||0)&&dist(r,g.body[0])<18){if(g.armed){g.armed=false;g.knives.push({x:r.x,y:r.y,type:'knife',pickupAt:age+.8});}this.dropCarriedDynamite();r.carried=true;continue;}
   }
 
  }
