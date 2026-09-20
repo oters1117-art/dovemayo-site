@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
-import {spawnCake,updateCake} from './cake-finale.mjs?v=20260920-royal2';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260920-royal2';
+import {spawnCake,updateCake} from './cake-finale.mjs?v=20260920-royal3';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260920-royal3';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -44,7 +44,7 @@ export class BossArena{
   g.food.push({x:origin.x,y:origin.y,kind,slide:{from:{x:origin.x,y:origin.y},to,born:g.age,duration:.8}});}
  dropCarriedDynamite(){const g=this.g;for(const r of this.relics)if(r.carried){r.carried=false;Object.assign(r,{x:g.body[0].x,y:g.body[0].y,pickupAt:g.age+.8});}}
  ensureDynamite(){const g=this.g;if(g.age<this.nextDynamite)return;const needed=g.enemies.filter(e=>e.kind===10).length;for(let i=this.relics.filter(r=>r.type==='dynamite').length;i<needed;i++){const p=g.freePoint(45);if(!p)break;this.relics.push({...p,type:'dynamite',born:g.age});}}
- spawnCastleMob(castle,opening=false){const g=this.g,p=g.nearPoint(castle,60,100)||g.freePoint(40,12);if(!p)return;const kind=g.random()<.45?11:g.chooseEnemyKind(),e={...p,kind,born:opening?g.age-1:g.age,state:'idle',until:g.age+(kind===4?12:2),king:castle.king,castle,guardAnchor:castle,guardCheckAt:g.age+6};if(opening){e.thrown={from:{x:castle.x,y:castle.y},to:p,born:g.age};e.x=castle.x;e.y=castle.y;}g.enemies.push(e);}
+ spawnCastleMob(castle,opening=false){const g=this.g,p=g.nearPoint(castle,60,100)||g.freePoint(40,12);if(!p)return;const kind=opening?11:[0,1,2,3,4,5,11][Math.floor(g.random()*7)],e={...p,kind,born:opening?g.age-1:g.age,state:'idle',until:g.age+(kind===4?12:2),king:castle.king,castle,guardAnchor:castle,guardCheckAt:g.age+6};if(opening){e.thrown={from:{x:castle.x,y:castle.y},to:p,born:g.age};e.x=castle.x;e.y=castle.y;}g.enemies.push(e);}
  updateEnemy(e,dt){const g=this.g,h=g.enemyTarget(e),age=g.age;
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
@@ -65,7 +65,7 @@ export class BossArena{
   }
   if(e.kind===12){if(!g.enemies.includes(e.owner)||e.owner.state==='egg'){g.killEnemy(e,'owner');return;}const siblings=g.enemies.filter(o=>o.kind===12&&o.owner===e.owner),count=siblings.length,speed=count===1?4.4:count===2?2.2:count===3?.6:count===4?.45:.35,owner=e.owner;if(owner.formationAt!==age){owner.formationAngle=(owner.formationAngle||0)+speed*dt;owner.formationAt=age;}const target=owner.formationAngle+siblings.indexOf(e)*TAU/count,delta=Math.atan2(Math.sin(target-e.orbitPhase),Math.cos(target-e.orbitPhase));e.orbitPhase+=delta*Math.min(1,dt*7);const angle=e.orbitPhase;g.moveEnemy(e,{x:owner.x+Math.cos(angle)*76,y:owner.y+Math.sin(angle)*76},count===1?350:count===2?225:150,dt);return;}
   if(e.kind===9){kingMove(this,e,dt);return;}
-  if(e.kind===10){if(age>=e.until){e.until=age+3.2;const before=g.enemies.length;g.spawnEnemy(g.random()<.45?11:g.chooseEnemyKind());const child=g.enemies[before];if(child){const p=g.nearPoint(e,55,85);if(p){child.x=p.x;child.y=p.y;}child.king=g.enemies.find(k=>k.kind===9&&k.serial===e.serial);child.castle=e;child.guardAnchor=g.random()<.5&&child.king?child.king:e;child.guardCheckAt=age+6;}}return;}
+  if(e.kind===10){if(age>=e.until){e.until=age+3.2;this.spawnCastleMob(e);}return;}
   if(e.kind===11){const anchors=g.enemies.filter(o=>o.kind===9||o.kind===10);if(!anchors.includes(e.guardAnchor)||age>=(e.guardCheckAt||0)){const near=anchors.sort((p,q)=>dist(p,e)-dist(q,e))[0];if(!e.guardAnchor||!anchors.includes(e.guardAnchor)||near&&dist(near,e)+75<dist(e.guardAnchor,e))e.guardAnchor=near;e.guardCheckAt=age+3;}const anchor=e.guardAnchor;if(anchor){e.orbitAngle=(e.orbitAngle??Math.atan2(e.y-anchor.y,e.x-anchor.x))+dt*.8;g.moveEnemy(e,{x:anchor.x+Math.cos(e.orbitAngle)*95,y:anchor.y+Math.sin(e.orbitAngle)*95},82,dt);}else g.moveEnemy(e,h,105,dt);}
 
  }

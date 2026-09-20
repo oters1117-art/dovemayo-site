@@ -1,12 +1,12 @@
 import {DebugKeys} from './debug-keys.mjs';
 import {FinaleMusic} from './finale-music.mjs';
-import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260920-royal2';
+import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260920-royal3';
 import {GameMetrics} from './metrics.mjs?v=1';
 import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
-import {FoleySound} from './foley.mjs?v=20260920-royal2';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20260920-royal2';
+import {FoleySound} from './foley.mjs?v=20260920-royal3';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20260920-royal3';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -40,7 +40,7 @@ const finaleMusic=new FinaleMusic({onActive:value=>music.setDucked?.(value)});
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
 function loadAssets(){
-  return assets ||= fetch('/emoji/manifest.json?v=14').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
+  return assets ||= fetch('/emoji/manifest.json?v=15').then(r=>{if(!r.ok)throw Error('assets');return r.json();}).then(async manifest=>{
     await Promise.all(['food','enemies','props','boss','expansion'].flatMap(type=>manifest[type].map((name,i)=>new Promise(resolve=>{
       const img=new Image();img.onload=()=>resolve();img.onerror=()=>resolve();img.src='/emoji/'+name+'.svg';images[type][i]=img;
     }))));
@@ -320,7 +320,7 @@ function draw(){
   drawDynamite(ctx,game,emoji);
   for(const r of game.arena?.relics||[])if(!r.attached&&!r.blackholeArmed)pickupSparkles(r);
   drawClouds(ctx,game,emoji);
-  if(game.enemies.some(e=>e.kind===8&&e.state==='egg')){ctx.save();ctx.strokeStyle='rgba(228,120,120,.7)';ctx.lineWidth=4;ctx.strokeRect(2,2,innerWidth-4,innerHeight-4);ctx.restore();}
+  if(game.enemies.some(e=>e.kind===8&&e.state==='egg')){ctx.save();const w=innerWidth,h=innerHeight,depth=Math.min(w,h)*.16,alpha=reduced?.2:.19+.065*Math.sin(game.age*1.5);for(const [x0,y0,x1,y1,x,y,rw,rh] of [[0,0,depth,0,0,0,depth,h],[w,0,w-depth,0,w-depth,0,depth,h],[0,0,0,depth,0,0,w,depth],[0,h,0,h-depth,0,h-depth,w,depth]]){const warm=ctx.createLinearGradient(x0,y0,x1,y1);warm.addColorStop(0,`rgba(231,82,62,${alpha})`);warm.addColorStop(.4,`rgba(239,115,83,${alpha*.45})`);warm.addColorStop(1,'rgba(239,115,83,0)');ctx.fillStyle=warm;ctx.fillRect(x,y,rw,rh);}ctx.restore();}
 }
 function toggleSound(){muted=!muted;finaleMusic.setMuted(muted);if(muted)stopMusic();else{unlockAudio();pop();updateMusic();}}
 touchSurface.addEventListener('pointerdown',e=>{

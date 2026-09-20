@@ -267,8 +267,8 @@ test('all ordinary colored effects replace both color and mechanics',()=>{
 });
 test('rainbow combines with food colors, resets duration, and still rejects potion',()=>{
  const g=fresh();g.setBuff('rainbow',10);g.age=2;
- for(const kind of ['red','blue','orange','purple']){assert.equal(g.setBuff(kind,8),true);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,12);assert.equal(g.combo,kind);assert(g.currentSpeed>125);}
- assert.equal(g.setBuff('green',8),false);g.age=12.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
+ for(const kind of ['red','blue','orange','purple']){assert.equal(g.setBuff(kind,8),true);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,17);assert.equal(g.combo,kind);assert(g.currentSpeed>125);}
+ assert.equal(g.setBuff('green',8),false);g.age=17.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
 });
 
 test('potion pools cancel blue fire and eggplant freezing',()=>{

@@ -1,5 +1,5 @@
-import {cakeFootprint} from './cake-finale.mjs?v=20260920-royal2';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20260920-royal2';
+import {cakeFootprint} from './cake-finale.mjs?v=20260920-royal3';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20260920-royal3';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -45,11 +45,11 @@ export class SnakeGame{
     const current=this.buffKind,colors=['purple','red','blue','orange'];
     if(current==='rainbow'&&kind!=='rainbow'){
       if(!colors.includes(kind))return false;
-      this.combo=kind;this.buff.until=this.age+10;this.graceUntil=this.buff.until+1.5;
+      this.combo=kind;this.buff.until=this.age+15;this.graceUntil=this.buff.until+1.5;
       if(kind==='blue')this.nextBlueShot=this.age;this.events.push({type:'combo',kind});return true;
     }
     this.combo=kind==='rainbow'?(current==='rainbow'?this.combo:colors.includes(current)?current:null):null;
-    this.buff={kind,until:this.age+duration};
+    this.buff={kind,until:this.age+(this.combo?15:duration)};
     if(kind==='rainbow'){this.graceUntil=this.buff.until+1.5;if(this.combo==='blue')this.nextBlueShot=this.age;if(this.combo)this.events.push({type:'combo',kind:this.combo});}
     return true;
   }
