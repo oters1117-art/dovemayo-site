@@ -14,7 +14,7 @@ vm.createContext(sandbox);
 const source=readFileSync(new URL('../dist/snake.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'');
 vm.runInContext(source+`;globalThis.test={set(g){game=g;mode='playing';score.hidden=false;dot.style.visibility='hidden';canvas.hidden=false},failure,end,advance,explosion,updateMusic,get(){return {game,mode,score,bossStars,escapeKey,canvas,dot,sound,touchSurface,stick}}};`,sandbox);
 const t=sandbox.test;
-const game={age:65,score:9,bossKills:3,body:[{x:200,y:200},{x:190,y:200}],angle:0,food:[],enemies:[],projectiles:[],puddles:[],bombs:[],buffKind:'rainbow',invincible:true,step(){throw Error('Dead game advanced')}};
+const game={age:65,score:9,bossKills:3,earnedStars:['gold','gold','gold'],body:[{x:200,y:200},{x:190,y:200}],angle:0,food:[],enemies:[],projectiles:[],puddles:[],bombs:[],buffKind:'rainbow',invincible:true,step(){throw Error('Dead game advanced')}};
 t.set(game);t.explosion({x:100,y:100});t.failure();
 let state=t.get();assert.equal(state.mode,'dead');assert.equal(state.game,game);assert.equal(state.score.textContent,'9\n01:05');assert.equal(state.escapeKey.hidden,false);assert.equal(state.bossStars.textContent,'★★★');assert(!state.bossStars.hidden);assert.equal(state.canvas.hidden,false);assert.equal(state.dot.style.visibility,'hidden');assert.equal(strokes.at(-1),'#929294');assert.ok(animations.slice(0,3).every(a=>a.paused));assert.equal(animations.at(-1).paused,false);
 t.advance(2000);listeners.visibilitychange();listeners.blur();t.updateMusic();assert.equal(state.sound.underwater,false);assert.equal(game.target,undefined);
@@ -35,4 +35,4 @@ console.log('Touch gestures drive heading and gameplay blocks link clicks: passe
 
 t.set(game);t.failure();now+=800;listeners.keydown({key:'Escape',preventDefault(){}});assert.equal(t.get().mode,'idle');
 
-game.bossKills=2;game.cakesEaten=1;t.set(game);t.failure();assert.equal(t.get().bossStars.textContent,"★★★");assert.equal(t.get().bossStars.innerHTML,'<span style="color:#e783ac">★</span>★★');console.log("Cake star adds to existing boss stars: passed");
+game.bossKills=2;game.cakesEaten=1;game.earnedStars=['gold','gold','pink'];t.set(game);t.failure();assert.equal(t.get().bossStars.textContent,"★★★");assert.equal(t.get().bossStars.innerHTML,'★★<span style="color:#e783ac">★</span>');console.log("Cake star adds to existing boss stars: passed");

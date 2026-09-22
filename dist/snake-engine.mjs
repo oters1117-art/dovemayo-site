@@ -1,5 +1,5 @@
-import {cakeFootprint} from './cake-finale.mjs?v=20260923-stars7';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20260923-stars7';
+import {cakeFootprint} from './cake-finale.mjs?v=20260923-order8';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20260923-order8';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -14,7 +14,7 @@ export class SnakeGame{
   constructor({width,height,origin,angle=0,obstacles=[],random=Math.random,routePlanner=null,musicVolume=50}){
     Object.assign(this,{width,height,obstacles,random,routePlanner,angle,target:angle});
     this.body=[{...origin}];this.radius=4;this.length=1;this.goalLength=42;this.speed=125;
-    this.age=0;this.score=0;this.kills=0;this.bossKills=0;this.dead=false;this.events=[];
+    this.age=0;this.score=0;this.kills=0;this.bossKills=0;this.earnedStars=[];this.dead=false;this.events=[];
     this.food=[];this.enemies=[];this.projectiles=[];this.bombs=[];this.puddles=[];
     this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=90;
     this.nextRefill=0;this.knives=[];this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();

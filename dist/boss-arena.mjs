@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
-import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-stars7';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-stars7';
+import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-order8';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-order8';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -26,7 +26,7 @@ export class BossArena{
   if(e.kind===8){e.state='egg';e.eggAt=g.age;e.until=g.age+12;delete e.gust;this.clearOwner(e,true);g.events.push({type:'egg',x:e.x,y:e.y});g.events.push({type:'brain-defeat'});return false;}return true;
  }
  pushEgg(e,dt){const g=this.g,near=g.body.reduce((p,q)=>dist(q,e)<dist(p,e)?q:p,g.body[0]);if(dist(near,e)<28)g.pushObject(e,near,180);}
- completeBoss(e){if(e.clearCounted)return;e.clearCounted=true;this.g.bossKills++;if(e.serial>=0&&e.serial<4&&(e.round??0)===this.round)this.defeated.add(e.serial);}
+ completeBoss(e){if(e.clearCounted)return;e.clearCounted=true;this.g.bossKills++;this.g.earnedStars.push('gold');if(e.serial>=0&&e.serial<4&&(e.round??0)===this.round)this.defeated.add(e.serial);}
  defeatedBoss(e){const g=this.g;if(e.kind>=6&&e.kind<=8)this.completeBoss(e);if(e.kind===6)g.dropBossTomatoes(e);
   if(e.kind===7){for(let i=0,n=4+Math.floor(g.random()*5);i<n;i++)this.drop(Math.floor(g.random()*47),e);this.drop(REWARD.PUMPKIN,e);}
   if(e.kind===8){this.drop(REWARD.NAZAR,e);g.events.push({type:'egg-break',x:e.x,y:e.y});}

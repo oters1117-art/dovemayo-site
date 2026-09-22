@@ -13,3 +13,5 @@ test('cake cycles repeat: first four are unique, later rolls can repeat, with 60
  }
  assert.equal(g.bossKills,12);assert.equal(g.cakesEaten,3);
 });
+
+test('boss and cake stars retain acquisition order, including bosses after a debug cake',()=>{const g=new SnakeGame({width:1400,height:1000,origin:{x:100,y:100}});for(let i=0;i<3;i++)g.arena.completeBoss({serial:-1});g.arena.cake={x:600,y:400,born:0,duration:8,landed:true,collectAt:0};g.age=10;g.body=[{x:600,y:430}];updateCake(g.arena);const boss={serial:-1};g.arena.completeBoss(boss);g.arena.completeBoss(boss);assert.deepEqual(g.earnedStars,['gold','gold','gold','pink','gold']);});
