@@ -34,3 +34,5 @@ let prevented=false;listeners.click({target:{closest:()=>true},preventDefault(){
 console.log('Touch gestures drive heading and gameplay blocks link clicks: passed');
 
 t.set(game);t.failure();now+=800;listeners.keydown({key:'Escape',preventDefault(){}});assert.equal(t.get().mode,'idle');
+
+game.bossKills=2;game.cakesEaten=1;t.set(game);t.failure();assert.equal(t.get().bossStars.textContent,"★★★");assert.equal(t.get().bossStars.innerHTML,'<span style="color:#e783ac">★</span>★★');console.log("Cake star adds to existing boss stars: passed");

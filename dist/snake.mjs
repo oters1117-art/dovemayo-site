@@ -1,12 +1,12 @@
 import {DebugKeys} from './debug-keys.mjs';
 import {FinaleMusic} from './finale-music.mjs';
-import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260923-cycle6';
+import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260923-stars7';
 import {GameMetrics} from './metrics.mjs?v=1';
 import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
-import {FoleySound} from './foley.mjs?v=20260923-cycle6';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20260923-cycle6';
+import {FoleySound} from './foley.mjs?v=20260923-stars7';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20260923-stars7';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -78,7 +78,7 @@ function layout(){
   const obstacles=[...glyphBoxes(title,title.firstChild),...glyphBoxes(subtitle,subtitle.firstChild),...[...document.querySelectorAll('.card')].map(el=>{const b=el.getBoundingClientRect();return cardObstacle(b,(parseFloat(getComputedStyle(el.parentElement).columnGap)||12)*scale,(parseFloat(getComputedStyle(el.parentElement).rowGap)||18)*scale);})];
   return {width:innerWidth,height:innerHeight,origin:{x:d.x+d.w/2,y:d.y+d.h/2},obstacles};
 }
-function updateScore(){if(game){const t=Math.floor(game.age);const text=game.score+'\n'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');if(score.textContent!==text)score.textContent=text;const gold=Math.max(0,game.bossKills-(game.arena?.roundBossBase||0)),pink=game.cakesEaten||0,stars='<span style="color:#e783ac">'+'★'.repeat(pink)+'</span>'+'★'.repeat(gold);if(bossStars.innerHTML!==stars)bossStars.innerHTML=stars;bossStars.hidden=!(gold||pink);}}
+function updateScore(){if(game){const t=Math.floor(game.age);const text=game.score+'\n'+String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');if(score.textContent!==text)score.textContent=text;const gold=Math.max(0,game.bossKills),pink=game.cakesEaten||0,stars='<span style="color:#e783ac">'+'★'.repeat(pink)+'</span>'+'★'.repeat(gold);if(bossStars.innerHTML!==stars)bossStars.innerHTML=stars;bossStars.hidden=!(gold||pink);}}
 function positionScore(){
   if(score.hidden)return;const d=textBox(title,dot);score.style.left=Math.min(innerWidth-58,d.x+d.w+10)+'px';score.style.top=(d.y+d.h/2-30)+'px';const glyphs=glyphBoxes(title,title.firstChild),o=glyphs[1],dHead=glyphs[0];if(o&&dHead){bossStars.style.left=o.x+'px';bossStars.style.top=(dHead.y+dHead.h*.35-7)+'px';}
 }

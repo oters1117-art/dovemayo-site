@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
-import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-cycle6';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-cycle6';
+import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-stars7';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-stars7';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -9,7 +9,7 @@ export const attackRank=type=>type==='dynamite'?4:['blast','knife'].includes(typ
 export class BossArena{
  removeHand(hand){if(hand.target)hand.target.held=false;const i=this.hands.indexOf(hand);if(i>=0)this.hands.splice(i,1);}
  constructor(g){this.g=g;this.order=[6,7,8,9];for(let i=3;i>0;i--){const j=Math.floor(g.random()*(i+1));[this.order[i],this.order[j]]=[this.order[j],this.order[i]];}
-  this.round=0;this.roundStartedAt=0;this.roundBossBase=0;this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
+  this.round=0;this.roundStartedAt=0;this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
  }
  spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??(this.round===0?this.order[this.spawned%4]:6+Math.floor(g.random()*4)),p=g.freePoint(160,kind===9?42:46);if(!p)return false;
   const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,round:this.round,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?(this.round===0?90+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
