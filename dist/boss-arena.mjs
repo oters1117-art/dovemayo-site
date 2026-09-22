@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
-import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-fix5';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-fix5';
+import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-cycle6';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-cycle6';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -9,10 +9,10 @@ export const attackRank=type=>type==='dynamite'?4:['blast','knife'].includes(typ
 export class BossArena{
  removeHand(hand){if(hand.target)hand.target.held=false;const i=this.hands.indexOf(hand);if(i>=0)this.hands.splice(i,1);}
  constructor(g){this.g=g;this.order=[6,7,8,9];for(let i=3;i>0;i--){const j=Math.floor(g.random()*(i+1));[this.order[i],this.order[j]]=[this.order[j],this.order[i]];}
-  this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
+  this.round=0;this.roundStartedAt=0;this.roundBossBase=0;this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
  }
- spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??this.order[this.spawned%4],p=g.freePoint(160,kind===9?42:46);if(!p)return false;
-  const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?90+this.spawned*90:Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
+ spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??(this.round===0?this.order[this.spawned%4]:6+Math.floor(g.random()*4)),p=g.freePoint(160,kind===9?42:46);if(!p)return false;
+  const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,round:this.round,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?(this.round===0?90+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
   if(kind===8)this.spawnSatellites(e);
   if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;const castle=g.enemies.at(-1);for(let i=0;i<3;i++)this.spawnCastleMob(castle,true);}
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
@@ -26,7 +26,7 @@ export class BossArena{
   if(e.kind===8){e.state='egg';e.eggAt=g.age;e.until=g.age+12;delete e.gust;this.clearOwner(e,true);g.events.push({type:'egg',x:e.x,y:e.y});g.events.push({type:'brain-defeat'});return false;}return true;
  }
  pushEgg(e,dt){const g=this.g,near=g.body.reduce((p,q)=>dist(q,e)<dist(p,e)?q:p,g.body[0]);if(dist(near,e)<28)g.pushObject(e,near,180);}
- completeBoss(e){if(e.clearCounted)return;e.clearCounted=true;this.g.bossKills++;if(e.serial>=0&&e.serial<4)this.defeated.add(e.serial);}
+ completeBoss(e){if(e.clearCounted)return;e.clearCounted=true;this.g.bossKills++;if(e.serial>=0&&e.serial<4&&(e.round??0)===this.round)this.defeated.add(e.serial);}
  defeatedBoss(e){const g=this.g;if(e.kind>=6&&e.kind<=8)this.completeBoss(e);if(e.kind===6)g.dropBossTomatoes(e);
   if(e.kind===7){for(let i=0,n=4+Math.floor(g.random()*5);i<n;i++)this.drop(Math.floor(g.random()*47),e);this.drop(REWARD.PUMPKIN,e);}
   if(e.kind===8){this.drop(REWARD.NAZAR,e);g.events.push({type:'egg-break',x:e.x,y:e.y});}
@@ -36,6 +36,7 @@ export class BossArena{
   if(e.kind===9&&!e.castleAlive)this.completeBoss(e);
   this.checkCake();
  }
+ beginNextRound(startedAt){this.round++;this.roundStartedAt=startedAt;this.spawned=0;this.defeated.clear();this.cakeClaimed=false;delete this.cakeAt;this.g.nextBoss=startedAt+60;}
  spawnCake(debug=false){return spawnCake(this,debug);}
  checkCake(){if(this.defeated.size!==4||this.cake||this.cakeClaimed||this.g.enemies.some(e=>e.kind===9||e.kind===10))return;if(this.cakeAt===undefined){this.cakeAt=this.g.age+7;this.g.events.push({type:'cake-prepare'});}if(this.g.age>=this.cakeAt)this.spawnCake();}
  spawnSatellites(owner){const g=this.g;for(let i=0;i<5;i++){const angle=i*TAU/5;let p;for(let n=0;n<30;n++){const a=angle+n*.21,q={x:owner.x+Math.cos(a)*76,y:owner.y+Math.sin(a)*76};if(!g.blocked(q,11)&&!g.enemies.some(o=>g.hitsEnemy(q,o,12))){p=q;break;}}p??=g.nearPoint(owner,60,115);if(p)g.enemies.push({...p,kind:12,owner,orbitPhase:angle,born:g.age,state:'orbit'});}}

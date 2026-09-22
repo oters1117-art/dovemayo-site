@@ -5,7 +5,7 @@ import {TouchSteering} from '../dist/touch-steering.mjs';
 import assert from 'node:assert/strict';
 const listeners={},animations=[],strokes=[];
 const ctx=new Proxy({stroke(){strokes.push(this.strokeStyle)}},{get(t,k){return k in t?t[k]:(()=>{});}});
-function element(){return {style:{getPropertyValue:()=>1,setProperty(){}},classList:{add(){},remove(){}},offsetHeight:800,hidden:false,textContent:'',setAttribute(){},listeners:{},addEventListener(k,f){this.listeners[k]=f},setPointerCapture(){},getContext:()=>ctx,animate(){const a={paused:false,cancelled:false,pause(){this.paused=true},cancel(){this.cancelled=true}};animations.push(a);return a;},append(){},remove(){this.removed=true}}}
+function element(){return {style:{getPropertyValue:()=>1,setProperty(){}},classList:{add(){},remove(){}},offsetHeight:800,hidden:false,textContent:'',get innerHTML(){return this._html||''},set innerHTML(value){this._html=value;this.textContent=value.replace(/<[^>]*>/g,'')},setAttribute(){},listeners:{},addEventListener(k,f){this.listeners[k]=f},setPointerCapture(){},getContext:()=>ctx,animate(){const a={paused:false,cancelled:false,pause(){this.paused=true},cancel(){this.cancelled=true}};animations.push(a);return a;},append(){},remove(){this.removed=true}}}
 const elements=new Map(),body=element();
 const document={body,fonts:{ready:Promise.resolve()},querySelector(s){if(!elements.has(s))elements.set(s,element());return elements.get(s)},createElement:element,addEventListener(k,f){listeners[k]=f}};
 let stopped=0,now=100;

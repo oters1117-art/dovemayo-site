@@ -15,13 +15,13 @@ export function updateCake(a){const g=a.g,age=g.age,c=a.cake;
    if(g.body.some(p=>cakeFootprint(p,c,4)))g.fail('케이크에 깔렸어요.');
    if(g.dead)return;
   }
-  if(c.landed&&age>=(c.collectAt||0)&&cakeFootprint(g.body[0],c,12)){const targets=finaleTargets(a);a.celebration={born:age,until:age+3.8,seen:new Set(targets),queue:targets.map((target,i)=>({target,at:age+.15+i*3.2/Math.max(1,targets.length)}))};g.graceUntil=Math.max(g.graceUntil,age+4.6);g.events.push({type:'celebration',x:c.x,y:c.y});a.cake=null;a.cakeClaimed=true;}
+  if(c.landed&&age>=(c.collectAt||0)&&cakeFootprint(g.body[0],c,12)){const targets=finaleTargets(a);a.celebration={born:age,until:age+3.8,seen:new Set(targets),queue:targets.map((target,i)=>({target,at:age+.15+i*3.2/Math.max(1,targets.length)}))};g.graceUntil=Math.max(g.graceUntil,age+4.6);g.events.push({type:'celebration',x:c.x,y:c.y});a.cake=null;a.cakeClaimed=true;g.cakesEaten=(g.cakesEaten||0)+1;a.roundBossBase=g.bossKills;}
  }
  const finale=a.celebration;if(!finale)return;
  // Bombers and airborne shots can create new objects after the initial snapshot.
  finale.seen??=new Set(finale.queue.map(i=>i.target));
  for(const p of finaleTargets(a))if(!finale.seen.has(p)){finale.seen.add(p);finale.queue.push({target:p,at:Math.min(finale.until,age+.12)});}
  for(const item of finale.queue){if(item.done||age<item.at)continue;item.done=true;clearFinaleTarget(a,item.target);}
- if(age>=finale.until){for(const p of finaleTargets(a))clearFinaleTarget(a,p);a.celebration=null;g.nextRefill=age;g.nextEnemy=age+2;g.events.push({type:'cake-resume'});}
+ if(age>=finale.until){for(const p of finaleTargets(a))clearFinaleTarget(a,p);a.celebration=null;a.beginNextRound(finale.born);g.nextRefill=age;g.nextEnemy=age+2;g.events.push({type:'cake-resume'});}
 
 }
