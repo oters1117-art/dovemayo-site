@@ -32,3 +32,6 @@ html,body,.page,.card{user-select:none;-webkit-user-select:none;-webkit-touch-ca
 .snake-playing .card:focus-visible{outline:none;box-shadow:0 2px 3px rgb(39 23 23 / .025),0 5px 12px rgb(39 23 23 / .015)}.snake-score{z-index:18}
 
 .snake-boss-stars{position:fixed;transform:translate(0,-100%);max-width:72px;color:#e8bf38;font:10px/1.3 system-ui;letter-spacing:2px;overflow-wrap:anywhere;text-align:left;pointer-events:none;z-index:18}
+
+.projects{margin-block-start:20px}.projects .project{grid-row:2}.projects .stickers{grid-column:2;grid-row:1}.card.stickers img{display:block;width:64%;height:64%;object-fit:contain}
+@media(max-width:34rem){.projects{margin-block-start:12px}}

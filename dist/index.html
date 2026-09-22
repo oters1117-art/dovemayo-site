@@ -47,6 +47,9 @@ html,body,.page,.card{user-select:none;-webkit-user-select:none;-webkit-touch-ca
 .snake-playing .card:focus-visible{outline:none;box-shadow:0 2px 3px rgb(39 23 23 / .025),0 5px 12px rgb(39 23 23 / .015)}.snake-score{z-index:18}
 
 .snake-boss-stars{position:fixed;transform:translate(0,-100%);max-width:72px;color:#e8bf38;font:10px/1.3 system-ui;letter-spacing:2px;overflow-wrap:anywhere;text-align:left;pointer-events:none;z-index:18}
+
+.projects{margin-block-start:20px}.projects .project{grid-row:2}.projects .stickers{grid-column:2;grid-row:1}.card.stickers img{display:block;width:64%;height:64%;object-fit:contain}
+@media(max-width:34rem){.projects{margin-block-start:12px}}
 </style>
 <!-- inline-style:end -->
 <link rel="modulepreload" href="/foley.mjs?v=20260923-order8">
@@ -76,6 +79,7 @@ html,body,.page,.card{user-select:none;-webkit-user-select:none;-webkit-touch-ca
 <a class="card gallery" href="https://gall.dcinside.com/mgallery/board/lists?id=dovemayo" target="_blank" rel="noopener noreferrer" aria-label="둘기마요 갤러리 (새 탭)"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="13" cy="10" r="4"/><path d="M5 27v-4a8 8 0 0 1 16 0v4M23 6a4 4 0 0 1 0 8m2 4a7 7 0 0 1 4 6v3"/></svg><span class="tooltip">둘기마요 갤러리</span></a>
 </nav>
 <nav class="projects cards" aria-label="둘기마요의 작업물">
+<a class="card project stickers" href="https://stickers.dovemayo.com/" target="_blank" rel="noopener noreferrer" aria-label="둘기마요 스티커 (새 탭)"><img src="/stickers-cat.svg?v=2" width="32" height="32" alt=""><span class="tooltip">둘기마요 스티커</span></a>
 <button type="button" class="card project snake-start" aria-label="미니게임 / 이모지 스네이크"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10 9h12c3 0 4 2 5 5l2 8c.8 4-3 5-5 2l-3-3H11l-3 3c-2 3-5.8 2-5-2l2-8c1-3 2-5 5-5Z"/><path d="M8 15h6m-3-3v6"/><g transform="translate(-.8 0)" fill="currentColor" stroke="none"><circle cx="22" cy="12.5" r="1"/><circle cx="24.5" cy="15" r="1"/><circle cx="22" cy="17.5" r="1"/><circle cx="19.5" cy="15" r="1"/></g></svg><span class="tooltip">미니게임 / 이모지 스네이크</span></button>
 <a class="card project reincarnation" href="https://oters1117-art.github.io/RandomReincarnation/" target="_blank" rel="noopener noreferrer" aria-label="랜덤 다시 태어나기 (새 탭)"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="M5 16h22M16 5a20 20 0 0 1 0 22 20 20 0 0 1 0-22Z"/></svg><span class="tooltip">랜덤 다시 태어나기</span></a>
 <a class="card project fonts" href="https://noonnu.cc/search/%EB%91%98%EA%B8%B0%EB%A7%88%EC%9A%94" target="_blank" rel="noopener noreferrer" aria-label="둘기마요 폰트 (새 탭)"><span class="font-icon" aria-hidden="true">Aa</span><span class="tooltip">둘기마요 폰트</span></a>
