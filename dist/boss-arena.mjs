@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
-import {spawnCake,updateCake} from './cake-finale.mjs?v=20260923-order8';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260923-order8';
+import {spawnCake,updateCake} from './cake-finale.mjs?v=20260927-timers10';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260927-timers10';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -11,10 +11,15 @@ export class BossArena{
  constructor(g){this.g=g;this.order=[6,7,8,9];for(let i=3;i>0;i--){const j=Math.floor(g.random()*(i+1));[this.order[i],this.order[j]]=[this.order[j],this.order[i]];}
   this.round=0;this.roundStartedAt=0;this.spawned=0;this.defeated=new Set();this.hazards=[];this.hands=[];this.relics=[];this.cake=null;this.cakeClaimed=false;this.nextDynamite=0;this.fireworks=[];this.shockAt=-10;this.shockUntil=0;
  }
- spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??(this.round===0?this.order[this.spawned%4]:6+Math.floor(g.random()*4)),p=g.freePoint(160,kind===9?42:46);if(!p)return false;
-  const serial=selected===null?this.spawned++:-1,e={...p,kind,serial,round:this.round,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);g.nextBoss=this.spawned<4?(this.round===0?90+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
+ spawn(debug=false,selected=null){const g=this.g;if(this.spawned>=4&&!debug)return false;const kind=selected??(this.round===0?this.order[this.spawned%4]:6+Math.floor(g.random()*4)),p=g.freePoint(160,kind===9?42:kind===7?54:46,true);if(!p)return false;
+  const serial=selected===null?this.spawned:-1,e={...p,kind,serial,round:this.round,born:g.age,state:'idle',until:g.age+2,pattern:0};g.enemies.push(e);
+  // King and castle are one encounter: reserve both before consuming its slot.
+  const c=kind===9?g.freePoint(120,42,true):null;
+  if(kind===9&&!c){g.enemies.splice(g.enemies.indexOf(e),1);return false;}
+  if(selected===null)this.spawned++;
+  g.nextBoss=this.spawned<4?(this.round===0?90+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
   if(kind===8)this.spawnSatellites(e);
-  if(kind===9){const c=g.freePoint(120,42)||g.nearPoint(e,95,170);if(c){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;const castle=g.enemies.at(-1);for(let i=0;i<3;i++)this.spawnCastleMob(castle,true);}
+  if(kind===9){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;const castle=g.enemies.at(-1);for(let i=0;i<3;i++)this.spawnCastleMob(castle,true);
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
   return true;
  }
@@ -102,13 +107,15 @@ export class BossArena{
   this.hazards=this.hazards.filter(h=>age<h.until+(h.type==='cloud'?.8:h.type==='laser'?.6:.05));
   for(const r of [...this.relics]){
    if(r.held)continue;if(r.thrown){thrown(this,r);continue;}
-   if(r.blackholeArmed){if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;this.area(r,150,'dynamite');}continue;}
+   if(r.blackholeArmed){if(!g.timeStopped&&age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;this.area(r,150,'dynamite');}continue;}
    if(r.carried){Object.assign(r,g.blade());const target=g.enemies.find(e=>e.state!=='jump'&&dist(r,e)<g.enemyRadius(e)+(e.kind===10?30:12))||g.bombs.find(b=>!b.thrown&&dist(r,b)<18)||g.projectiles.find(p=>!p.dead&&!g.isFlying(p)&&dist(r,p)<18);if(target){r.attached=target;r.carried=false;r.installed=age;r.fuse=age+2.4;g.events.push({type:'fuse'});}continue;}
-   if(r.attached){const offset=r.attached.kind===10?18:r.attached.kind>=6&&r.attached.kind<=9?14:6;r.x=r.attached.x+offset;r.y=r.attached.y+offset;if(age>=r.fuse){r.warnAt??=age;if(age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;if(r.attached?.kind===10&&g.enemies.includes(r.attached))g.killEnemy(r.attached,'attached-dynamite');this.area(r,150,'dynamite');}}continue;}
+   if(r.attached){const offset=r.attached.kind===10?18:r.attached.kind>=6&&r.attached.kind<=9?14:6;r.x=r.attached.x+offset;r.y=r.attached.y+offset;if(!g.timeStopped&&age>=r.fuse){r.warnAt??=age;if(!g.timeStopped&&age-r.warnAt>=.8){this.relics.splice(this.relics.indexOf(r),1);this.nextDynamite=age+4;if(r.attached?.kind===10&&g.enemies.includes(r.attached))g.killEnemy(r.attached,'attached-dynamite');this.area(r,150,'dynamite');}}continue;}
    if(age>=(r.pickupAt||0)&&dist(r,g.body[0])<18){if(g.armed){g.armed=false;g.knives.push({x:r.x,y:r.y,type:'knife',pickupAt:age+.8});}this.dropCarriedDynamite();r.carried=true;continue;}
   }
 
  }
+ // Advance only fuse timestamps; movement, spawns and brain skills keep running.
+ pauseFuses(dt){for(const b of this.g.bombs)if(typeof b.armed==='number')b.armed+=dt;for(const r of this.relics)for(const key of ['installed','fuse','warnAt'])if(typeof r[key]==='number')r[key]+=dt;}
  pauseGroundEnemies(dt){for(const e of this.g.enemies)if(this.g.grounded(e))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
  pauseEnemies(dt){for(const e of this.g.enemies)if(![8,12].includes(e.kind))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
  pause(dt){const g=this.g;for(const f of this.fireworks)f.at+=dt;for(const o of [...g.enemies,...g.projectiles,...g.bombs,...g.puddles,...this.hazards,...this.hands,...this.relics])for(const k of ['born','until','armed','patternUntil','nextShot','chargeAt','jumpAt','landAt','eggAt','roamUntil','fuse','lockAt','pickupAt'])if(typeof o[k]==='number'&&!(this.g.age<this.shockUntil&&o===this.shockOwner))o[k]+=dt;}

@@ -53,7 +53,7 @@ test('diagonal holds and release preserve a non-cardinal heading',()=>{
  assert.equal(headingFromKeys(new Set(['ArrowUp','ArrowDown']),released),released);
 });
 test('background elapsed time continues all the way to death instead of freezing',()=>{
- const g=fresh();g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
+ const g=fresh();g.food=[];g.nextRefill=Infinity;g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
 });
 test('food quantity scales with score while enemy frequency scales with time',()=>{
  const g=fresh();g.age=100;g.refill();assert.equal(g.food.length,3);g.score=25;g.refill();assert.equal(g.food.length,8);
@@ -103,7 +103,7 @@ test('chili speeds up, blueberry replaces it without a speed effect, tomato repl
 test('eggplant awards one point and briefly freezes purple without shrinking',()=>{
  const g=fresh();g.score=3;g.goalLength=120;g.length=120;g.eatFood({kind:FOOD.EGGPLANT});
  assert.equal(g.score,4);assert.equal(g.goalLength,144);assert.equal(g.length,120);assert.equal(g.buffKind,'purple');assert.equal(g.currentSpeed,0);
- const h={...g.body[0]};g.step(.5);assert.deepEqual(g.body[0],h);assert.equal(g.body.length,1);g.age=1.2;assert(g.currentSpeed>0);assert.equal(g.buffKind,null);
+ const h={...g.body[0]};g.step(.5);assert.deepEqual(g.body[0],h);assert.equal(g.body.length,1);g.age=10.01;assert(g.currentSpeed>0);assert.equal(g.buffKind,null);
 });
 test('tomato turns away from cards and walls and defeats head-contact enemies',()=>{
  const g=fresh({obstacles:[{x:446,y:190,w:30,h:30}]});g.setBuff('rainbow',5);for(let i=0;i<30;i++){g.step(.01);assert(!g.dead);assert(!g.blocked(g.body[0],g.radius));}assert.notEqual(g.angle,0);
@@ -224,7 +224,7 @@ test('blueberry periodically fires forward bullets that do not hurt the player',
  const g=fresh();g.food=[];g.eatFood({kind:FOOD.BLUEBERRY});g.step(.01);assert.equal(g.projectiles.length,1);assert.equal(g.projectiles[0].type,'blue');assert.equal(g.projectiles[0].vx,360);
  g.step(.3);assert.equal(g.projectiles.length,3);assert(!g.dead);
  g.projectiles=[{type:'blue',...g.body[0],vx:0,vy:0,born:g.age}];g.updateHazards(.01);assert(!g.dead);
- g.age=8.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
+ g.age=10.1;g.projectiles=[];g.step(.01);assert.equal(g.projectiles.length,0);
 });
 test('blue bullets destroy teeth and ordinary enemies but cannot kill bosses',()=>{
  for(const target of ['enemy','shot','boss']){
@@ -267,8 +267,8 @@ test('all ordinary colored effects replace both color and mechanics',()=>{
 });
 test('rainbow combines with food colors, resets duration, and still rejects potion',()=>{
  const g=fresh();g.setBuff('rainbow',10);g.age=2;
- for(const kind of ['red','blue','orange','purple']){assert.equal(g.setBuff(kind,8),true);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,17);assert.equal(g.combo,kind);assert(g.currentSpeed>125);}
- assert.equal(g.setBuff('green',8),false);g.age=17.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
+ for(const kind of ['red','blue','orange','purple']){assert.equal(g.setBuff(kind,8),true);assert.equal(g.buffKind,'rainbow');assert.equal(g.buff.until,12);assert.equal(g.combo,kind);assert(g.currentSpeed>125);}
+ assert.equal(g.setBuff('green',8),false);g.age=12.1;assert(g.invincible);g.setBuff('green',8);assert.equal(g.buffKind,'green');assert(g.invincible);
 });
 
 test('potion pools cancel blue fire and eggplant freezing',()=>{
