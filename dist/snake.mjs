@@ -1,3 +1,4 @@
+import {shoeAngle,SHOE_SIZE} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {DebugKeys} from './debug-keys.mjs';
 import {FinaleMusic} from './finale-music.mjs';
 import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260927-timers10';
@@ -6,7 +7,7 @@ import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261009-balance';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261009-shoe';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -292,8 +293,8 @@ function draw(){
     const t=['tooth','anger-ray'].includes(p.type)?0:Math.min(1,(game.age-p.born)/p.duration);
     if(p.type==='shoe'||p.type==='potion'){const y=p.from.y+(p.to.y-p.from.y)*t;ctx.fillStyle='rgba(36,36,36,.12)';ctx.beginPath();ctx.ellipse(p.x,y,6,2.5,0,0,Math.PI*2);ctx.fill();}
     if(p.type==='tooth'){ctx.fillStyle='rgba(39,35,49,.2)';ctx.beginPath();ctx.ellipse(p.x,p.y+9,9,3,0,0,Math.PI*2);ctx.fill();}
-    ctx.save();ctx.translate(p.x,p.y-(p.type==='tooth'?8:0));ctx.rotate(p.type==='tooth'?Math.atan2(p.vy,p.vx)+Math.PI/2:p.type==='boomerang'?t*20:t*4);
-    if(p.type==='tooth')emoji('boss',3,0,0,1,20);else emoji('props',p.type==='shoe'?0:p.type==='potion'?1:2,0,0);ctx.restore();
+    ctx.save();ctx.translate(p.x,p.y-(p.type==='tooth'?8:0));ctx.rotate(p.type==='tooth'?Math.atan2(p.vy,p.vx)+Math.PI/2:p.type==='shoe'?shoeAngle(p,game.age):p.type==='boomerang'?t*20:t*4);
+    if(p.type==='tooth')emoji('boss',3,0,0,1,20);else if(p.type==='shoe')emoji('props',0,0,0,1,SHOE_SIZE);else emoji('props',p.type==='shoe'?0:p.type==='potion'?1:2,0,0);ctx.restore();
   }
   for(const k of game.knives||[]){emoji('boss',4,k.x,k.y-(k.lift||0),1,27);if(!k.held&&!k.thrown)pickupSparkles(k);}
   if(game.armed){const blade=game.blade();ctx.save();ctx.translate(blade.x,blade.y);ctx.rotate(game.angle+Math.PI*5/4);emoji('boss',4,0,0,1,30);ctx.restore();}

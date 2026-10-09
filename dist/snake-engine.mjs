@@ -1,3 +1,4 @@
+import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
 import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261009-balance';
 import {MusicPads} from './music-pads.mjs?v=5';
@@ -113,6 +114,7 @@ export class SnakeGame{
   fail(reason){if(this.dead||this.invincible)return;if(this.shield){this.shield=0;this.graceUntil=this.age+1.6;this.events.push({type:'shield-break',...this.body[0]});return;}this.dead=true;this.events.push({type:'fail',reason});}
   step(dt){let left=Math.max(0,Number.isFinite(dt)?dt:0);while(left>0&&!this.dead){const s=Math.min(left,1/120);this.tick(s);left-=s;}}
   bodyHit(p,r){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&distance(p,this.body[i])<r)return true;}return false;}
+  shoeBodyHit(p){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&shoeTouches(p,this.body[i],this.age,this.radius))return true;}return false;}
   tick(dt){
     const frozen=this.buffKind==='purple';
     if(this.timeStopped)this.arena.pauseFuses(Math.min(dt,this.buff.until-this.age));
@@ -344,10 +346,10 @@ export class SnakeGame{
         const k=this.knives.find(k=>!k.held&&!k.thrown&&distance(p,k)<17);if(k){this.breakObject(k,'knife');this.removeKnife(k);this.nextKnife=this.age+6;p.dead=true;continue;}}
       const bomb=this.bombs.find(b=>!b.held&&!b.thrown&&distance(p,b)<17);if(bomb){p.dead=true;if(p.type==='blue')this.pushObject(bomb,p,240);else this.explode(bomb);if(this.dead)return;continue;}
       if(p.type==='blue')continue;
-      if(distance(p,h)<(p.landed?22:12)){
+      if(p.type==='shoe'?shoeTouches(p,h,this.age,this.radius):distance(p,h)<(p.landed?22:12)){
         p.dead=true;this.breakObject(p);
         if(p.type==='potion')this.setBuff('green');else if(!this.invincible){this.fail('공격에 맞았어요.');return;}
-      }else if(this.bodyHit(p,12)){p.dead=true;this.shotImpact(p);}
+      }else if(p.type==='shoe'?this.shoeBodyHit(p):this.bodyHit(p,12)){p.dead=true;this.shotImpact(p);}
       if(p.landed)p.dead=true;
     }
     this.finalizeShots();
