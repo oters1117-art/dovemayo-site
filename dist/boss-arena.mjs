@@ -17,7 +17,7 @@ export class BossArena{
   const c=kind===9?g.freePoint(120,42,true):null;
   if(kind===9&&!c){g.enemies.splice(g.enemies.indexOf(e),1);return false;}
   if(selected===null)this.spawned++;
-  g.nextBoss=this.spawned<4?(this.round===0?90+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
+  g.nextBoss=this.spawned<4?(this.round===0?60+this.spawned*90:this.roundStartedAt+(this.spawned+1)*60):Infinity;g.nextKnife=g.age;g.ensureKnife();g.events.push({type:'boss',name:BOSS_NAMES[kind-6],...p});
   if(kind===8)this.spawnSatellites(e);
   if(kind===9){g.enemies.push({...c,kind:10,serial,born:g.age,until:g.age+2,king:e});e.castleAlive=true;const castle=g.enemies.at(-1);for(let i=0;i<3;i++)this.spawnCastleMob(castle,true);
    for(const side of [-1,1])this.hands.push({x:clamp(e.x+side*83,16,g.width-16),y:e.y,king:e,side,state:'idle',until:g.age+2});this.ensureDynamite();}
@@ -54,9 +54,9 @@ export class BossArena{
  updateEnemy(e,dt){const g=this.g,h=g.enemyTarget(e),age=g.age;
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
-   if(e.state==='jump'){const t=clamp((age-e.jumpAt)/(e.jumpDuration||1.65),0,1);e.x=e.from.x+(e.aim.x-e.from.x)*t;e.y=e.from.y+(e.aim.y-e.from.y)*t;e.lift=Math.sin(Math.pow(t,.8)*Math.PI)*250;if(e.retreat&&age>=(e.nextAirHammer||0)&&t<.9){hammer(this,e,g.random()*TAU);e.nextAirHammer=age+.09;}
+   if(e.state==='jump'){const t=clamp((age-e.jumpAt)/(e.jumpDuration||1.65),0,1);e.x=e.from.x+(e.aim.x-e.from.x)*t;e.y=e.from.y+(e.aim.y-e.from.y)*t;e.lift=Math.sin(Math.pow(t,.8)*Math.PI)*250;if(e.retreat&&age>=(e.nextAirHammer||0)&&t<.9){hammer(this,e,g.random()*TAU);e.nextAirHammer=age+.12;}
     if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}return;}
-   if(e.state==='hammer-charge'){if(age>=e.until){if(e.rapid){e.state='hammer-stream';e.left=30;e.nextHammer=age;}else{const offset=g.random()*TAU;for(let i=0;i<28;i++)hammer(this,e,offset+i*TAU/28);e.state='idle';e.until=age+.8;}}return;}
+   if(e.state==='hammer-charge'){if(age>=e.until){if(e.rapid){e.state='hammer-stream';e.left=24;e.nextHammer=age;}else{const offset=g.random()*TAU;for(let i=0;i<22;i++)hammer(this,e,offset+i*TAU/22);e.state='idle';e.until=age+.8;}}return;}
    if(e.state==='hammer-stream'){if(age>=e.nextHammer){hammer(this,e,g.random()*TAU);e.left--;e.nextHammer=age+.05;if(!e.left){e.state='idle';e.until=age+.7;}}return;}
    if(e.state==='land'&&age>=e.until){e.state='idle';e.until=age;}
    if(e.state==='idle'){this.keepDistance(e,180,105,dt);if(age>=e.until){const pattern=Math.floor(g.random()*6);if(pattern===0||pattern===5){e.retreat=pattern===5;e.aim=this.landingPoint(e,e.retreat);e.state='jump';e.jumpAt=age;e.from={x:e.x,y:e.y};e.jumpDuration=1.65;e.until=age+e.jumpDuration;g.events.push({type:'throw'});}else if(pattern===1||pattern===4){e.state='hammer-charge';e.chargeAt=age;e.rapid=pattern===4;e.until=age+.32;}else{const ground={x:e.x,y:e.y+40},angle=Math.atan2(h.y-ground.y,h.x-ground.x);let radius=15;while(radius<52&&g.hitsEnemy({x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius},e,12))radius++;g.projectiles.push({type:'ball',x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius,vx:Math.cos(angle)*205,vy:Math.sin(angle)*205,born:age,owner:e,leftOwner:true,hits:0});g.events.push({type:'roll'});e.until=age+.7;}}}return;
