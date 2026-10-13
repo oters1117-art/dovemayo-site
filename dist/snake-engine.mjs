@@ -1,6 +1,6 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261009-balance';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261013-first-tomato';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -19,7 +19,7 @@ export class SnakeGame{
     this.age=0;this.score=0;this.kills=0;this.bossKills=0;this.earnedStars=[];this.dead=false;this.events=[];
     this.food=[];this.enemies=[];this.projectiles=[];this.bombs=[];this.puddles=[];
     this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=60;
-    this.nextRefill=0;this.knives=[];this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();
+    this.firstTomatoSpawned=false;this.nextFirstTomato=55;this.nextRefill=0;this.knives=[];this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();
   }
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
   get invincible(){return !!this.debugInvincible||this.buffKind==='rainbow'||this.age<this.graceUntil;}
@@ -45,7 +45,19 @@ export class SnakeGame{
     if(scan)for(let y=radius+3;y<this.height-radius-2;y+=12)for(let x=radius+3;x<this.width-radius-2;x+=12){const p={x,y};if(available(p))return p;}
     return null;
   }
-  refill(){if(this.age<this.nextRefill)return;while(this.food.length<4+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.food.push({...p,kind:Math.floor(this.random()*47)});}}
+  addFood(p){this.food.push(p);if(p.kind===FOOD.TOMATO)this.firstTomatoSpawned=true;return p;}
+  nextFoodKind(){
+    const roll=this.random();if(this.firstTomatoSpawned)return Math.floor(roll*47);
+    // First appearance only: 20% tomato, with the other 46 foods equally likely.
+    if(roll<.2)return FOOD.TOMATO;
+    const kind=Math.min(45,Math.floor((roll-.2)/.8*46));return kind>=FOOD.TOMATO?kind+1:kind;
+  }
+  ensureFirstTomato(){
+    if(this.firstTomatoSpawned||this.age<this.nextFirstTomato)return;
+    const p=this.freePoint(60,16,true);
+    if(p)this.addFood({...p,kind:FOOD.TOMATO});else this.nextFirstTomato=this.age+.5;
+  }
+  refill(){if(this.age<this.nextRefill)return;while(this.food.length<4+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.addFood({...p,kind:this.nextFoodKind()});}}
   setBuff(kind,duration=EFFECT_DURATION){
     const current=this.buffKind,colors=['purple','red','blue','orange'];
     if(current==='rainbow'&&kind!=='rainbow'){
@@ -73,7 +85,7 @@ export class SnakeGame{
   spawnSpecial(){
 
     const kinds=[FOOD.TOMATO,FOOD.CHILI,FOOD.BLUEBERRY,FOOD.EGGPLANT,FOOD.BEER,FOOD.GOLDEN_APPLE],p=this.nearPoint(this.body[0],50,100)||this.freePoint(40);
-    if(!p)return false;this.food.push({...p,kind:kinds[this.specialIndex++%6]});return true;
+    if(!p)return false;this.addFood({...p,kind:kinds[this.specialIndex++%6]});return true;
   }
   nearPoint(center,min,max){
     for(let i=0;i<80;i++){const a=this.random()*TAU,r=min+this.random()*(max-min),p={x:center.x+Math.cos(a)*r,y:center.y+Math.sin(a)*r};if(!this.blocked(p,12)&&!this.food.some(o=>distance(p,o)<28)&&!this.enemies.some(o=>distance(p,o)<this.enemyRadius(o)+18)&&!this.bombs.some(o=>distance(p,o)<24))return p;}return null;
@@ -103,7 +115,7 @@ export class SnakeGame{
     for(let i=0;i<3;i++){
       const angle=rotation+i*TAU/3;let to={x:origin.x,y:origin.y};
       for(let r=2;r<=80;r+=2){const p={x:origin.x+Math.cos(angle)*r,y:origin.y+Math.sin(angle)*r};if(this.blocked(p,12))break;to=p;}
-      this.food.push({x:origin.x,y:origin.y,kind:FOOD.TOMATO,slide:{from:{x:origin.x,y:origin.y},to,born:this.age,duration:.7}});
+      this.addFood({x:origin.x,y:origin.y,kind:FOOD.TOMATO,slide:{from:{x:origin.x,y:origin.y},to,born:this.age,duration:.7}});
     }
   }
   slideFood(){
@@ -134,7 +146,7 @@ export class SnakeGame{
     let used=0;for(let i=1;i<this.body.length;i++){const d=distance(this.body[i-1],this.body[i]);if(used+d>this.length){const t=(this.length-used)/d;this.body[i]={x:this.body[i-1].x+(this.body[i].x-this.body[i-1].x)*t,y:this.body[i-1].y+(this.body[i].y-this.body[i-1].y)*t};this.body.length=i+1;break;}used+=d;}
     for(let i=this.food.length-1;i>=0;i--)if(!this.arena.celebration&&!this.food[i].slide&&distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
     const pickup=this.knives.find(k=>!k.held&&!k.thrown&&this.age>=(k.pickupAt||0)&&distance(head,k)<17);if(pickup&&!this.armed){this.arena.dropCarriedDynamite();this.removeKnife(pickup);this.armed=true;this.events.push({type:'knife'});}
-    if(!this.arena.celebration)this.refill();
+    if(!this.arena.celebration){this.ensureFirstTomato();this.refill();}
     if(!this.worldFrozen&&!this.arena.celebration&&this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
     if(this.age>=this.nextBoss){if(!this.spawnBoss())this.nextBoss=this.age+.5;}
     this.ensureKnife();this.updateBlade();
