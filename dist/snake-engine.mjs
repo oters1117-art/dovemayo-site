@@ -1,6 +1,6 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261013-first-tomato';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261013-ball-stop';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -321,7 +321,7 @@ export class SnakeGame{
   updateHazards(dt){
     const h=this.body[0];
     for(const p of this.projectiles){
-      if(p.dead)continue;
+      if(p.dead||(p.type==='ball'&&this.timeStopped))continue;
       p.previous={x:p.x,y:p.y};
       if(['tooth','blue','anger-ray','ball'].includes(p.type)){p.x+=p.vx*dt;p.y+=p.vy*dt;}
       else{
@@ -372,7 +372,7 @@ export class SnakeGame{
   enemyTarget(e){if(this.activeCombo!=='orange')return this.body[0];let target=this.body[0],best=distance(e,target);for(const o of this.enemies)if(o!==e&&distance(e,o)<best){target=o;best=distance(e,o);}return target;}
   updateFrozenBlue(dt){for(const p of this.projectiles)if(p.type==='blue'&&!p.dead){p.x+=p.vx*dt;p.y+=p.vy*dt;if(this.blocked(p,4))p.dead=true;for(const e of [...this.enemies])if(this.hitsEnemy(p,e,4)){if(e.kind===8&&e.state==='egg')this.pushObject(e,p,230);else this.killEnemy(e,'blue');p.dead=true;break;}}this.finalizeShots();}
   pushObject(p,from,power=220){if(p.slide)delete p.slide;const angle=from.vx!==undefined?Math.atan2(from.vy,from.vx):Math.atan2(p.y-from.y,p.x-from.x);if(this.bombs.includes(p))p.armed??=this.age;if(p.type==='ball'){p.vx=Math.cos(angle)*power;p.vy=Math.sin(angle)*power;p.leftOwner=true;}else p.gust={vx:Math.cos(angle)*power,vy:Math.sin(angle)*power,until:this.age+.7};}
-  updateBalls(){for(const p of this.projectiles){if(p.type!=='ball'||p.dead)continue;if(p.owner&&distance(p,p.owner)>this.enemyRadius(p.owner)+13)p.leftOwner=true;
+  updateBalls(){for(const p of this.projectiles){if(p.type!=='ball'||p.dead)continue;if(this.timeStopped){const blue=this.projectiles.find(o=>o.type==='blue'&&!o.dead&&distance(p,o)<18);if(blue){this.pushObject(p,blue,280);blue.dead=true;}continue;}if(p.owner&&distance(p,p.owner)>this.enemyRadius(p.owner)+13)p.leftOwner=true;
     if(this.armed&&distance(p,this.blade())<20){p.dead=true;this.consumeKnife();continue;}
     const knife=this.knives.find(k=>!k.held&&!k.thrown&&distance(p,k)<23);if(knife){p.dead=true;this.breakObject(knife,'knife');this.removeKnife(knife);this.nextKnife=this.age+6;continue;}
     const bomb=this.bombs.find(b=>!b.held&&!b.thrown&&distance(p,b)<21);if(bomb){p.dead=true;this.explode(bomb);continue;}

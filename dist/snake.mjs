@@ -7,7 +7,7 @@ import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261013-tomato10';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261013-ball-stop';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -204,7 +204,7 @@ function flashBackground(color,duration){
   flashAnimation?.cancel();const base=comboPaper(mode==='playing'?game:null);document.body.style.backgroundColor=base;flashAnimation=document.body.animate([{backgroundColor:base},{backgroundColor:color,offset:.04},{backgroundColor:base}],{duration,easing:'ease-out'});
 }
 function stopMusic(){sound.setUnderwater(false);sound.setLoop?.('wind',0);sound.setLoop?.('rolling',0);sound.setLoop?.('fuse',0);}
-function updateMusic(){sound.setLoop?.('fuse',mode==='playing'&&!muted&&!game.timeStopped&&game.arena?.relics.some(r=>r.attached)?.28:0,'fuse-soft');const active=mode==='playing'&&!muted;sound.setUnderwater(active&&game?.buffKind==='rainbow');const wind=active?game.arena?.hazards.find(h=>h.type==='tornado'&&game.age>=(h.activeAt??h.born)&&h.until>game.age):null;const proximity=wind?Math.max(0,1-Math.hypot(wind.x-game.body[0].x,wind.y-game.body[0].y)/Math.hypot(innerWidth,innerHeight)):0;sound.setLoop?.('wind',wind?.12+proximity*.6:0,'blackhole-hum');sound.setLoop?.('rolling',active&&game.projectiles.some(p=>p.type==='ball')?.34:0,'roll-soft');}
+function updateMusic(){sound.setLoop?.('fuse',mode==='playing'&&!muted&&!game.timeStopped&&game.arena?.relics.some(r=>r.attached)?.28:0,'fuse-soft');const active=mode==='playing'&&!muted;sound.setUnderwater(active&&game?.buffKind==='rainbow');const wind=active?game.arena?.hazards.find(h=>h.type==='tornado'&&game.age>=(h.activeAt??h.born)&&h.until>game.age):null;const proximity=wind?Math.max(0,1-Math.hypot(wind.x-game.body[0].x,wind.y-game.body[0].y)/Math.hypot(innerWidth,innerHeight)):0;sound.setLoop?.('wind',wind?.12+proximity*.6:0,'blackhole-hum');sound.setLoop?.('rolling',active&&!game.timeStopped&&game.projectiles.some(p=>p.type==='ball')?.34:0,'roll-soft');}
 function emoji(type,kind,x,y,alpha=1,size=24){
   if(game&&(type==='food'||type==='expansion'&&[4,10].includes(kind)))y-=shockLift(game);
   const image=images[type][kind];ctx.globalAlpha=alpha;

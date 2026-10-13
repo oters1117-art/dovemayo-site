@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
 import {spawnCake,updateCake} from './cake-finale.mjs?v=20260927-timers10';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20260927-timers10';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20261013-ball-stop';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
