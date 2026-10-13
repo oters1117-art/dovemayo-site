@@ -5,6 +5,7 @@ import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
 export const EFFECT_DURATION=10;
+export const DEBUFF_DURATION=6;
 export const TAU=Math.PI*2;
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function turnToward(angle,target,max){const d=Math.atan2(Math.sin(target-angle),Math.cos(target-angle));return angle+Math.max(-max,Math.min(max,d));}
@@ -53,7 +54,7 @@ export class SnakeGame{
     const kind=Math.min(45,Math.floor((roll-.1)/.9*46));return kind>=FOOD.TOMATO?kind+1:kind;
   }
   refill(){if(this.age<this.nextRefill)return;while(this.food.length<4+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.addFood({...p,kind:this.nextFoodKind()});}}
-  setBuff(kind,duration=EFFECT_DURATION){
+  setBuff(kind,duration=['green','purple'].includes(kind)?DEBUFF_DURATION:EFFECT_DURATION){
     const current=this.buffKind,colors=['purple','red','blue','orange'];
     if(current==='rainbow'&&kind!=='rainbow'){
       if(!colors.includes(kind))return false;

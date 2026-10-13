@@ -5,9 +5,9 @@ import {updateCake} from '../dist/cake-finale.mjs';
 function fresh(){let seed=429;const g=new SnakeGame({width:1400,height:1000,origin:{x:100,y:100},random:()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296)});g.food=[];g.nextRefill=g.nextEnemy=Infinity;g.musicPads.nextPlacement=Infinity;g.debugInvincible=true;g.speed=0;return g;}
 const close=(a,b)=>assert(Math.abs(a-b)<1e-7,`${a} != ${b}`);
 const stop=g=>{g.eatFood({kind:FOOD.TOMATO});g.eatFood({kind:FOOD.EGGPLANT});};
-test('all timed foods and potion last ten seconds',()=>{
- for(const [food,kind] of [[FOOD.CHILI,'red'],[FOOD.BLUEBERRY,'blue'],[FOOD.TOMATO,'rainbow'],[FOOD.BEER,'orange'],[FOOD.EGGPLANT,'purple']]){const g=fresh();g.age=20;g.eatFood({kind:food});assert.equal(g.buffKind,kind);assert.equal(g.buff.until,30);g.age=29.99;assert.equal(g.buffKind,kind);g.age=30;assert.equal(g.buffKind,null);}
- const g=fresh();g.age=3;g.puddles=[{...g.body[0],radius:52,until:20}];g.step(.1);assert.equal(g.buffKind,'green');close(g.buff.until-g.age,10);g.puddles=[];g.age=g.buff.until;assert.equal(g.buffKind,null);
+test('buffs last ten seconds while eggplant and poison last six',()=>{
+ for(const [food,kind] of [[FOOD.CHILI,'red'],[FOOD.BLUEBERRY,'blue'],[FOOD.TOMATO,'rainbow'],[FOOD.BEER,'orange'],[FOOD.EGGPLANT,'purple']]){const g=fresh();g.age=20;g.eatFood({kind:food});assert.equal(g.buffKind,kind);const end=kind==='purple'?26:30;assert.equal(g.buff.until,end);g.age=end-.01;assert.equal(g.buffKind,kind);g.age=end;assert.equal(g.buffKind,null);}
+ const g=fresh();g.age=3;g.puddles=[{...g.body[0],radius:52,until:20}];g.step(.1);assert.equal(g.buffKind,'green');close(g.buff.until-g.age,6);g.puddles=[];g.age=g.buff.until;assert.equal(g.buffKind,null);
 });
 test('all combos reset to ten seconds in either order',()=>{
  for(const food of [FOOD.CHILI,FOOD.BLUEBERRY,FOOD.BEER,FOOD.EGGPLANT])for(const reverse of [false,true]){const g=fresh();g.eatFood({kind:reverse?food:FOOD.TOMATO});g.age=2;g.eatFood({kind:reverse?FOOD.TOMATO:food});assert(g.activeCombo);assert.equal(g.buff.until,12);g.age=5;g.eatFood({kind:food});assert.equal(g.buff.until,15);g.age=15;assert.equal(g.activeCombo,null);}
