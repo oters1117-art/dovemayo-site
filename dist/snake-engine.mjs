@@ -19,7 +19,7 @@ export class SnakeGame{
     this.age=0;this.score=0;this.kills=0;this.bossKills=0;this.earnedStars=[];this.dead=false;this.events=[];
     this.food=[];this.enemies=[];this.projectiles=[];this.bombs=[];this.puddles=[];
     this.buff={kind:null,until:0};this.graceUntil=0;this.nextBlueShot=0;this.nextEnemy=11+random()*5;this.spawnCount=0;this.nextBoss=60;
-    this.firstTomatoSpawned=false;this.nextFirstTomato=55;this.nextRefill=0;this.knives=[];this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();
+    this.firstTomatoSpawned=false;this.nextRefill=0;this.knives=[];this.armed=false;this.nextKnife=0;this.specialIndex=0;this.musicPads=new MusicPads(musicVolume);this.arena=new BossArena(this);this.shield=0;this.selfPhase=false;this.combo=null;this.refill();
   }
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
   get invincible(){return !!this.debugInvincible||this.buffKind==='rainbow'||this.age<this.graceUntil;}
@@ -48,14 +48,9 @@ export class SnakeGame{
   addFood(p){this.food.push(p);if(p.kind===FOOD.TOMATO)this.firstTomatoSpawned=true;return p;}
   nextFoodKind(){
     const roll=this.random();if(this.firstTomatoSpawned)return Math.floor(roll*47);
-    // First appearance only: 20% tomato, with the other 46 foods equally likely.
-    if(roll<.2)return FOOD.TOMATO;
-    const kind=Math.min(45,Math.floor((roll-.2)/.8*46));return kind>=FOOD.TOMATO?kind+1:kind;
-  }
-  ensureFirstTomato(){
-    if(this.firstTomatoSpawned||this.age<this.nextFirstTomato)return;
-    const p=this.freePoint(60,16,true);
-    if(p)this.addFood({...p,kind:FOOD.TOMATO});else this.nextFirstTomato=this.age+.5;
+    // First appearance only: 10% tomato, with the other 46 foods equally likely.
+    if(roll<.1)return FOOD.TOMATO;
+    const kind=Math.min(45,Math.floor((roll-.1)/.9*46));return kind>=FOOD.TOMATO?kind+1:kind;
   }
   refill(){if(this.age<this.nextRefill)return;while(this.food.length<4+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.addFood({...p,kind:this.nextFoodKind()});}}
   setBuff(kind,duration=EFFECT_DURATION){
@@ -146,7 +141,7 @@ export class SnakeGame{
     let used=0;for(let i=1;i<this.body.length;i++){const d=distance(this.body[i-1],this.body[i]);if(used+d>this.length){const t=(this.length-used)/d;this.body[i]={x:this.body[i-1].x+(this.body[i].x-this.body[i-1].x)*t,y:this.body[i-1].y+(this.body[i].y-this.body[i-1].y)*t};this.body.length=i+1;break;}used+=d;}
     for(let i=this.food.length-1;i>=0;i--)if(!this.arena.celebration&&!this.food[i].slide&&distance(head,this.food[i])<15)this.eatFood(this.food.splice(i,1)[0]);
     const pickup=this.knives.find(k=>!k.held&&!k.thrown&&this.age>=(k.pickupAt||0)&&distance(head,k)<17);if(pickup&&!this.armed){this.arena.dropCarriedDynamite();this.removeKnife(pickup);this.armed=true;this.events.push({type:'knife'});}
-    if(!this.arena.celebration){this.ensureFirstTomato();this.refill();}
+    if(!this.arena.celebration)this.refill();
     if(!this.worldFrozen&&!this.arena.celebration&&this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
     if(this.age>=this.nextBoss){if(!this.spawnBoss())this.nextBoss=this.age+.5;}
     this.ensureKnife();this.updateBlade();
