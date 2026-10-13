@@ -1,0 +1,8 @@
+{
+  "name": "dovemayo-site",
+  "account_id": "a3d1feae61a64987b6ff5025c69f6cb0",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "assets": { "directory": "./dist" },
+  "routes": [ { "pattern": "dovemayo.com", "custom_domain": true } ]
+}

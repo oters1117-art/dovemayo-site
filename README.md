@@ -23,7 +23,9 @@ CSS와 작은 제목 폰트는 첫 화면 지연을 줄이도록 HTML에 포함�
 
 ## 배포 및 권리
 
-현재 사이트는 Sites에서 호스팅합니다. 이 GitHub 저장소에 올리는 것만으로 자동 배포되지는 않습니다.
+현재 사이트는 Cloudflare Workers Static Assets에서 호스팅합니다(2026-10-13 이전 완료). 프로덕션은 https://dovemayo.com/, 보조 주소는 https://dovemayo-site.oters.workers.dev/ 입니다. ChatGPT/Codex 구독과 별도로 운영됩니다.
+
+배포: `npx wrangler deploy --config wrangler.jsonc` (Cloudflare 로그인 필요). `dist/`만 업로드하며 별도 빌드나 서버 DB는 없습니다. 이 GitHub 저장소에 올리는 것만으로 자동 배포되지는 않습니다. `.openai/hosting.json`은 이전 Sites 배포의 기록이며, 현재 프로덕션 업데이트에는 사용하지 않습니다.
 
 공개 저장소는 열람을 위한 것으로, 작품·폰트·음악 등의 재사용 허가를 의미하지 않습니다. 외부 이모지와 효과음의 출처 및 라이선스는 `dist/emoji/LICENSE.txt`, `dist/audio/CREDITS.txt`를 확인하세요.
 
@@ -58,3 +60,4 @@ http://127.0.0.1:4174/admin 주소로 바로 열립니다. 로그인은 없으�
 조회수는 페이지 로드별로 집계하며 오늘(KST)·누적 조회수와 유입 도메인을 표시합니다. 기존 방문 세션과 구분하여 이번 버전부터 pageviews 테이블에 기록합니다. 직접 방문 또는 리퍼러 미전달은 알 수 없음으로 표시하며, 경로·검색어·URL 쿼리는 저장하지 않습니다.
 
 케이크는 8초간 내려오며 적을 추가 소환합니다. 획득 시 3.8초간 슬로모션과 순차 별 파티클 후 정상 진행합니다. Still Alive 및 사용자 제공 종소리는 로컬 테스트 전용으로 연결했습니다.
+
