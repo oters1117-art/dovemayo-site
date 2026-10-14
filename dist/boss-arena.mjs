@@ -1,6 +1,6 @@
 import {spawnCloudScore,updateCloud} from './cloud-scores.mjs';
 import {spawnCake,updateCake} from './cake-finale.mjs?v=20260927-timers10';
-import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20261013-ball-stop';
+import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynamics.mjs?v=20261014-time-stop';
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
@@ -114,9 +114,10 @@ export class BossArena{
   }
 
  }
- // Advance only fuse timestamps; movement, spawns and brain skills keep running.
+ // Preserve remaining durations while the brain and its skills keep running.
  pauseFuses(dt){for(const b of this.g.bombs)if(typeof b.armed==='number')b.armed+=dt;for(const r of this.relics)for(const key of ['installed','fuse','warnAt'])if(typeof r[key]==='number')r[key]+=dt;}
- pauseGroundEnemies(dt){for(const e of this.g.enemies)if(this.g.grounded(e))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
- pauseEnemies(dt){for(const e of this.g.enemies)if(![8,12].includes(e.kind))for(const key of ['until','nextShot','patternUntil','chargeAt','jumpAt','roamUntil','nextHammer'])if(typeof e[key]==='number')e[key]+=dt;}
+ pauseObjects(dt){const g=this.g;for(const p of [...g.enemies,...g.projectiles,...g.bombs,...g.knives,...this.relics])if(g.timeFrozen(p)){if(p.thrown)p.thrown.born+=dt;if(p.gust)p.gust.until+=dt;if(g.projectiles.includes(p))p.born+=dt;}for(const p of g.puddles)p.until+=dt;for(const f of this.fireworks)f.at+=dt;if(this.cake)for(const key of ['born','nextSpawn','landAt','collectAt'])if(typeof this.cake[key]==='number')this.cake[key]+=dt;}
+ pauseGroundEnemies(dt){for(const e of this.g.enemies)if(this.g.grounded(e))for(const key of ['born','until','nextShot','patternUntil','chargeAt','jumpAt','landAt','roamUntil','nextHammer','nextAirHammer','thinkAt','guardCheckAt'])if(typeof e[key]==='number')e[key]+=dt;}
+ pauseEnemies(dt){for(const e of this.g.enemies)if(![8,12].includes(e.kind))for(const key of ['born','until','nextShot','patternUntil','chargeAt','jumpAt','landAt','roamUntil','nextHammer','nextAirHammer','thinkAt','guardCheckAt'])if(typeof e[key]==='number')e[key]+=dt;}
  pause(dt){const g=this.g;for(const f of this.fireworks)f.at+=dt;for(const o of [...g.enemies,...g.projectiles,...g.bombs,...g.puddles,...this.hazards,...this.hands,...this.relics])for(const k of ['born','until','armed','patternUntil','nextShot','chargeAt','jumpAt','landAt','eggAt','roamUntil','fuse','lockAt','pickupAt'])if(typeof o[k]==='number'&&!(this.g.age<this.shockUntil&&o===this.shockOwner))o[k]+=dt;}
 }

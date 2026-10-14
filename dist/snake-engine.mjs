@@ -1,6 +1,6 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261013-ball-stop';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261014-time-stop';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -25,6 +25,7 @@ export class SnakeGame{
   get buffKind(){return this.buff.until>this.age?this.buff.kind:null;}
   get invincible(){return !!this.debugInvincible||this.buffKind==='rainbow'||this.age<this.graceUntil;}
   get timeStopped(){return this.buffKind==='rainbow'&&this.combo==='purple';}
+  timeFrozen(p){return this.timeStopped&&!(this.enemies.includes(p)&&[8,12].includes(p.kind))&&p.type!=='blue'&&![8,12].includes(p.owner?.kind);}
   get worldFrozen(){return this.age<this.arena.shockUntil;}
   // Landing recoil affects grounded actors, never hovering bosses or airborne throws.
   grounded(e){return !e.thrown&&e.state!=='jump'&&e!==this.arena.shockOwner&&![6,8,12].includes(e.kind);}
@@ -125,8 +126,8 @@ export class SnakeGame{
   shoeBodyHit(p){let trail=0;for(let i=1;i<this.body.length;i++){trail+=distance(this.body[i-1],this.body[i]);if(trail>21&&shoeTouches(p,this.body[i],this.age,this.radius))return true;}return false;}
   tick(dt){
     const frozen=this.buffKind==='purple';
-    if(this.timeStopped)this.arena.pauseFuses(Math.min(dt,this.buff.until-this.age));
-    this.age+=dt;if(this.worldFrozen){for(const p of this.food)if(p.slide)p.slide.born+=dt;}else this.slideFood();
+    if(this.timeStopped){const paused=Math.min(dt,this.buff.until-this.age);this.arena.pauseFuses(paused);this.arena.pauseObjects(paused);}
+    this.age+=dt;if(this.worldFrozen||this.timeStopped){for(const p of this.food)if(p.slide)p.slide.born+=dt;}else this.slideFood();
     for(const p of this.puddles)if(p.until>this.age&&distance(this.body[0],p)<p.radius+this.radius)this.setBuff('green');
     this.puddles=this.puddles.filter(p=>p.until>this.age);
     const wobble=this.buffKind==='orange'?Math.sin(this.age*4.2)*.5+Math.sin(this.age*7.1)*.12:0;
@@ -146,11 +147,11 @@ export class SnakeGame{
     if(!this.worldFrozen&&!this.arena.celebration&&this.age>=this.nextEnemy){this.nextEnemy=this.age+Math.max(1.7,10-this.age*.055)+this.random()*2;if(this.spawnEnemy(this.spawnCount===0?0:this.chooseEnemyKind()))this.spawnCount++;}
     if(this.age>=this.nextBoss){if(!this.spawnBoss())this.nextBoss=this.age+.5;}
     this.ensureKnife();this.updateBlade();
-    if(this.worldFrozen)this.arena.pauseGroundEnemies(dt);else if(this.timeStopped)this.arena.pauseEnemies(dt);
+    if(this.timeStopped)this.arena.pauseEnemies(dt);else if(this.worldFrozen)this.arena.pauseGroundEnemies(dt);
     for(const e of [...this.enemies]){
       if(!this.enemies.includes(e)||this.age-e.born<1||e.held)continue;
       if(e.kind===8&&e.state==='egg'){this.arena.updateEnemy(e,dt);if(e.state==='egg')this.arena.pushEgg(e,dt);continue;}
-      if((this.worldFrozen&&this.grounded(e))||(this.timeStopped&&![8,12].includes(e.kind)&&!e.thrown)){if(this.hitsEnemy(head,e,4)){if(this.invincible&&e.kind<6)this.killEnemy(e,'body');else if(!this.invincible)this.fail('적에게 부딪혔어요.');}continue;}
+      if((this.worldFrozen&&this.grounded(e))||(this.timeFrozen(e))){if(this.hitsEnemy(head,e,4)){if(this.invincible&&e.kind<6)this.killEnemy(e,'body');else if(!this.invincible)this.fail('적에게 부딪혔어요.');}continue;}
       if(e.thrown){this.arena.updateEnemy(e,dt);continue;}
       if(e.state==='jump'){this.updateEnemy(e,dt*(this.arena.celebration?.08:1));continue;}
       if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
@@ -282,7 +283,7 @@ export class SnakeGame{
   }
   updateBlade(){
     if(!this.armed)return;const p=this.blade();
-    const hand=this.arena.hands.find(h=>distance(p,h)<24);if(hand){this.arena.removeHand(hand);this.consumeKnife();this.events.push({type:'defeat',x:hand.x,y:hand.y});return;}
+    const hand=!this.timeStopped&&this.arena.hands.find(h=>distance(p,h)<24);if(hand){this.arena.removeHand(hand);this.consumeKnife();this.events.push({type:'defeat',x:hand.x,y:hand.y});return;}
     for(const e of this.enemies)if(e.state!=='egg'&&e.state!=='jump'&&this.hitsEnemy(p,e,10)){this.killEnemy(e,'knife');this.consumeKnife();return;}
     for(const shot of this.projectiles)if(!shot.dead&&shot.type!=='blue'&&!this.isFlying(shot)&&distance(shot,p)<16){shot.dead=true;this.consumeKnife();return;}
     for(const b of this.bombs)if(distance(b,p)<17){this.consumeKnife();this.explode(b);return;}
@@ -322,7 +323,7 @@ export class SnakeGame{
   updateHazards(dt){
     const h=this.body[0];
     for(const p of this.projectiles){
-      if(p.dead||(p.type==='ball'&&this.timeStopped))continue;
+      if(p.dead||this.timeFrozen(p))continue;
       p.previous={x:p.x,y:p.y};
       if(['tooth','blue','anger-ray','ball'].includes(p.type)){p.x+=p.vx*dt;p.y+=p.vy*dt;}
       else{
@@ -339,10 +340,11 @@ export class SnakeGame{
     }
     this.updateBalls();
     // Stronger attacks survive weaker ones; equal ranks cancel each other.
-    for(let i=0;i<this.projectiles.length;i++){const a=this.projectiles[i];if(a.dead||a.type==='ball'||this.isFlying(a))continue;for(let j=i+1;j<this.projectiles.length;j++){const b=this.projectiles[j];if(!b.dead&&b.type!=='ball'&&!this.isFlying(b)&&distance(a,b)<15){if(a.volley!==undefined&&a.volley===b.volley&&this.age-a.born<.3)continue;if(a.type==='tooth'&&b.type==='tooth'&&a.owner===b.owner&&a.owner&&(distance(a,a.owner)<90||distance(b,b.owner)<90))continue;if(a.type==='blue'&&b.type==='blue')continue;if(a.type==='blue'||b.type==='blue'){const blue=a.type==='blue'?a:b,other=blue===a?b:a;if(other.type==='tooth'){other.dead=true;blue.dead=true;this.shotImpact(blue,other);}else{this.pushObject(other,blue,230);blue.dead=true;}if(a.dead)break;continue;}const ar=attackRank(a.type),br=attackRank(b.type);if(ar<=br)a.dead=true;if(br<=ar)b.dead=true;this.shotImpact(a,b);if(a.dead)break;}}}
+    for(let i=0;i<this.projectiles.length;i++){const a=this.projectiles[i];if(a.dead||a.type==='ball'||this.isFlying(a))continue;for(let j=i+1;j<this.projectiles.length;j++){const b=this.projectiles[j];if(!b.dead&&b.type!=='ball'&&!(this.timeFrozen(a)&&this.timeFrozen(b))&&!this.isFlying(b)&&distance(a,b)<15){if(a.volley!==undefined&&a.volley===b.volley&&this.age-a.born<.3)continue;if(a.type==='tooth'&&b.type==='tooth'&&a.owner===b.owner&&a.owner&&(distance(a,a.owner)<90||distance(b,b.owner)<90))continue;if(a.type==='blue'&&b.type==='blue')continue;if(a.type==='blue'||b.type==='blue'){const blue=a.type==='blue'?a:b,other=blue===a?b:a;if(other.type==='tooth'){other.dead=true;blue.dead=true;this.shotImpact(blue,other);}else{this.pushObject(other,blue,230);blue.dead=true;}if(a.dead)break;continue;}const ar=attackRank(a.type),br=attackRank(b.type);if(ar<=br)a.dead=true;if(br<=ar)b.dead=true;this.shotImpact(a,b);if(a.dead)break;}}}
     for(const p of this.projectiles){
       if(p.dead||this.isFlying(p)||p.type==='ball')continue;
       if(p.type!=='blue'&&this.armed&&distance(p,this.blade())<16){p.dead=true;this.consumeKnife();continue;}
+      if(this.timeFrozen(p))continue;
       for(const e of [...this.enemies]){
         if(e.state==='jump'||e.thrown||e.held)continue;
         if(e===p.owner&&p.type==='boomerang')continue;
