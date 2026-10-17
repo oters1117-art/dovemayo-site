@@ -7,7 +7,7 @@ import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261014-time-stop';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-notice';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -21,8 +21,12 @@ const score=document.createElement('div');score.className='snake-score';score.hi
 const bossStars=document.createElement('div');bossStars.className='snake-boss-stars';bossStars.hidden=true;bossStars.setAttribute('aria-label','처치한 보스');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
 const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='enter';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',()=>{if(performance.now()>=deathReadyAt)end();});
+const notice=document.createElement('div');notice.className='snake-notice';notice.hidden=true;notice.setAttribute('aria-hidden','true');
+// One-time explanations per game, shown beside the subtitle.
+const NOTICES={amulet:'나자르 부적 · 자기 몸 관통 가능',purple:'가지 콤보 · 시간 정지 (10초)',orange:'맥주 콤보 · 피아 구분 사라짐 (10초)',cake:'클리어! 축하합니다!'};
+let noticed=new Set(),noticeAnimation=null;
 const rings=new Map();
-document.body.append(touchSurface,canvas,score,bossStars,live,escapeKey);
+document.body.append(touchSurface,canvas,score,bossStars,notice,live,escapeKey);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[],expansion:[]},particles=[],previousFocus=null,pending=false;
 let backgroundTimer=0,flashAnimation=null,textureAt=0,deathReadyAt=0;
 const sound=new FoleySound();
@@ -37,6 +41,14 @@ const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Ma
 const held=new Set();const debugKeys=new DebugKeys();
 function steer(){if(mode==='playing'&&game&&game.buffKind!=='purple')game.target=headingFromKeys(held,game.angle);}
 const say=t=>{live.textContent=t;};
+function hideNotice(){noticeAnimation?.cancel();noticeAnimation=null;notice.hidden=true;notice.textContent='';}
+function showNotice(key){
+  if(noticed.has(key)||!NOTICES[key])return;noticed.add(key);
+  const range=document.createRange();range.selectNodeContents(subtitle);const r=range.getBoundingClientRect(),left=r.right+12;
+  notice.textContent=NOTICES[key];notice.style.left=left+'px';notice.style.top=(r.top+r.height/2)+'px';notice.style.maxWidth=Math.max(96,innerWidth-left-10)+'px';notice.hidden=false;
+  noticeAnimation?.cancel();noticeAnimation=notice.animate([{opacity:0,transform:'translate(-6px,-50%)'},{opacity:1,transform:'translate(0,-50%)',offset:.08},{opacity:1,transform:'translate(0,-50%)',offset:.72},{opacity:0,transform:'translate(0,-50%)'}],{duration:reduced?3000:3800,easing:'ease-out',fill:'forwards'});
+  const current=noticeAnimation;current.onfinish=()=>{if(noticeAnimation===current)hideNotice();};say(NOTICES[key]);
+}
 const finaleMusic=new FinaleMusic({onActive:value=>music.setDucked?.(value)});
 function pop(type='eat'){if(!muted)sound.play(type);}
 function unlockAudio(){sound.unlock();}
@@ -93,7 +105,7 @@ async function start(angle=0){
   const options=layout();
   if(options.origin.y<6 || options.origin.y>innerHeight-6){score.hidden=true;pending=false;say('제목이 보이는 위치에서 시작해 주세요.');return;}
   positionScore();
-  game=new SnakeGame({...options,angle,musicVolume:music.volume,routePlanner:s=>routes.request(s)});metrics.start();particles=[];mode='playing';pending=false;
+  game=new SnakeGame({...options,angle,musicVolume:music.volume,routePlanner:s=>routes.request(s)});metrics.start();particles=[];noticed=new Set();hideNotice();mode='playing';pending=false;
   touchSurface.hidden=false;document.body.classList.add('snake-playing');dot.style.visibility='hidden';canvas.hidden=false;
   updateScore();steer();
   say('스네이크 시작. 방향키로 이동, Escape로 끝내기.');
@@ -111,7 +123,7 @@ function end(){
   touchSurface.hidden=true;stick.reset();mode='idle';game=null;held.clear();cancelAnimationFrame(raf);
   flashAnimation?.cancel();flashAnimation=null;
   for(const [ring,animation] of rings){animation.cancel();ring.remove();}rings.clear();
-  particles=[];bossStars.hidden=true;bossStars.textContent='';score.hidden=true;score.textContent='';escapeKey.hidden=true;
+  particles=[];hideNotice();bossStars.hidden=true;bossStars.textContent='';score.hidden=true;score.textContent='';escapeKey.hidden=true;
   ctx.clearRect(0,0,innerWidth,innerHeight);canvas.hidden=true;
   dot.style.visibility='';document.body.classList.remove('snake-playing');
   say('');
@@ -158,6 +170,9 @@ function advance(now){
     if(e.type==='nerd')pop('throw');
     if(e.type==='grab')pop('grab');
     if(e.type==='king-throw')pop('king-throw');
+    if(e.type==='combo')showNotice(e.kind);
+    if(e.type==='amulet')showNotice('amulet');
+    if(e.type==='celebration')showNotice('cake');
     if(e.type==='combo'&&['purple','orange'].includes(e.kind))flashBackground(e.kind==='purple'?'#bdc3e9':'#f3c45f',650);
     if(e.type==='laser'){pop('chime');flashBackground(reduced?'#ead0c9':'#f1a092',320);}
     if(e.type==='zap'&&!muted){if(e.note!==undefined)sound.playMidi(e.note,e.duration);else pop('zap');}

@@ -1,6 +1,6 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261014-time-stop';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261017-notice';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -269,7 +269,7 @@ export class SnakeGame{
   }
   updateBoss(e,dt){
     const h=this.enemyTarget(e),age=this.age;
-    if(e.patternUntil===undefined||age>=e.patternUntil){e.pattern=Math.floor(this.random()*3);e.patternUntil=age+6;e.nextShot=age;e.orbitAngle=Math.atan2(e.y-h.y,e.x-h.x);e.orbitCenter={...h};}
+    if(e.patternUntil===undefined||age>=e.patternUntil){const options=[0,1,2].filter(p=>e.patternUntil===undefined||p!==e.pattern);e.pattern=options[Math.floor(this.random()*options.length)];e.patternUntil=age+6;e.nextShot=age;e.orbitAngle=Math.atan2(e.y-h.y,e.x-h.x);e.orbitCenter={...h};}
     if(e.pattern===1){
       e.orbitAngle+=TAU/6*dt;
       const c=e.orbitCenter;this.moveEnemy(e,{x:c.x+Math.cos(e.orbitAngle)*160,y:c.y+Math.sin(e.orbitAngle)*160},190,dt);
@@ -277,8 +277,8 @@ export class SnakeGame{
     if(age<e.nextShot)return;
     const aim=Math.atan2(h.y-e.y,h.x-e.x);
     if(e.pattern===0){const offset=this.random()*TAU;for(let i=0;i<14;i++)this.fireTooth(e,offset+i*TAU/14,175);e.nextShot=age+2;}
-    if(e.pattern===1){this.fireTooth(e,aim,245);e.nextShot=age+.11;}
-    if(e.pattern===2){for(let i=-2;i<=2;i++)this.fireTooth(e,aim+i*.18,175);e.nextShot=age+.7;}
+    if(e.pattern===1){this.fireTooth(e,aim,245);e.nextShot=age+.14;}
+    if(e.pattern===2){for(let i=-2;i<=2;i++)this.fireTooth(e,aim+i*.3,175);e.nextShot=age+.7;}
     this.events.push({type:'tooth-shot',x:e.x,y:e.y});
   }
   updateBlade(){

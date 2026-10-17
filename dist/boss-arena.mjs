@@ -55,7 +55,7 @@ export class BossArena{
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
    if(e.state==='jump'){const t=clamp((age-e.jumpAt)/(e.jumpDuration||1.65),0,1);e.x=e.from.x+(e.aim.x-e.from.x)*t;e.y=e.from.y+(e.aim.y-e.from.y)*t;e.lift=Math.sin(Math.pow(t,.8)*Math.PI)*250;if(e.retreat&&age>=(e.nextAirHammer||0)&&t<.9){hammer(this,e,g.random()*TAU);e.nextAirHammer=age+.12;}
-    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}return;}
+    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}if(!e.retreat){this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}}return;}
    if(e.state==='hammer-charge'){if(age>=e.until){if(e.rapid){e.state='hammer-stream';e.left=24;e.nextHammer=age;}else{const offset=g.random()*TAU;for(let i=0;i<22;i++)hammer(this,e,offset+i*TAU/22);e.state='idle';e.until=age+.8;}}return;}
    if(e.state==='hammer-stream'){if(age>=e.nextHammer){hammer(this,e,g.random()*TAU);e.left--;e.nextHammer=age+.05;if(!e.left){e.state='idle';e.until=age+.7;}}return;}
    if(e.state==='land'&&age>=e.until){e.state='idle';e.until=age;}

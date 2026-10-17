@@ -35,3 +35,4 @@ html,body,.page,.card{user-select:none;-webkit-user-select:none;-webkit-touch-ca
 
 .projects{margin-block-start:20px}.projects .project{grid-row:2}.projects .stickers{grid-column:2;grid-row:1}.card.stickers img{display:block;width:64%;height:64%;object-fit:contain}
 @media(max-width:34rem){.projects{margin-block-start:12px}}
+.snake-notice{position:fixed;top:0;left:0;transform:translate(0,-50%);z-index:18;font:700 12px/1.35 Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.01em;color:#c9493f;text-align:left;white-space:normal;word-break:keep-all;pointer-events:none}

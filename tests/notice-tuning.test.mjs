@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {SnakeGame} from '../dist/snake-engine.mjs';
+const fresh=()=>{let n=97;const g=new SnakeGame({width:1200,height:950,origin:{x:100,y:100},random:()=>((n=(n*1664525+1013904223)>>>0)/4294967296)});g.food=[];g.nextEnemy=Infinity;g.nextRefill=Infinity;g.musicPads.nextPlacement=Infinity;return g;};
+const enemy=(g,kind,extra={})=>{const e={x:600,y:450,kind,born:0,state:'idle',until:0,pattern:0,...extra};g.enemies.push(e);return e;};
+test('tomato never selects the same pattern twice in a row',()=>{const g=fresh(),e=enemy(g,6);let previous=null;for(let i=0;i<200;i++){g.projectiles=[];g.updateBoss(e,0);if(previous!==null)assert.notEqual(e.pattern,previous);previous=e.pattern;g.age=e.patternUntil;}});
+test('tomato shotgun is wider and machine gun fires every .14s',()=>{const g=fresh(),e=enemy(g,6),h=g.body[0];g.random=()=>.75;g.updateBoss(e,0);assert.equal(e.pattern,2);const angles=g.projectiles.map(p=>Math.atan2(p.vy,p.vx)).sort((a,b)=>a-b);assert(Math.abs(angles.at(-1)-angles[0]-1.2)<1e-6);
+ const m=fresh(),b=enemy(m,6);m.random=()=>.4;m.updateBoss(b,0);assert.equal(b.pattern,1);assert(Math.abs(b.nextShot-m.age-.14)<1e-9);});
+test('heart presses only on an attack jump, never on a retreat jump',()=>{for(const retreat of [false,true]){const g=fresh(),e=enemy(g,7,{state:'jump',retreat,from:{x:600,y:600},aim:{x:700,y:600},jumpAt:0,jumpDuration:1,until:1});g.age=1;g.updateEnemy(e,0);assert.equal(e.state,'land');assert.equal(g.events.some(v=>v.type==='press'),!retreat);assert.equal(g.worldFrozen,!retreat);}});
