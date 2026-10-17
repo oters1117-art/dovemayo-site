@@ -161,8 +161,7 @@ export class SnakeGame{
       if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
       if(e.kind===4){if(this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.nerdBodyHit(e))this.killEnemy(e,'body');continue;}
       this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.dead)return;
-      // A retreat landing is harmless; only the press jump must be dodged.
-      const hit=!(e.kind===7&&e.state==='land'&&e.retreat)&&this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
+      const hit=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
       if(hit&&!this.invincible){this.fail('적에게 잡혔어요.');return;}
       if((e.kind<6||e.kind===11||e.kind===12)&&((this.invincible&&hit)||(e.kind===4?this.nerdBodyHit(e):this.bodyHit(e,14))))this.killEnemy(e,'body');
     }

@@ -7,7 +7,7 @@ import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-wall';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-land';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
