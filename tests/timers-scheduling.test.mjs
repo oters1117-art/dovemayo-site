@@ -5,8 +5,8 @@ import {updateCake} from '../dist/cake-finale.mjs';
 function fresh(){let seed=429;const g=new SnakeGame({width:1400,height:1000,origin:{x:100,y:100},random:()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296)});g.food=[];g.nextRefill=g.nextEnemy=Infinity;g.musicPads.nextPlacement=Infinity;g.debugInvincible=true;g.speed=0;return g;}
 const close=(a,b)=>assert(Math.abs(a-b)<1e-7,`${a} != ${b}`);
 const stop=g=>{g.eatFood({kind:FOOD.TOMATO});g.eatFood({kind:FOOD.EGGPLANT});};
-test('buffs last ten seconds while eggplant and poison last six',()=>{
- for(const [food,kind] of [[FOOD.CHILI,'red'],[FOOD.BLUEBERRY,'blue'],[FOOD.TOMATO,'rainbow'],[FOOD.BEER,'orange'],[FOOD.EGGPLANT,'purple']]){const g=fresh();g.age=20;g.eatFood({kind:food});assert.equal(g.buffKind,kind);const end=kind==='purple'?26:30;assert.equal(g.buff.until,end);g.age=end-.01;assert.equal(g.buffKind,kind);g.age=end;assert.equal(g.buffKind,null);}
+test('buffs last ten seconds, eggplant four and poison six',()=>{
+ for(const [food,kind] of [[FOOD.CHILI,'red'],[FOOD.BLUEBERRY,'blue'],[FOOD.TOMATO,'rainbow'],[FOOD.BEER,'orange'],[FOOD.EGGPLANT,'purple']]){const g=fresh();g.age=20;g.eatFood({kind:food});assert.equal(g.buffKind,kind);const end=kind==='purple'?24:30;assert.equal(g.buff.until,end);g.age=end-.01;assert.equal(g.buffKind,kind);g.age=end;assert.equal(g.buffKind,null);}
  const g=fresh();g.age=3;g.puddles=[{...g.body[0],radius:52,until:20}];g.step(.1);assert.equal(g.buffKind,'green');close(g.buff.until-g.age,6);g.puddles=[];g.age=g.buff.until;assert.equal(g.buffKind,null);
 });
 test('all combos reset to ten seconds in either order',()=>{

@@ -1,11 +1,12 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261017-notice';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261017-wall';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
 export const EFFECT_DURATION=10;
 export const DEBUFF_DURATION=6;
+export const EGGPLANT_DURATION=4;
 export const TAU=Math.PI*2;
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function turnToward(angle,target,max){const d=Math.atan2(Math.sin(target-angle),Math.cos(target-angle));return angle+Math.max(-max,Math.min(max,d));}
@@ -58,7 +59,7 @@ export class SnakeGame{
     const kind=Math.min(45,Math.floor((roll-.1)/.9*46));return kind>=FOOD.TOMATO?kind+1:kind;
   }
   refill(){if(this.age<this.nextRefill)return;while(this.food.length<4+Math.floor(this.score/5)){const p=this.freePoint();if(!p){this.nextRefill=this.age+.5;break;}this.addFood({...p,kind:this.nextFoodKind()});}}
-  setBuff(kind,duration=['green','purple'].includes(kind)?DEBUFF_DURATION:EFFECT_DURATION){
+  setBuff(kind,duration=kind==='purple'?EGGPLANT_DURATION:kind==='green'?DEBUFF_DURATION:EFFECT_DURATION){
     const current=this.buffKind,colors=['purple','red','blue','orange'];
     if(current==='rainbow'&&kind!=='rainbow'){
       if(!colors.includes(kind))return false;
@@ -139,8 +140,8 @@ export class SnakeGame{
     else this.angle=turnToward(this.angle,this.target+wobble,4.6*dt);
     const speed=this.currentSpeed;let head={x:this.body[0].x+Math.cos(this.angle)*speed*dt,y:this.body[0].y+Math.sin(this.angle)*speed*dt};
     for(const force of [this.attraction,this.knockback])if(force){head.x+=force.vx*dt;head.y+=force.vy*dt;}if(this.knockback){this.knockback.vx*=Math.exp(-3*dt);this.knockback.vy*=Math.exp(-3*dt);if(this.age>=this.knockback.until)this.knockback=null;}
-    if(this.invincible)head=this.deflect(head,speed*dt);
-    else if(this.blocked(head,this.radius)){this.fail('벽이나 글자, 카드에 부딪혔어요.');if(this.dead)return;head=this.deflect(head,speed*dt);}
+    // Walls, cards and letters never kill: the head slides off them.
+    head=this.deflect(head,speed*dt);
     if(!this.invincible&&!this.selfPhase&&this.age>=(this.selfGraceUntil||0)&&this.bodyHit(head,this.radius*1.65)){this.fail('자기 몸에 부딪혔어요.');return;}
     if(distance(head,this.body[0])>0)this.body.unshift(head);this.length=Math.min(this.goalLength,this.length+dt*82);
     let used=0;for(let i=1;i<this.body.length;i++){const d=distance(this.body[i-1],this.body[i]);if(used+d>this.length){const t=(this.length-used)/d;this.body[i]={x:this.body[i-1].x+(this.body[i].x-this.body[i-1].x)*t,y:this.body[i-1].y+(this.body[i].y-this.body[i-1].y)*t};this.body.length=i+1;break;}used+=d;}
@@ -160,7 +161,8 @@ export class SnakeGame{
       if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
       if(e.kind===4){if(this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.nerdBodyHit(e))this.killEnemy(e,'body');continue;}
       this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.dead)return;
-      const hit=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
+      // A retreat landing is harmless; only the press jump must be dodged.
+      const hit=!(e.kind===7&&e.state==='land'&&e.retreat)&&this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
       if(hit&&!this.invincible){this.fail('적에게 잡혔어요.');return;}
       if((e.kind<6||e.kind===11||e.kind===12)&&((this.invincible&&hit)||(e.kind===4?this.nerdBodyHit(e):this.bodyHit(e,14))))this.killEnemy(e,'body');
     }
@@ -175,12 +177,15 @@ export class SnakeGame{
   deflect(next,step){
     const solid=p=>this.blocked(p,this.radius);
     if(!solid(next))return next;
-    const h=this.body[0];
-    for(const delta of [Math.PI/8,-Math.PI/8,Math.PI/4,-Math.PI/4,Math.PI/2,-Math.PI/2,Math.PI*3/4,-Math.PI*3/4,Math.PI]){
-      const a=this.angle+delta,p={x:h.x+Math.cos(a)*step,y:h.y+Math.sin(a)*step};
-      const ahead={x:h.x+Math.cos(a)*(step+5),y:h.y+Math.sin(a)*(step+5)};
-      if(!solid(p)&&!solid(ahead)){this.angle=a;this.target=a;return p;}
-    }
+    const h=this.body[0],at=(a,d)=>({x:h.x+Math.cos(a)*d,y:h.y+Math.sin(a)*d}),free=a=>!solid(at(a,step))&&!solid(at(a,step+5));
+    // Bounce off the surface normal, never turning more than 90 degrees: grazing hits mirror, head-on hits slide.
+    let nx=0,ny=0;for(let i=0;i<16;i++){const a=i*Math.PI/8,q={x:next.x+Math.cos(a)*(this.radius+3),y:next.y+Math.sin(a)*(this.radius+3)};if(this.blocked(q,1)){nx-=Math.cos(a);ny-=Math.sin(a);}}
+    let n=Math.hypot(nx,ny);if(n<1e-6){nx=-Math.cos(this.angle);ny=-Math.sin(this.angle);n=1;}nx/=n;ny/=n;
+    const dx=Math.cos(this.angle),dy=Math.sin(this.angle),dn=dx*nx+dy*ny,incidence=Math.asin(Math.max(0,Math.min(1,-dn)));
+    let tx=dx-dn*nx,ty=dy-dn*ny,t=Math.hypot(tx,ty);
+    if(t<.05){const room=(x,y)=>{let d=0;while(d<90&&!solid({x:h.x+x*(d+5),y:h.y+y*(d+5)}))d+=5;return d;};[tx,ty]=room(-ny,nx)>=room(ny,-nx)?[-ny,nx]:[ny,-nx];t=1;}
+    tx/=t;ty/=t;const out=Math.min(incidence,Math.PI/2-incidence),want=Math.atan2(ty*Math.cos(out)+ny*Math.sin(out),tx*Math.cos(out)+nx*Math.sin(out));
+    for(let i=0;i<=16;i++)for(const side of i?[1,-1]:[0]){const a=want+side*i*Math.PI/16;if(free(a)){this.angle=a;this.target=a;return at(a,step);}}
     this.angle+=Math.PI/2;this.target=this.angle;return {...h};
   }
   isFlying(p){return['shoe','potion','hammer'].includes(p.type)&&this.age-p.born<p.duration;}

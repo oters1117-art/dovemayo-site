@@ -7,7 +7,7 @@ export function drawExpansion(ctx,g,emoji,reduced=false){
  const age=g.age,a=g.arena;if(!a)return;
  const icon=(i,x,y,size=30,alpha=1)=>emoji('expansion',i,x,y,alpha,size);
  const ellipse=(x,y,rx,ry,alpha=.13)=>{ctx.fillStyle=`rgba(31,29,45,${alpha})`;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill();};
- for(const e of g.enemies){if(e.kind===6)ellipse(e.x,e.y+39,33,9,.17);if(e.kind===7){const scale=1-(e.lift||0)/550;ellipse(e.x,e.y+40,36*scale,12*scale,.2);const after=Math.max(0,1-(age-(e.landAt??-10))/.25);if(after>0){ctx.fillStyle=`rgba(255,255,255,${after*.7})`;ctx.beginPath();ctx.ellipse(e.x,e.y+40,108,42,0,0,TAU);ctx.fill();}}if(e.kind===8)ellipse(e.x,e.y+29,29,8,.12);if(e.kind===12)ellipse(e.x,e.y+14,11,3.5,.13);if(e.kind===9)ellipse(e.x,e.y+33,30,8,.18);if(e.thrown)ellipse(e.x,e.y+10,13,4,.16);}
+ for(const e of g.enemies){if(e.kind===6)ellipse(e.x,e.y+39,33,9,.17);if(e.kind===7){const scale=1-(e.lift||0)/550;ellipse(e.x,e.y+40,36*scale,12*scale,.2);const after=Math.max(0,1-(age-(e.pressAt??-10))/.25);if(after>0){ctx.fillStyle=`rgba(255,255,255,${after*.7})`;ctx.beginPath();ctx.ellipse(e.x,e.y+40,108,42,0,0,TAU);ctx.fill();}}if(e.kind===8)ellipse(e.x,e.y+29,29,8,.12);if(e.kind===12)ellipse(e.x,e.y+14,11,3.5,.13);if(e.kind===9)ellipse(e.x,e.y+33,30,8,.18);if(e.thrown)ellipse(e.x,e.y+10,13,4,.16);}
 
  for(const h of a.hazards){const t=age-h.born;if(t<0)continue;
   if(h.type==='cloud'){const fade=h.fired?Math.max(0,1-(age-h.until)/.8):Math.min(1,t/.6);ellipse(h.x,h.y,28,14,.19*fade);if(h.fired&&age-h.until<.16){ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(h.x,h.y,28,14,0,0,TAU);ctx.fill();}}

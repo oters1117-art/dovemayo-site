@@ -19,9 +19,9 @@ test('food increases length and score, and is replaced in free space',()=>{
  assert.equal(g.score,1);assert.equal(g.goalLength,length+24);assert.equal(g.food.length,4);
  assert(g.food.every(p=>!g.blocked(p,16)));assert(g.events.some(e=>e.type==='eat'));
 });
-test('walls and rectangular text obstacles kill without tunneling',()=>{
- const wall=fresh({origin:{x:894,y:200}});wall.step(.08);assert(wall.dead);
- const text=fresh({obstacles:[{x:450,y:195,w:1,h:15}]});text.step(.08);assert(text.dead);
+test('walls and rectangular text obstacles bounce without killing or tunneling',()=>{
+ const wall=fresh({origin:{x:880,y:200}});for(let i=0;i<60;i++){wall.step(1/60);assert(!wall.dead);assert(!wall.blocked(wall.body[0],wall.radius));}assert(Math.cos(wall.angle)<.01);
+ const text=fresh({obstacles:[{x:450,y:195,w:1,h:15}]});for(let i=0;i<60;i++){text.step(1/60);assert(!text.dead);assert(!text.blocked(text.body[0],text.radius));}assert(text.body.every(p=>p.x<450-text.radius||p.x>451+text.radius||p.y<195-text.radius||p.y>210+text.radius));
 });
 test('rounded cards use their rounded visible boundary',()=>{
  const b={x:100,y:100,w:100,h:100,radius:21};assert(!touches({x:101,y:101},4,b));assert(touches({x:150,y:99},4,b));
@@ -53,7 +53,7 @@ test('diagonal holds and release preserve a non-cardinal heading',()=>{
  assert.equal(headingFromKeys(new Set(['ArrowUp','ArrowDown']),released),released);
 });
 test('background elapsed time continues all the way to death instead of freezing',()=>{
- const g=fresh();g.food=[];g.nextRefill=Infinity;g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
+ const g=fresh();g.food=[];g.nextRefill=Infinity;g.enemies=[{x:700,y:200,kind:0,born:-2,state:'idle'}];g.step(10);assert(g.dead);assert(g.age>1);assert(g.age<10);
 });
 test('food quantity scales with score while enemy frequency scales with time',()=>{
  const g=fresh();assert.equal(g.food.length,4);g.age=100;g.refill();assert.equal(g.food.length,4);g.score=25;g.refill();assert.equal(g.food.length,9);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SnakeGame} from '../dist/snake-engine.mjs';
+import {SnakeGame,FOOD} from '../dist/snake-engine.mjs';
+import {PRESS_JUMP_RANGE} from '../dist/boss-arena.mjs';
 const fresh=()=>{let n=97;const g=new SnakeGame({width:1200,height:950,origin:{x:100,y:100},random:()=>((n=(n*1664525+1013904223)>>>0)/4294967296)});g.food=[];g.nextEnemy=Infinity;g.nextRefill=Infinity;g.musicPads.nextPlacement=Infinity;return g;};
 const enemy=(g,kind,extra={})=>{const e={x:600,y:450,kind,born:0,state:'idle',until:0,pattern:0,...extra};g.enemies.push(e);return e;};
 test('tomato never selects the same pattern twice in a row',()=>{const g=fresh(),e=enemy(g,6);let previous=null;for(let i=0;i<200;i++){g.projectiles=[];g.updateBoss(e,0);if(previous!==null)assert.notEqual(e.pattern,previous);previous=e.pattern;g.age=e.patternUntil;}});
@@ -11,3 +12,7 @@ test('space fires blueberries only after a cake, slower than the buff and faster
  const shots=cakes=>{const t=fresh();t.cakesEaten=cakes;t.fireHeld=true;let n=0;for(let i=0;i<300;i++){t.fireManual();t.step(1/60);}n=t.events.filter(e=>e.type==='blue-shot').length;return n;};
  const one=shots(1),two=shots(2),many=shots(9);assert(one>=7&&one<=8);assert(two>one);assert(many>two);assert(many<=21);for(const n of [1,2,9]){const t=fresh();t.cakesEaten=n;assert(t.manualShotCooldown>.14);}});
 test('manual shots stop during the cake celebration',()=>{const g=fresh();g.cakesEaten=1;g.arena.celebration={queue:[],until:99};assert.equal(g.fireManual(),false);});
+test('heart press jump only starts when the player is far away',()=>{for(const far of [false,true]){const g=fresh(),e=enemy(g,7,{x:g.body[0].x+(far?PRESS_JUMP_RANGE+60:150),y:g.body[0].y});g.random=()=>.05;g.updateEnemy(e,0);assert.equal(e.state==='jump'&&!e.retreat,far);}});
+test('retreat landing has no floor flash and no contact hitbox',()=>{const g=fresh(),e=enemy(g,7,{state:'jump',retreat:true,from:{x:600,y:600},aim:{...g.body[0]},jumpAt:0,jumpDuration:1,until:1});g.age=1;g.updateEnemy(e,0);assert.equal(e.state,'land');assert.equal(e.pressAt,undefined);e.x=g.body[0].x;e.y=g.body[0].y-40;g.step(1/120);assert(!g.dead);});
+test('eggplant lasts four seconds',()=>{const g=fresh();g.eatFood({kind:FOOD.EGGPLANT});assert.equal(g.buff.until-g.age,4);});
+test('wall bounce mirrors grazing hits and never turns more than 90 degrees',()=>{for(const deg of [0,10,30,45,60,80]){const a=deg*Math.PI/180,g=new SnakeGame({width:900,height:700,origin:{x:885-Math.cos(a)*20,y:350-Math.sin(a)*20},angle:a,random:()=>.5});g.food=[];g.nextEnemy=Infinity;g.nextRefill=Infinity;g.musicPads.pads=[];g.musicPads.nextPlacement=Infinity;g.target=a;let turned=null;for(let i=0;i<120&&turned===null;i++){g.step(1/120);if(Math.abs(g.angle-a)>1e-6)turned=Math.abs(Math.atan2(Math.sin(g.angle-a),Math.cos(g.angle-a)));}assert(!g.dead);assert(turned!==null);assert(turned<=Math.PI/2+.2,deg+' turned '+turned);if(deg>=45)assert(Math.abs(turned-(Math.PI-2*a))<.25,deg+' mirror '+turned);}});

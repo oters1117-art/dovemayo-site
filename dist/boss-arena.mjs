@@ -4,6 +4,7 @@ import {brainRoam,kingMove,hammer,tornado,gusts,hands,thrown} from './boss-dynam
 // Boss mechanics use the simulation clock: death freezes every pose and telegraph.
 const TAU=Math.PI*2,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const BOSS_NAMES=['토마토','문어심장','뇌','왕 / 성'];
+export const PRESS_JUMP_RANGE=240;
 export const REWARD={PUMPKIN:47,NAZAR:48,CAKE:49};
 export const attackRank=type=>type==='dynamite'?4:['blast','knife'].includes(type)?3:type==='blue'?1:2;
 export class BossArena{
@@ -55,11 +56,13 @@ export class BossArena{
   if(e.thrown){thrown(this,e);return;}
   if(e.kind===7){
    if(e.state==='jump'){const t=clamp((age-e.jumpAt)/(e.jumpDuration||1.65),0,1);e.x=e.from.x+(e.aim.x-e.from.x)*t;e.y=e.from.y+(e.aim.y-e.from.y)*t;e.lift=Math.sin(Math.pow(t,.8)*Math.PI)*250;if(e.retreat&&age>=(e.nextAirHammer||0)&&t<.9){hammer(this,e,g.random()*TAU);e.nextAirHammer=age+.12;}
-    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}if(!e.retreat){this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}}return;}
+    if(t===1){e.lift=0;e.state='land';e.landAt=age;e.until=age+.32;if(g.armed&&g.hitsEnemy(g.blade(),e,10)){g.killEnemy(e,'knife');g.consumeKnife();return;}if(!e.retreat){e.pressAt=age;this.area({x:e.x,y:e.y+40},108,'press',e,42);this.shockAt=age;this.shockUntil=age+.38;this.shockOwner=e;}}return;}
    if(e.state==='hammer-charge'){if(age>=e.until){if(e.rapid){e.state='hammer-stream';e.left=24;e.nextHammer=age;}else{const offset=g.random()*TAU;for(let i=0;i<22;i++)hammer(this,e,offset+i*TAU/22);e.state='idle';e.until=age+.8;}}return;}
    if(e.state==='hammer-stream'){if(age>=e.nextHammer){hammer(this,e,g.random()*TAU);e.left--;e.nextHammer=age+.05;if(!e.left){e.state='idle';e.until=age+.7;}}return;}
    if(e.state==='land'&&age>=e.until){e.state='idle';e.until=age;}
-   if(e.state==='idle'){this.keepDistance(e,180,105,dt);if(age>=e.until){const pattern=Math.floor(g.random()*6);if(pattern===0||pattern===5){e.retreat=pattern===5;e.aim=this.landingPoint(e,e.retreat);e.state='jump';e.jumpAt=age;e.from={x:e.x,y:e.y};e.jumpDuration=1.65;e.until=age+e.jumpDuration;g.events.push({type:'throw'});}else if(pattern===1||pattern===4){e.state='hammer-charge';e.chargeAt=age;e.rapid=pattern===4;e.until=age+.32;}else{const ground={x:e.x,y:e.y+40},angle=Math.atan2(h.y-ground.y,h.x-ground.x);let radius=15;while(radius<52&&g.hitsEnemy({x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius},e,12))radius++;g.projectiles.push({type:'ball',x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius,vx:Math.cos(angle)*205,vy:Math.sin(angle)*205,born:age,owner:e,leftOwner:true,hits:0});g.events.push({type:'roll'});e.until=age+.7;}}}return;
+   if(e.state==='idle'){this.keepDistance(e,180,105,dt);if(age>=e.until){let pattern=Math.floor(g.random()*6);
+    // The press jump is a gap closer: only when the player is far away.
+    if(pattern===0&&dist(e,h)<PRESS_JUMP_RANGE)pattern=1+Math.floor(g.random()*5);if(pattern===0||pattern===5){e.retreat=pattern===5;e.aim=this.landingPoint(e,e.retreat);e.state='jump';e.jumpAt=age;e.from={x:e.x,y:e.y};e.jumpDuration=1.65;e.until=age+e.jumpDuration;g.events.push({type:'throw'});}else if(pattern===1||pattern===4){e.state='hammer-charge';e.chargeAt=age;e.rapid=pattern===4;e.until=age+.32;}else{const ground={x:e.x,y:e.y+40},angle=Math.atan2(h.y-ground.y,h.x-ground.x);let radius=15;while(radius<52&&g.hitsEnemy({x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius},e,12))radius++;g.projectiles.push({type:'ball',x:ground.x+Math.cos(angle)*radius,y:ground.y+Math.sin(angle)*radius,vx:Math.cos(angle)*205,vy:Math.sin(angle)*205,born:age,owner:e,leftOwner:true,hits:0});g.events.push({type:'roll'});e.until=age+.7;}}}return;
   }
   if(e.kind===8){
    if(e.state==='egg'){if(age>=e.until){e.state='idle';e.until=age+1;e.born=age-.7;delete e.gust;this.spawnSatellites(e);g.nextKnife=age;g.ensureKnife();g.events.push({type:'egg-hatch',x:e.x,y:e.y});}return;}

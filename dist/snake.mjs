@@ -1,13 +1,13 @@
 import {shoeAngle,SHOE_SIZE} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {DebugKeys} from './debug-keys.mjs';
 import {FinaleMusic} from './finale-music.mjs';
-import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20260927-timers10';
+import {drawCake,drawCakeAtmosphere,drawClouds,drawDynamite,drawExpansion,drawExpansionEnemy,drawExpansionShot,drawEnhancement,shockLift,comboPaper,comboInk} from './boss-view.mjs?v=20261017-wall';
 import {GameMetrics} from './metrics.mjs?v=1';
 import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-space';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-wall';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
