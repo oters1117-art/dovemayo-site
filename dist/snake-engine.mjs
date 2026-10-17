@@ -33,6 +33,9 @@ export class SnakeGame{
   get slowUntil(){return this.buffKind==='green'?this.buff.until:0;}
   get freezeUntil(){return this.buffKind==='purple'?this.buff.until:0;}
   get currentSpeed(){if(this.buffKind==='purple')return 0;return(this.arena.celebration?.1:1)*(this.speed+Math.min(Math.max(0,this.score)*1.2,32))*(this.buffKind==='red'?1.5:this.buffKind==='rainbow'?(this.combo==='red'?2.1:1.3):this.buffKind==='green'?.55:1);}
+  // Cake reward: manual blueberry shots, faster with each cake but never as fast as the buff.
+  get manualShotCooldown(){const n=this.cakesEaten||0;return n?Math.max(.25,.85-.15*n):Infinity;}
+  fireManual(){if(!this.cakesEaten||this.dead||this.arena.celebration||this.age<(this.nextManualShot||0)||this.projectiles.length>=180)return false;const h=this.body[0],a=this.angle;this.projectiles.push({type:'blue',volley:this.age,x:h.x+Math.cos(a)*14,y:h.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});this.nextManualShot=this.age+this.manualShotCooldown;this.events.push({type:'blue-shot'});return true;}
   get hasBoss(){return this.enemies.some(e=>e.kind>=6&&e.kind<=10);}
   blocked(p,r){return p.x<r+2||p.y<r+2||p.x>this.width-r-2||p.y>this.height-r-2||this.obstacles.some(b=>touches(p,r,b));}
   enemyRadius(e){return e.kind===6?36:e.kind===10?31:e.kind>=6&&e.kind<=9?(e.state==='egg'?22:34):10;}
@@ -165,6 +168,7 @@ export class SnakeGame{
       this.nextBlueShot=this.age+.14;
       if(this.projectiles.length<180){for(const offset of this.activeCombo==='blue'?[-.15,0,.15]:[0]){const a=this.angle+offset;this.projectiles.push({type:'blue',volley:this.age,x:head.x+Math.cos(a)*14,y:head.y+Math.sin(a)*14,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:this.age});}this.events.push({type:'blue-shot'});}
     }
+    if(this.fireHeld)this.fireManual();
     this.updateHazards(dt);if(!this.dead)this.arena.update(dt);
     if(!this.dead)this.musicPads.update(this);
   }

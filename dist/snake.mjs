@@ -7,7 +7,7 @@ import {TouchSteering} from './touch-steering.mjs?v=2';
 import {PadMusicPlayer} from './music-pads.mjs?v=5';
 import {RoutePlanner} from './route-client.mjs?v=1';
 import {FoleySound} from './foley.mjs?v=20260927-timers10';
-import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-notice';
+import {SnakeGame,headingFromKeys,cardObstacle,FOOD} from './snake-engine.mjs?v=20261017-space';
 // Twemoji © Twitter and contributors; CC BY 4.0. Local assets; tooth contrast outline added.
 // https://github.com/jdecked/twemoji · https://creativecommons.org/licenses/by/4.0/
 const dot=document.querySelector('.identity h1 > span');
@@ -20,11 +20,11 @@ const ctx=canvas.getContext('2d');
 const score=document.createElement('div');score.className='snake-score';score.hidden=true;score.setAttribute('aria-label','점수와 생존 시간');
 const bossStars=document.createElement('div');bossStars.className='snake-boss-stars';bossStars.hidden=true;bossStars.setAttribute('aria-label','처치한 보스');
 const live=document.createElement('div');live.className='snake-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
-const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='enter';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',()=>{if(performance.now()>=deathReadyAt)end();});
+const escapeKey=document.createElement('button');escapeKey.className='snake-escape';escapeKey.textContent='enter / esc';escapeKey.hidden=true;escapeKey.setAttribute('aria-label','게임 종료하고 처음으로');escapeKey.addEventListener('click',()=>{if(performance.now()>=deathReadyAt)end();});
 const notice=document.createElement('div');notice.className='snake-notice';notice.hidden=true;notice.setAttribute('aria-hidden','true');
 // One-time explanations per game, shown beside the subtitle.
-const NOTICES={amulet:'나자르 부적 · 자기 몸 관통 가능',purple:'가지 콤보 · 시간 정지 (10초)',orange:'맥주 콤보 · 피아 구분 사라짐 (10초)',cake:'클리어! 축하합니다!'};
-let noticed=new Set(),noticeAnimation=null;
+const NOTICES={amulet:'자기 몸 관통 가능',purple:'시간 정지 (10초)',orange:'피아 구분 사라짐 (10초)',cake:'클리어! 축하합니다!',fire:'[Space bar]로 블루베리 발사'};
+let noticed=new Set(),noticeAnimation=null,noticeQueue=[];
 const rings=new Map();
 document.body.append(touchSurface,canvas,score,bossStars,notice,live,escapeKey);
 let game=null,mode='idle',raf=0,last=0,muted=false,assets=null,images={food:[],enemies:[],props:[],boss:[],expansion:[]},particles=[],previousFocus=null,pending=false;
@@ -41,13 +41,15 @@ const directions={ArrowRight:0,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowUp:-Ma
 const held=new Set();const debugKeys=new DebugKeys();
 function steer(){if(mode==='playing'&&game&&game.buffKind!=='purple')game.target=headingFromKeys(held,game.angle);}
 const say=t=>{live.textContent=t;};
-function hideNotice(){noticeAnimation?.cancel();noticeAnimation=null;notice.hidden=true;notice.textContent='';}
+function hideNotice(){noticeAnimation?.cancel();noticeAnimation=null;noticeQueue=[];notice.hidden=true;notice.textContent='';}
 function showNotice(key){
-  if(noticed.has(key)||!NOTICES[key])return;noticed.add(key);
+  if(noticed.has(key)||!NOTICES[key])return;noticed.add(key);if(noticeAnimation){noticeQueue.push(key);return;}playNotice(key);
+}
+function playNotice(key){
   const range=document.createRange();range.selectNodeContents(subtitle);const r=range.getBoundingClientRect(),left=r.right+12;
   notice.textContent=NOTICES[key];notice.style.left=left+'px';notice.style.top=(r.top+r.height/2)+'px';notice.style.maxWidth=Math.max(96,innerWidth-left-10)+'px';notice.hidden=false;
   noticeAnimation?.cancel();noticeAnimation=notice.animate([{opacity:0,transform:'translate(-6px,-50%)'},{opacity:1,transform:'translate(0,-50%)',offset:.08},{opacity:1,transform:'translate(0,-50%)',offset:.72},{opacity:0,transform:'translate(0,-50%)'}],{duration:reduced?3000:3800,easing:'ease-out',fill:'forwards'});
-  const current=noticeAnimation;current.onfinish=()=>{if(noticeAnimation===current)hideNotice();};say(NOTICES[key]);
+  const current=noticeAnimation;current.onfinish=()=>{if(noticeAnimation!==current)return;noticeAnimation=null;notice.hidden=true;const next=noticeQueue.shift();if(next)playNotice(next);};say(NOTICES[key]);
 }
 const finaleMusic=new FinaleMusic({onActive:value=>music.setDucked?.(value)});
 function pop(type='eat'){if(!muted)sound.play(type);}
@@ -114,7 +116,7 @@ async function start(angle=0){
 function positionEscape(){
   if(!game||escapeKey.hidden)return;
   const h=game.body[0];
-  escapeKey.style.left=Math.max(8,Math.min(innerWidth-68,h.x+14))+'px';
+  escapeKey.style.left=Math.max(8,Math.min(innerWidth-escapeKey.offsetWidth-10,h.x+14))+'px';
   escapeKey.style.top=Math.max(8,Math.min(innerHeight-36,h.y-14))+'px';
 }
 function end(){
@@ -172,7 +174,7 @@ function advance(now){
     if(e.type==='king-throw')pop('king-throw');
     if(e.type==='combo')showNotice(e.kind);
     if(e.type==='amulet')showNotice('amulet');
-    if(e.type==='celebration')showNotice('cake');
+    if(e.type==='celebration'){showNotice('cake');showNotice('fire');}
     if(e.type==='combo'&&['purple','orange'].includes(e.kind))flashBackground(e.kind==='purple'?'#bdc3e9':'#f3c45f',650);
     if(e.type==='laser'){pop('chime');flashBackground(reduced?'#ead0c9':'#f1a092',320);}
     if(e.type==='zap'&&!muted){if(e.note!==undefined)sound.playMidi(e.note,e.duration);else pop('zap');}
@@ -360,12 +362,13 @@ window.addEventListener('keydown',e=>{
   }
   if(debugKeys.enabled&&['1','2','3','4','q','w','0','e'].includes(e.key.toLowerCase())&&!e.repeat&&['localhost','127.0.0.1'].includes(location.hostname)){e.preventDefault();const key=e.key.toLowerCase();if('1234'.includes(key))game.spawnBoss(true,5+Number(key));if(key==='q')game.spawnSpecial();if(key==='w')game.spawnEnemy();if(key==='0')game.arena.spawnCake(true);if(key==='e'){game.debugInvincible=!game.debugInvincible;say(game.debugInvincible?'무적 켜짐':'무적 꺼짐');}return;}
   if(e.key==='Escape'){e.preventDefault();end();return;}
-  if(e.key===' '){e.preventDefault();return;}
+  if(e.key===' '){e.preventDefault();if(mode==='playing'&&game){game.fireHeld=true;game.fireManual();}return;}
   if(e.key==='Tab'){e.preventDefault();return;}
   if(e.key.toLowerCase()==='m'){toggleSound();return;}
   if(e.key in directions){e.preventDefault();if(mode==='playing'){game.touchTarget=null;stick.reset();held.add(e.key);steer();}}
 });
-window.addEventListener('keyup',e=>{if(e.key in directions){held.delete(e.key);steer();}});
+window.addEventListener('keyup',e=>{if(e.key===' '&&game)game.fireHeld=false;if(e.key in directions){held.delete(e.key);steer();}});
+window.addEventListener('blur',()=>{if(game)game.fireHeld=false;});
 window.addEventListener('blur',()=>{stick.reset();held.clear();steer();});
 document.addEventListener('visibilitychange',()=>{held.clear();steer();if(mode==='playing'){advance(performance.now());if(!document.hidden){cancelAnimationFrame(raf);if(mode==='playing')raf=requestAnimationFrame(frame);}}});
 window.addEventListener('resize',()=>{if(mode==='playing')end();else if(mode==='dead'){sizeCanvas();draw();positionEscape();}positionScore();});
