@@ -234,10 +234,11 @@ test('blue bullets destroy teeth and ordinary enemies but cannot kill bosses',()
  g.updateHazards(.001);assert.equal(g.projectiles.length,0);assert.equal(g.enemies.length,target==='boss'?1:0);
  }
 });
-test('boss randomly selects radial barrage, orbit machine gun and aimed fan',()=>{
+test('boss randomly selects radial barrage, orbit machine gun, aimed fan and loose single shots',()=>{
  const g=fresh();g.food=[];const e={x:200,y:300,kind:6,until:0};g.enemies=[e];g.random=()=>.05;g.updateBoss(e,.01);assert.equal(e.pattern,0);assert.equal(g.projectiles.length,14);
- g.age=6.1;g.projectiles=[];g.random=()=>.4;g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
- g.age=12.2;g.projectiles=[];g.random=()=>.75;g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
+ g.age=6.1;g.projectiles=[];g.random=()=>.2;g.updateBoss(e,.01);assert.equal(e.pattern,1);assert.equal(g.projectiles.length,1);const a=e.orbitAngle;g.age+=.2;g.updateBoss(e,.2);assert(e.orbitAngle>a);assert.equal(g.projectiles.length,2);
+ g.age=12.2;g.projectiles=[];g.random=()=>.5;g.updateBoss(e,.01);assert.equal(e.pattern,2);assert.equal(g.projectiles.length,5);
+ g.age=18.3;g.projectiles=[];g.random=()=>.9;g.updateBoss(e,.01);assert.equal(e.pattern,3);assert.equal(g.projectiles.length,1);
 });
 
 test('teeth and blue bullets are silent on terrain collisions',()=>{

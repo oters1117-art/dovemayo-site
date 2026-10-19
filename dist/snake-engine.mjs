@@ -1,6 +1,6 @@
 import {shoeTouches} from './shoe-hitbox.mjs?v=20261009-shoe';
 import {cakeFootprint} from './cake-finale.mjs?v=20260927-timers10';
-import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261017-wall';
+import {BossArena,REWARD,attackRank} from './boss-arena.mjs?v=20261019-vary';
 import {MusicPads} from './music-pads.mjs?v=5';
 import {planSnapshotRoute} from './navigation-snapshot.mjs?v=1';
 export const FOOD=Object.freeze({CHILI:22,EGGPLANT:17,BLUEBERRY:5,TOMATO:44,BEER:3,GOLDEN_APPLE:46});
@@ -8,6 +8,7 @@ export const EFFECT_DURATION=10;
 export const DEBUFF_DURATION=6;
 export const EGGPLANT_DURATION=4;
 export const TAU=Math.PI*2;
+const NEUTRAL_TRAIT=Object.freeze({speed:1,range:1,rest:1,orbit:1,weave:0,phase:0});
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function turnToward(angle,target,max){const d=Math.atan2(Math.sin(target-angle),Math.cos(target-angle));return angle+Math.max(-max,Math.min(max,d));}
 export function touches(p,r,b){if(b.parts){if(p.x+r<b.x||p.y+r<b.y||p.x-r>b.x+b.w||p.y-r>b.y+b.h)return false;return b.parts.some(part=>touches(p,r,part));}const c=Math.min(b.radius||0,b.w/2,b.h/2),x=Math.max(Math.abs(p.x-b.x-b.w/2)-(b.w/2-c),0),y=Math.max(Math.abs(p.y-b.y-b.h/2)-(b.h/2-c),0);return Math.hypot(x,y)<c+r;}
@@ -92,9 +93,12 @@ export class SnakeGame{
     for(let i=0;i<80;i++){const a=this.random()*TAU,r=min+this.random()*(max-min),p={x:center.x+Math.cos(a)*r,y:center.y+Math.sin(a)*r};if(!this.blocked(p,12)&&!this.food.some(o=>distance(p,o)<28)&&!this.enemies.some(o=>distance(p,o)<this.enemyRadius(o)+18)&&!this.bombs.some(o=>distance(p,o)<24))return p;}return null;
   }
   chooseEnemyKind(){const r=this.random();return r<.5?0:r<.6?1:r<.7?2:r<.8?3:r<.9?4:5;}
+  // Small per-enemy personality: the same pattern, with varied speed, range, rest and approach.
+  makeTrait(){const r=()=>this.random();return {speed:.88+r()*.24,range:.8+r()*.45,rest:.75+r()*.5,orbit:.8+r()*.4,weave:r()<.35?(r()<.5?-1:1)*(18+r()*22):0,phase:r()*TAU};}
+  trait(e){return e.trait||NEUTRAL_TRAIT;}
   spawnEnemy(kind=this.chooseEnemyKind(),bonus=false){
     const p=this.freePoint(150,kind===4?31:16);if(!p)return false;
-    this.enemies.push({...p,kind,born:this.age,state:'idle',until:this.age+(kind===4?10+this.random()*12:0)});
+    this.enemies.push({...p,kind,born:this.age,state:'idle',until:this.age+(kind===4?10+this.random()*12:0),trait:this.makeTrait()});
     this.events.push({type:'enemy',...p});return true;
   }
   spawnBoss(debug=false,kind=null){return this.arena.spawn(debug,kind);}
@@ -155,13 +159,13 @@ export class SnakeGame{
     for(const e of [...this.enemies]){
       if(!this.enemies.includes(e)||this.age-e.born<1||e.held)continue;
       if(e.kind===8&&e.state==='egg'){this.arena.updateEnemy(e,dt);if(e.state==='egg')this.arena.pushEgg(e,dt);continue;}
-      if((this.worldFrozen&&this.grounded(e))||(this.timeFrozen(e))){if(this.hitsEnemy(head,e,4)){if(this.invincible&&e.kind<6)this.killEnemy(e,'body');else if(!this.invincible)this.fail('적에게 부딪혔어요.');}continue;}
+      if((this.worldFrozen&&this.grounded(e))||(this.timeFrozen(e))){if(e.kind!==10&&this.hitsEnemy(head,e,4)){if(this.invincible&&e.kind<6)this.killEnemy(e,'body');else if(!this.invincible)this.fail('적에게 부딪혔어요.');}continue;}
       if(e.thrown){this.arena.updateEnemy(e,dt);continue;}
       if(e.state==='jump'){this.updateEnemy(e,dt*(this.arena.celebration?.08:1));continue;}
       if(e.kind===4&&distance(e,head)<this.enemyRadius(e)+this.radius&&!this.invincible){this.fail('너드에게 부딪혔어요.');return;}
       if(e.kind===4){if(this.nerdBodyHit(e)){this.killEnemy(e,'body');continue;}this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.nerdBodyHit(e))this.killEnemy(e,'body');continue;}
       this.updateEnemy(e,dt*(this.arena.celebration?.08:1));if(this.dead)return;
-      const hit=this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
+      const hit=e.kind!==10&&this.enemyDiscs(e).some(c=>distance(c,head)<c.r+4);
       if(hit&&!this.invincible){this.fail('적에게 잡혔어요.');return;}
       if((e.kind<6||e.kind===11||e.kind===12)&&((this.invincible&&hit)||(e.kind===4?this.nerdBodyHit(e):this.bodyHit(e,14))))this.killEnemy(e,'body');
     }
@@ -173,12 +177,14 @@ export class SnakeGame{
     this.updateHazards(dt);if(!this.dead)this.arena.update(dt);
     if(!this.dead)this.musicPads.update(this);
   }
+  // The castle is terrain for the snake: it bounces like a wall and never kills.
+  headBlocked(p,r=this.radius){return this.blocked(p,r)||this.enemies.some(e=>e.kind===10&&!e.thrown&&this.hitsEnemy(p,e,r));}
   deflect(next,step){
-    const solid=p=>this.blocked(p,this.radius);
+    const solid=p=>this.headBlocked(p);
     if(!solid(next))return next;
     const h=this.body[0],at=(a,d)=>({x:h.x+Math.cos(a)*d,y:h.y+Math.sin(a)*d}),free=a=>!solid(at(a,step))&&!solid(at(a,step+5));
     // Bounce off the surface normal, never turning more than 90 degrees: grazing hits mirror, head-on hits slide.
-    let nx=0,ny=0;for(let i=0;i<16;i++){const a=i*Math.PI/8,q={x:next.x+Math.cos(a)*(this.radius+3),y:next.y+Math.sin(a)*(this.radius+3)};if(this.blocked(q,1)){nx-=Math.cos(a);ny-=Math.sin(a);}}
+    let nx=0,ny=0;for(let i=0;i<16;i++){const a=i*Math.PI/8,q={x:next.x+Math.cos(a)*(this.radius+3),y:next.y+Math.sin(a)*(this.radius+3)};if(this.headBlocked(q,1)){nx-=Math.cos(a);ny-=Math.sin(a);}}
     let n=Math.hypot(nx,ny);if(n<1e-6){nx=-Math.cos(this.angle);ny=-Math.sin(this.angle);n=1;}nx/=n;ny/=n;
     const dx=Math.cos(this.angle),dy=Math.sin(this.angle),dn=dx*nx+dy*ny,incidence=Math.asin(Math.max(0,Math.min(1,-dn)));
     let tx=dx-dn*nx,ty=dy-dn*ny,t=Math.hypot(tx,ty);
@@ -197,7 +203,7 @@ export class SnakeGame{
     const steps=Math.max(1,Math.ceil(speed*dt/2)),stride=speed*dt/steps;let moved=false;
     for(let i=0;i<steps;i++){const a=Math.atan2(target.y-e.y,target.x-e.x)+(away?Math.PI:0);let accepted=false;for(const offset of [0,.4,-.4,.85,-.85,1.3,-1.3,1.65,-1.65]){const p={x:e.x+Math.cos(a+offset)*stride,y:e.y+Math.sin(a+offset)*stride};if(!this.enemyBlocked(e,p)){e.x=p.x;e.y=p.y;accepted=true;moved=true;break;}}if(!accepted)break;}return moved;
   }
-  orbit(e,dt){e.orbitDirection??=this.random()<.5?-1:1;const h=this.enemyTarget(e),a=Math.atan2(e.y-h.y,e.x-h.x)+e.orbitDirection*.38;this.moveEnemy(e,{x:h.x+Math.cos(a)*185,y:h.y+Math.sin(a)*185},72,dt);}
+  orbit(e,dt){e.orbitDirection??=this.random()<.5?-1:1;const t=this.trait(e),h=this.enemyTarget(e),a=Math.atan2(e.y-h.y,e.x-h.x)+e.orbitDirection*.38*t.orbit;this.moveEnemy(e,{x:h.x+Math.cos(a)*185*t.orbit,y:h.y+Math.sin(a)*185*t.orbit},72*t.speed,dt);}
   randomAim(center=this.body[0]){const h=center;for(let i=0;i<60;i++){const a=this.random()*TAU,r=36+this.random()*100,p={x:h.x+Math.cos(a)*r,y:h.y+Math.sin(a)*r};if(!this.blocked(p,8))return p;}return this.freePoint(30)||{x:h.x+36,y:h.y};}
   toss(e,type){
     if(this.projectiles.length>=96)return;
@@ -244,8 +250,11 @@ export class SnakeGame{
     if(!e.route.length)this.stopNerd(e);
   }
   updateEnemy(e,dt){
-    const h=this.enemyTarget(e),d=distance(e,h),age=this.age;e.state||='idle';e.until??=age;
-    if(e.kind===0){if(h!==this.body[0]&&distance(e,h)<this.enemyRadius(h)+15){this.killEnemy(h,'mob');return;}this.moveEnemy(e,h,(this.speed+Math.min(Math.max(0,this.score)*1.2,32))*.94,dt);return;}
+    const h=this.enemyTarget(e),d=distance(e,h),age=this.age,t=this.trait(e);e.state||='idle';e.until??=age;
+    if(e.kind===0){if(h!==this.body[0]&&distance(e,h)<this.enemyRadius(h)+15){this.killEnemy(h,'mob');return;}
+      // Some chasers weave sideways while far away, then close in directly.
+      let goal=h;if(t.weave&&d>70){const a=Math.atan2(h.y-e.y,h.x-e.x)+Math.PI/2,w=t.weave*Math.sin(age*2.2+t.phase)*Math.min(1,(d-70)/80);goal={x:h.x+Math.cos(a)*w,y:h.y+Math.sin(a)*w};}
+      const chase=t===NEUTRAL_TRAIT?.94:.85+(t.speed-.88)*.375;this.moveEnemy(e,goal,(this.speed+Math.min(Math.max(0,this.score)*1.2,32))*chase,dt);return;}
     if(e.kind===6){this.updateBoss(e,dt);return;}
     if(e.kind>=7){this.arena.updateEnemy(e,dt);return;}
     if(e.kind===4){
@@ -258,16 +267,16 @@ export class SnakeGame{
         else this.acceptNerdRoute(e,planSnapshotRoute(snapshot));
       }return;
     }
-    if(e.kind===5){if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{x:e.x,y:e.y};e.roamUntil=age+3;}this.moveEnemy(e,e.aim,56,dt);if(age>=e.until){this.dropBomb(e);e.until=age+(e.enhanced?1:3)+this.random()*(e.enhanced?1:3);}return;}
+    if(e.kind===5){if(!e.aim||distance(e,e.aim)<18||age>(e.roamUntil||0)){e.aim=this.freePoint(20)||{x:e.x,y:e.y};e.roamUntil=age+3*t.rest;}this.moveEnemy(e,e.aim,56*t.speed,dt);if(age>=e.until){this.dropBomb(e);e.until=age+(e.enhanced?1:3)+this.random()*(e.enhanced?1:3);}return;}
     if(e.kind===3&&e.enhanced){const a=Math.atan2(h.y-e.y,h.x-e.x),n=Math.ceil(d/10);let clear=true;for(let i=2;i<n;i++)if(this.blocked({x:e.x+(h.x-e.x)*i/n,y:e.y+(h.y-e.y)*i/n},6)){clear=false;break;}
       if(!clear){this.orbit(e,dt);e.state='idle';return;}
       if(e.state==='charge'&&age>=e.until){this.projectiles.push({type:'anger-ray',x:e.x+Math.cos(a)*23,y:e.y+Math.sin(a)*23,vx:Math.cos(a)*360,vy:Math.sin(a)*360,born:age,owner:e});e.state='recover';e.until=age+1.6;this.events.push({type:'throw'});}else if(e.state!=='charge'&&age>=e.until){e.state='charge';e.chargeAt=age;e.until=age+.45;}return;
     }
-    if(e.kind===3){this.orbit(e,dt);if(e.state==='charge'){if(age>=e.until){this.toss(e,'boomerang');e.state='recover';e.until=age+2.4;}}else if(age>=e.until&&d<(e.enhanced?480:300)){e.state='charge';e.chargeAt=age;e.until=age+.65;}return;}
-    if(e.state==='flee'){this.moveEnemy(e,h,155,dt,true);if(age>=e.until)e.state='idle';return;}
-    if(e.state==='recover'){if(d<175)this.moveEnemy(e,h,90,dt,true);if(age>=e.until)e.state='idle';return;}
-    if(d>215){this.moveEnemy(e,h,e.kind===1?65:48,dt);return;}
-    for(let i=0;i<(e.enhanced&&e.kind===1?3:1);i++)this.toss(e,e.kind===1?'shoe':'potion');e.state=e.kind===1?'flee':'recover';e.until=age+(e.kind===1?3.5:2.8)+this.random();
+    if(e.kind===3){this.orbit(e,dt);if(e.state==='charge'){if(age>=e.until){this.toss(e,'boomerang');e.state='recover';e.until=age+2.4*t.rest;}}else if(age>=e.until&&d<(e.enhanced?480:300)*t.range){e.state='charge';e.chargeAt=age;e.until=age+.65;}return;}
+    if(e.state==='flee'){this.moveEnemy(e,h,100*t.speed,dt,true);if(age>=e.until)e.state='idle';return;}
+    if(e.state==='recover'){if(d<175*t.range)this.moveEnemy(e,h,90*t.speed,dt,true);if(age>=e.until)e.state='idle';return;}
+    if(d>215*t.range){this.moveEnemy(e,h,(e.kind===1?65:48)*t.speed,dt);return;}
+    for(let i=0;i<(e.enhanced&&e.kind===1?3:1);i++)this.toss(e,e.kind===1?'shoe':'potion');e.state=e.kind===1?'flee':'recover';e.until=age+((e.kind===1?2.4:2.8)+this.random())*t.rest;
   }
   fireTooth(e,a,speed=205){
     if(this.projectiles.length>=96)return;
@@ -277,16 +286,18 @@ export class SnakeGame{
   }
   updateBoss(e,dt){
     const h=this.enemyTarget(e),age=this.age;
-    if(e.patternUntil===undefined||age>=e.patternUntil){const options=[0,1,2].filter(p=>e.patternUntil===undefined||p!==e.pattern);e.pattern=options[Math.floor(this.random()*options.length)];e.patternUntil=age+6;e.nextShot=age;e.orbitAngle=Math.atan2(e.y-h.y,e.x-h.x);e.orbitCenter={...h};}
+    if(e.patternUntil===undefined||age>=e.patternUntil){const options=[0,1,2,3].filter(p=>e.patternUntil===undefined||p!==e.pattern);e.pattern=options[Math.floor(this.random()*options.length)];e.patternUntil=age+6;e.nextShot=age;e.orbitAngle=Math.atan2(e.y-h.y,e.x-h.x);e.orbitCenter={...h};}
     if(e.pattern===1){
       e.orbitAngle+=TAU/6*dt;
       const c=e.orbitCenter;this.moveEnemy(e,{x:c.x+Math.cos(e.orbitAngle)*160,y:c.y+Math.sin(e.orbitAngle)*160},190,dt);
-    }else this.moveEnemy(e,h,e.pattern===2?45:27,dt);
+    }else this.moveEnemy(e,h,e.pattern===2?45:e.pattern===3?38:27,dt);
     if(age<e.nextShot)return;
     const aim=Math.atan2(h.y-e.y,h.x-e.x);
     if(e.pattern===0){const offset=this.random()*TAU;for(let i=0;i<14;i++)this.fireTooth(e,offset+i*TAU/14,175);e.nextShot=age+2;}
     if(e.pattern===1){this.fireTooth(e,aim,245);e.nextShot=age+.14;}
     if(e.pattern===2){for(let i=-2;i<=2;i++)this.fireTooth(e,aim+i*.3,175);e.nextShot=age+.7;}
+    // Single loose shots: roughly aimed, with gaps to slip through.
+    if(e.pattern===3){this.fireTooth(e,aim+(this.random()-.5)*.5,205);e.nextShot=age+.38+this.random()*.22;}
     this.events.push({type:'tooth-shot',x:e.x,y:e.y});
   }
   updateBlade(){

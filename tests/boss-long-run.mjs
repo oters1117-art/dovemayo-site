@@ -10,5 +10,6 @@ for(let i=0;i<4700;i++){
  for(const p of [...g.enemies,...g.projectiles,...g.food,...g.body])assert(Number.isFinite(p.x)&&Number.isFinite(p.y));
  assert(!g.dead);maxEnemies=Math.max(maxEnemies,g.enemies.length);maxShots=Math.max(maxShots,g.projectiles.length);
 }
-frameTimes.sort((a,b)=>a-b);assert.equal(g.arena.spawned,4);assert.equal(g.arena.defeated.size,4);assert(g.arena.cake||g.arena.cakeClaimed);
+frameTimes.sort((a,b)=>a-b);// Either the first round is still finishing with all four bosses down, or the cake already started a new round.
+assert(g.arena.round>=1||(g.arena.spawned===4&&g.arena.defeated.size===4&&(g.arena.cake||g.arena.cakeClaimed)));assert(bossKinds.size>=5);
 console.log(JSON.stringify({simulatedSeconds:g.age,bossKinds:[...bossKinds],maxEnemies,maxShots,elapsedMs:Math.round(performance.now()-start),p95StepMs:frameTimes[Math.floor(frameTimes.length*.95)].toFixed(2)}));
