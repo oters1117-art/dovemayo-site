@@ -10,6 +10,9 @@
   var locks = { face: true, skinColor: true, acc: true, earring: true, facewear: true };
   var history = [];
   var cursor = -1;
+  // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다
+  var real = {};
+  try { real = JSON.parse(localStorage.getItem('cg-real') || '{}') || {}; } catch (e) { real = {}; }
   var controls = {}; // key -> 화면 갱신 함수
 
   var $ = function (id) { return document.getElementById(id); };
@@ -73,6 +76,7 @@
   var ICON = {
     random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
+    real: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 7 3.5 17h5z"/><path d="M15.5 7l5 10h-5z" fill="currentColor"/></svg>'
   };
   function iconButton(cls, icon, label, title) {
@@ -106,7 +110,19 @@
   function diceButton(key) {
     var b = iconButton('dice', 'random', '랜덤', '이 항목만 랜덤');
     b.setAttribute('data-key', key);
-    b.addEventListener('click', function () { commit(CG.randomOne(state, key)); });
+    b.addEventListener('click', function () { commit(CG.randomOne(state, key, null, real)); });
+    return b;
+  }
+
+  // 현실 모드 버튼 (건물): 켜면 이 항목의 랜덤에서 판타지 선택지가 빠진다. 직접 고르는 것은 막지 않는다
+  function realButton(cat) {
+    var b = iconButton('real', 'real', cat.name + ' 현실 모드', '현실 모드: 랜덤에서 판타지 요소를 뺌');
+    b.setAttribute('aria-pressed', real[cat.key] ? 'true' : 'false');
+    b.addEventListener('click', function () {
+      if (real[cat.key]) delete real[cat.key]; else real[cat.key] = true;
+      b.setAttribute('aria-pressed', real[cat.key] ? 'true' : 'false');
+      try { localStorage.setItem('cg-real', JSON.stringify(real)); } catch (e) {}
+    });
     return b;
   }
 
@@ -153,7 +169,8 @@
     row.appendChild(next);
     var tools = el('span', { class: 'tools' });
     var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
-    tools.appendChild(flip || el('span', { class: 'tool-gap' }));
+    var hasFantasy = list.some(function (p) { return p.fantasy; });
+    tools.appendChild(flip || (hasFantasy ? realButton(cat) : el('span', { class: 'tool-gap' })));
     tools.appendChild(diceButton(cat.key));
     tools.appendChild(lockButton(cat.key));
     if (SERVER) tools.appendChild(fileButton(cat));
@@ -328,11 +345,11 @@
     sec.appendChild(rows);
   });
 
-  $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks)); });
+  $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real)); });
   $('btn-prev').addEventListener('click', function () { travel(-1); });
   $('btn-next').addEventListener('click', function () { travel(1); });
   $('btn-copy-image').addEventListener('click', copyImage);
-  $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks)); });
+  $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real)); });
   $('ico-prev').addEventListener('click', function () { travel(-1); });
   $('ico-copy').addEventListener('click', copyImage);
   // 자랑하기: 자랑 게시판으로 가서 한 줄 적고 올린다 (조합 코드를 주소로 넘긴다)
@@ -348,7 +365,7 @@
   document.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
-    if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks)); }
+    if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks, null, real)); }
     else if (e.key === 'ArrowLeft') travel(-1);
     else if (e.key === 'ArrowRight') travel(1);
   });
@@ -479,7 +496,7 @@
       var cell = el('div', { class: 'sheet-cell' });
       var face = el('button', { type: 'button', class: 'sheet-face', 'aria-label': '샘플 ' + (i + 1) + ' 불러오기' });
       var again = iconButton('sheet-re', 'random', '샘플 ' + (i + 1) + ' 다시 뽑기', '이 칸만 다시 뽑기');
-      var roll = function () { sheetStates[i] = CG.randomState(state, locks); face.innerHTML = CG.compose(sheetStates[i]); };
+      var roll = function () { sheetStates[i] = CG.randomState(state, locks, null, real); face.innerHTML = CG.compose(sheetStates[i]); };
       roll();
       face.onclick = function () { commit(sheetStates[i]); $sdlg.close(); };
       again.onclick = roll;

@@ -193,7 +193,7 @@ button.primary:hover { background: #4d403b; }
 .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tool:disabled { opacity: .28; cursor: default; }
 .flip.idle { opacity: .4; }
-.flip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.flip[aria-pressed="true"], .real[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .lock[aria-pressed="true"] {
   background: var(--on);

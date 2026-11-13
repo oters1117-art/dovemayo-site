@@ -196,9 +196,14 @@
     return list[list.length - 1];
   }
 
-  function randomPart(cat, rnd) {
+  // real: { key: true } 인 항목은 fantasy 표시가 붙은 선택지를 뽑지 않는다 (현실 모드)
+  function randomPart(cat, rnd, real) {
     var list = parts[cat.key];
     if (!list.length) return null;
+    if (real && real[cat.key]) {
+      var plain = list.filter(function (p) { return !p.fantasy; });
+      if (plain.length) list = plain;
+    }
     if (cat.noneWeight != null) {
       var none = findIn(list, 'none');
       var rest = list.filter(function (p) { return !p.none; });
@@ -209,12 +214,12 @@
   }
 
   // locks: { key: true } 인 항목은 prev 값을 유지한다
-  function randomState(prev, locks, rnd) {
+  function randomState(prev, locks, rnd, real) {
     rnd = rnd || Math.random;
     locks = locks || {};
     var b = normalize(prev), s = {};
     CATEGORIES.forEach(function (c) {
-      s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd);
+      s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd, real);
     });
     s.flip = {};
     // 좌우 반전은 켜 둔 대로 유지한다 (랜덤이 바꾸지 않는다)
@@ -225,13 +230,15 @@
     return s;
   }
 
-  function randomOne(prev, key, rnd) {
+  function randomOne(prev, key, rnd, real) {
     rnd = rnd || Math.random;
     var s = normalize(prev), i, cur = s[key], tries = 0;
     for (i = 0; i < CATEGORIES.length; i++) {
       if (CATEGORIES[i].key !== key) continue;
-      if (parts[key].length < 2) return s;
-      do { s[key] = pickWeighted(parts[key], rnd).id; } while (s[key] === cur && ++tries < 20);
+      var pool = parts[key];
+      if (real && real[key]) { var plain = pool.filter(function (p) { return !p.fantasy; }); if (plain.length) pool = plain; }
+      if (pool.length < 2) return s;
+      do { s[key] = pickWeighted(pool, rnd).id; } while (s[key] === cur && ++tries < 20);
       return s;
     }
     for (i = 0; i < COLOR_SLOTS.length; i++) {
