@@ -6,7 +6,8 @@
 
   var state = CG.defaultState();
   // 얼굴형(둥근형)과 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다)
-  var locks = { face: true, skinColor: true };
+  // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
+  var locks = { face: true, skinColor: true, acc: true, earring: true, facewear: true };
   var history = [];
   var cursor = -1;
   var controls = {}; // key -> 화면 갱신 함수
@@ -471,21 +472,38 @@
       sheetStates = [];
       $sgrid.textContent = '';
       $sstat.textContent = '';
-      for (var i = 0; i < 16; i++) {
-        var st = CG.randomState(state, locks);
-        sheetStates.push(st);
-        var b = el('button', { type: 'button', 'aria-label': '샘플 ' + (i + 1) + ' 불러오기' });
-        b.innerHTML = CG.compose(st);
-        b.onclick = (function (one) { return function () { commit(one); $sdlg.close(); }; })(st);
-        $sgrid.appendChild(b);
-      }
+      for (var i = 0; i < 16; i++) sheetCell(i);
+    };
+    // 한 칸: 얼굴을 누르면 불러오고, 왼쪽 위 버튼은 그 칸만 다시 뽑는다
+    var sheetCell = function (i) {
+      var cell = el('div', { class: 'sheet-cell' });
+      var face = el('button', { type: 'button', class: 'sheet-face', 'aria-label': '샘플 ' + (i + 1) + ' 불러오기' });
+      var again = iconButton('sheet-re', 'random', '샘플 ' + (i + 1) + ' 다시 뽑기', '이 칸만 다시 뽑기');
+      var roll = function () { sheetStates[i] = CG.randomState(state, locks); face.innerHTML = CG.compose(sheetStates[i]); };
+      roll();
+      face.onclick = function () { commit(sheetStates[i]); $sdlg.close(); };
+      again.onclick = roll;
+      cell.appendChild(face); cell.appendChild(again);
+      $sgrid.appendChild(cell);
     };
     var sheetPng = function () {
-      var cell = 512, canvas = el('canvas', { width: cell * 4, height: cell * 4 }), ctx = canvas.getContext('2d');
+      // 둥근 카드 16장: 칸 480, 사이 20, 바깥 여백 38, 모서리 35 (전체 2056px)
+      var cell = 480, gap = 20, pad = 38, rad = 35, full = cell * 4 + gap * 3 + pad * 2;
+      var canvas = el('canvas', { width: full, height: full }), ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f5f1ee'; ctx.fillRect(0, 0, full, full);
       return Promise.all(sheetStates.map(function (st, i) {
         return new Promise(function (resolve, reject) {
           var url = URL.createObjectURL(new Blob([CG.compose(st, { size: cell })], { type: 'image/svg+xml' })), img = new Image();
-          img.onload = function () { ctx.drawImage(img, (i % 4) * cell, Math.floor(i / 4) * cell, cell, cell); URL.revokeObjectURL(url); resolve(); };
+          img.onload = function () {
+            var x = pad + (i % 4) * (cell + gap), y = pad + Math.floor(i / 4) * (cell + gap);
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y); ctx.arcTo(x + cell, y, x + cell, y + cell, rad); ctx.arcTo(x + cell, y + cell, x, y + cell, rad);
+            ctx.arcTo(x, y + cell, x, y, rad); ctx.arcTo(x, y, x + cell, y, rad); ctx.closePath(); ctx.clip();
+            ctx.drawImage(img, x, y, cell, cell);
+            ctx.restore();
+            URL.revokeObjectURL(url); resolve();
+          };
           img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('svg')); };
           img.src = url;
         });

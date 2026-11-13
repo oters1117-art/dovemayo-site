@@ -277,10 +277,13 @@ button.primary:hover { background: #4d403b; }
 .sheet-dialog { width: min(820px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--rule); border-radius: 18px; padding: 16px; color: var(--ink); background: var(--card); }
 .sheet-dialog::backdrop { background: rgba(40, 30, 25, .35); }
 .sheet-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
-.sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); overflow: auto; border-radius: 12px; }
-.sheet-grid button { padding: 0; border: 0; border-radius: 0; background: none; display: block; cursor: pointer; }
-.sheet-grid svg { display: block; width: 100%; height: auto; }
-.sheet-grid button:hover { filter: brightness(1.06); }
+.sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow: auto; padding: 2px; }
+.sheet-cell { position: relative; border-radius: 14px; overflow: hidden; }
+.sheet-face { padding: 0; border: 0; border-radius: 0; background: none; display: block; width: 100%; cursor: pointer; }
+.sheet-face svg { display: block; width: 100%; height: auto; }
+.sheet-face:hover { filter: brightness(1.06); }
+.sheet-re { position: absolute; top: 6px; left: 6px; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border-radius: 9px; border: 1px solid rgba(43, 37, 35, .10); background: rgba(255, 255, 255, .86); }
+.sheet-re svg { width: 15px; height: 15px; }
 .items-dialog::backdrop { background: rgba(40, 30, 25, .35); }
 .items-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
 .items-head { display: flex; align-items: center; gap: 8px; margin: 0; }
