@@ -40,7 +40,7 @@ h2 small{font-weight:400;color:var(--muted)}
 </head>
 <body>
 <main>
-  <a class="back" href="../">← 랜덤 캐릭터 생성기</a>
+  <a class="back" href="../">← 랜덤 캐릭터 생성기</a> &nbsp; <a class="back" href="../show/">자랑 게시판</a>
   <h1>제안 게시판</h1>
   <p class="lead">추가했으면 하는 요소들을 제안해주세요. 안바쁘다면 검토 후 추가 하겠습니다</p>
 
@@ -56,12 +56,12 @@ h2 small{font-weight:400;color:var(--muted)}
     <p id="msg" class="msg" role="status"></p>
   </form>
 
-  <section id="pending-sec" hidden>
-    <h2>검토 대기 <small id="pending-n"></small></h2>
+  <section id="pending-sec">
+    <h2>제안 <small id="pending-n"></small></h2>
     <div id="pending" class="list"></div>
   </section>
 
-  <h2>승인된 제안 <small id="waiting"></small></h2>
+  <h2>검토한 제안 <small id="waiting"></small></h2>
   <div id="approved" class="list"></div>
 </main>
 <script>
@@ -119,7 +119,7 @@ h2 small{font-weight:400;color:var(--muted)}
     $('send').disabled = true; say('보내는 중…');
     api('submit', { text: text, image: image }).then(function () {
       $('text').value = ''; image = null; $('thumb').hidden = true;
-      say('제출했습니다. 검토 뒤에 아래 목록에 올라갑니다.');
+      say('제출했습니다.');
       load();
     }, function (x) { say(x.message); }).then(function () { $('send').disabled = false; });
   };
@@ -130,7 +130,7 @@ h2 small{font-weight:400;color:var(--muted)}
     if (p.text) { var t = document.createElement('p'); t.textContent = p.text; d.appendChild(t); }
     if (p.img) {
       var a = document.createElement('a'), im = document.createElement('img');
-      var src = '/api/board/img/' + p.id + (p.status === 'approved' ? '' : '?k=' + encodeURIComponent(key));
+      var src = '/api/board/img/' + p.id;
       a.href = src; a.target = '_blank'; a.rel = 'noopener';
       im.src = src; im.alt = '첨부 이미지'; im.loading = 'lazy';
       a.appendChild(im); d.appendChild(a);
@@ -157,9 +157,9 @@ h2 small{font-weight:400;color:var(--muted)}
   }
   function load() {
     api('list').then(function (r) {
-      $('pending-sec').hidden = !r.admin;
-      if (r.admin) { $('pending-n').textContent = r.pending.length + '개'; fill($('pending'), r.pending, true, '검토할 제안이 없습니다.'); }
-      $('waiting').textContent = !r.admin && r.waiting ? '검토 대기 ' + r.waiting + '개' : '';
+      $('pending-n').textContent = r.pending.length + '개';
+      fill($('pending'), r.pending, r.admin, '아직 없습니다.');
+      $('waiting').textContent = r.approved.length + '개';
       fill($('approved'), r.approved, r.admin, '아직 없습니다.');
     }, function () { fill($('approved'), [], false, '목록을 불러오지 못했습니다.'); });
   }

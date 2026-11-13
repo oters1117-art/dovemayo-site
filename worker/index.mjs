@@ -1,8 +1,9 @@
 // dovemayo.com worker. Everything is static (dist/) except the suggestion board API:
-//   GET  /api/board/list            approved posts (+ pending ones with a valid x-admin-key)
+//   GET  /api/board/list            new (pending) and approved posts, all public
+//   GET|POST /api/board/show/list|submit|delete   showcase posts {code, text}
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve|delete  {id}                      admin only
-//   GET  /api/board/img/<id>        image of a post (pending images: admin only)
+//   GET  /api/board/img/<id>        image of a post
 // Storage: one Durable Object (class Board, SQLite-backed). "index" = array of posts (newest first),
 // "img:<id>" = image bytes. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
 import { DurableObject } from 'cloudflare:workers';
@@ -52,29 +53,59 @@ async function submit(request, env) {
   return json({ ok: true, id });
 }
 
+// Showcase ("자랑 게시판"): a post is a combination code and a short text; the page draws the face from the code.
+const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300;
+async function show(request, env, path, admin) {
+  const list = (await env.BOARD.get('show')) || [];
+  if (path === 'list' && request.method === 'GET') return json({ admin, posts: list.slice(0, 600) });
+  if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
+  let body;
+  try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
+  if (path === 'submit') {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const rateKey = 'rate-show:' + ip, hour = Math.floor(Date.now() / 3600000);
+    const rate = await env.BOARD.get(rateKey);
+    const used = rate && rate.hour === hour ? rate.n : 0;
+    if (used >= 12) return fail('잠시 뒤에 다시 올려 주세요.', 429);
+    const code = String(body.code || '').trim();
+    if (!/^[^<>"'&]{6,900}$/.test(code) || code.indexOf(':') < 0) return fail('조합 코드가 올바르지 않습니다.');
+    const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    list.unshift({ id, code, text, at: new Date().toISOString() });
+    if (list.length > MAX_SHOW) list.length = MAX_SHOW;
+    await env.BOARD.put('show', list);
+    await env.BOARD.put(rateKey, { hour, n: used + 1 });
+    return json({ ok: true, id });
+  }
+  if (path === 'delete') {
+    if (!admin) return fail('권한이 없습니다.', 403);
+    const i = list.findIndex((p) => p.id === body.id);
+    if (i < 0) return fail('없는 글입니다.', 404);
+    list.splice(i, 1);
+    await env.BOARD.put('show', list);
+    return json({ ok: true });
+  }
+  return fail('없는 요청입니다.', 404);
+}
+
 async function board(request, env, path) {
   const admin = isAdmin(request, env);
+  if (path.startsWith('show/')) return show(request, env, path.slice(5), admin);
   if (path === 'list' && request.method === 'GET') {
     const list = await readIndex(env);
     return json({
       admin,
       approved: list.filter((p) => p.status === 'approved').map(view),
-      pending: admin ? list.filter((p) => p.status === 'pending').map(view) : [],
-      waiting: list.filter((p) => p.status === 'pending').length
+      pending: list.filter((p) => p.status === 'pending').map(view)
     });
   }
   if (path.startsWith('img/') && request.method === 'GET') {
     const id = path.slice(4);
     const post = (await readIndex(env)).find((p) => p.id === id);
     if (!post || !post.img) return fail('없음', 404);
-    // pending images are for the owner only; the page loads them with the key as a query
-    if (post.status !== 'approved') {
-      const key = new URL(request.url).searchParams.get('k') || '';
-      if (!env.BOARD_ADMIN_KEY || key !== env.BOARD_ADMIN_KEY) return fail('없음', 404);
-    }
     const data = await env.BOARD.get('img:' + id);
     if (!data) return fail('없음', 404);
-    return new Response(data, { headers: { 'content-type': post.img, 'cache-control': post.status === 'approved' ? 'public, max-age=86400' : 'no-store', 'x-content-type-options': 'nosniff' } });
+    return new Response(data, { headers: { 'content-type': post.img, 'cache-control': 'public, max-age=86400', 'x-content-type-options': 'nosniff' } });
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   if (path === 'submit') return submit(request, env);

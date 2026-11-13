@@ -17,6 +17,7 @@
         </div>
         <div class="card-tools right">
           <button id="ico-prev" class="ico" type="button" aria-label="이전 캐릭터" title="이전"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></svg></button>
+          <button id="ico-show" class="ico" type="button" aria-label="자랑 게시판에 올리기" title="자랑하기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></button>
           <button id="ico-copy" class="ico" type="button" aria-label="이미지 복사" title="이미지 복사"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 9V6.5A2.5 2.5 0 0 0 12.5 4h-6A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15H9"/></svg></button>
         </div>
         <p id="status" class="toast" role="status"></p>
@@ -28,10 +29,11 @@
         <button id="btn-next" type="button" title="다음 캐릭터 (→)">다음</button>
       </div>
 
-      <div class="actions">
+      <div class="actions four">
         <button id="btn-png" type="button">PNG 저장</button>
         <button id="btn-svg" type="button">SVG 저장</button>
         <button id="btn-copy-image" type="button" title="왼쪽 위에 dovemayo.com 이 작게 들어간 이미지를 복사합니다">이미지 복사</button>
+        <button id="btn-show" type="button" title="자랑 게시판에 이 캐릭터를 올립니다">자랑하기</button>
       </div>
 
       <div id="build-bar" class="build-bar" hidden>
@@ -54,6 +56,7 @@
       <header class="panel-head">
         <h1>랜덤 캐릭터 생성기</h1>
         <a class="repo" href="https://dovemayo.com/">dovemayo.com</a>
+        <a class="repo" href="https://dovemayo.com/character/show/">자랑 게시판</a>
         <a class="repo" href="https://dovemayo.com/character/board/">제안 게시판</a>
       </header>
       <div id="groups"></div>
