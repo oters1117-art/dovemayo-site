@@ -69,7 +69,7 @@
     { key: 'acc', code: 'a', name: '헤어 악세사리', group: 'acc', noneWeight: 0.65 },
     { key: 'glasses', code: 'g', name: '안경', group: 'acc', noneWeight: 0.75 },
     { key: 'earring', code: 'ae', name: '귀걸이', group: 'acc', noneWeight: 0.6 },
-    { key: 'facewear', code: 'af', name: '마스크 · 안대', group: 'acc', noneWeight: 0.9 }
+    { key: 'facewear', code: 'af', name: '마스크', group: 'acc', noneWeight: 0.9 }
   ];
 
   // after: 그 항목 바로 뒤에 놓는다 (없으면 묶음·소분류의 맨 뒤)
@@ -161,7 +161,7 @@
   }
 
   // 좌우 반전할 수 있는 항목 (그대로 한 번만 그리는 full 조각이 뒤집힌다). 조합 코드에는 fl:hf.hs 처럼 적힌다
-  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'facewear'];
+  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'facewear'];
   // 지금 고른 파츠가 좌우가 다른 그림인지 (half 만 있으면 뒤집어도 같다)
   function canFlip(state, key) {
     if (FLIP_KEYS.indexOf(key) < 0) return false;
@@ -470,15 +470,15 @@
     }).join(' ');
   }
 
-  // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
+  // 아래 속눈썹: 아래 라인에 붙여서, 전부 같은 방향(바깥쪽 아래로 비스듬히)으로 짧고 굵게 긋는다
   function lowLashes(p, o, c) {
-    var L = o.len || 5, end = along(p, 0), bx = end.out[0] * 0.2, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.15;
+    var L = o.len || 11, end = along(p, 0), bx = (end.out[0] < 0 ? -1 : 1), by = 0.85, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0;
     bx /= bl; by /= bl;
     return spread(p, o, 13, 0.28).map(function (f) {
       var q = along(p, f).q, rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
       var dx = bx + rx / rl * R, dy = by + ry / rl * R, dl = Math.hypot(dx, dy) || 1;
       // 흰자 윤곽에서 조금 띄워서 시작한다 (아래 아이라인 밑에서 시작하도록)
-      var G = o.offset != null ? o.offset : 8, ux = dx / dl, uy = dy / dl;
+      var G = o.offset != null ? o.offset : 1, ux = dx / dl, uy = dy / dl;
       return 'M' + r1(q[0] + ux * G) + ' ' + r1(q[1] + uy * G) + ' L' + r1(q[0] + ux * (G + L)) + ' ' + r1(q[1] + uy * (G + L));
     }).join(' ');
   }
@@ -567,7 +567,7 @@
       else {
         // 흰자 아래 윤곽 전체를 기준선으로 쓴다 (노란 아래 라인은 짧아서 속눈썹을 다 못 놓는다)
         var wb = whiteBottom(eye), base = wb ? resample(wb, 60) : lo;
-        if (base.length) out += stroke(lowLashes(base, opt.lowlash, c), 'cg-lash', W(opt.lowlash, 4));
+        if (base.length) out += stroke(lowLashes(base, opt.lowlash, c), 'cg-lash', W(opt.lowlash, 5));
       }
     }
     return out;
