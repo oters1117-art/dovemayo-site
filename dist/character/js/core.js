@@ -672,8 +672,15 @@
       if (!p || p.none || !p.pieces) return;
       // 눈 높이·간격은 눈썹과 안경에도, 입 높이는 입과 립에도 같이 적용한다
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
+      // 동물 귀(earringAt 이 있는 귀 모양)에서는 귀걸이를 그 귀로 옮겨 머리 위 레이어에 그린다. 기준은 사람 귓불 (201, 440)
+      var earAt = c.key === 'earring' ? (part('ear') || {}).earringAt : null;
       for (var l in p.pieces) {
         var pc = p.pieces[l];
+        if (earAt) {
+          var em = 'translate(' + (earAt[0] - 201) + ' ' + (earAt[1] - 440) + ')';
+          put('hairTop', { half: pc.half ? '<g transform="' + em + '">' + pc.half + '</g>' : '', full: pc.full ? '<g transform="' + em + '">' + pc.full + '</g>' : '' });
+          continue;
+        }
         if (s.flip[c.key] && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
         if (tf && (tf[0] || tf[1])) {
           pc = {
