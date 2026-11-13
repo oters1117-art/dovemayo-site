@@ -26,7 +26,7 @@
 
   // 아래 -> 위 순서
   var LAYERS = ['hairBack', 'body', 'hairMid', 'hairBase', 'ear', 'face', 'skin', 'makeup', 'skinTop', 'mouth', 'eye',
-    'hairLine', 'brow', 'glasses', 'hairFront', 'hairSide', 'acc'];
+    'hairLine', 'brow', 'glasses', 'hairFront', 'hairSide', 'hairTop', 'acc'];
 
   // 화면의 묶음. 위에서부터 이 순서로 놓인다
   var GROUPS = [
