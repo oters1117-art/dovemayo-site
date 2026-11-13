@@ -192,6 +192,7 @@ button.primary:hover { background: #4d403b; }
 .row .tool, .color-head .tool { padding: 0; display: grid; place-items: center; }
 .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tool:disabled { opacity: .28; cursor: default; }
+.flip.idle { opacity: .4; }
 .flip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .lock[aria-pressed="true"] {
@@ -273,6 +274,13 @@ button.primary:hover { background: #4d403b; }
   background: var(--card);
   color: var(--ink);
 }
+.sheet-dialog { width: min(820px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--rule); border-radius: 18px; padding: 16px; color: var(--ink); background: var(--card); }
+.sheet-dialog::backdrop { background: rgba(40, 30, 25, .35); }
+.sheet-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
+.sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); overflow: auto; border-radius: 12px; }
+.sheet-grid button { padding: 0; border: 0; border-radius: 0; background: none; display: block; cursor: pointer; }
+.sheet-grid svg { display: block; width: 100%; height: auto; }
+.sheet-grid button:hover { filter: brightness(1.06); }
 .items-dialog::backdrop { background: rgba(40, 30, 25, .35); }
 .items-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
 .items-head { display: flex; align-items: center; gap: 8px; margin: 0; }

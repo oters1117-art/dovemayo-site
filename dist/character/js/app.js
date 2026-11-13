@@ -162,8 +162,9 @@
       select.value = state[cat.key];
       if (flip) {
         var can = CG.canFlip(state, cat.key);
-        flip.disabled = !can;
-        flip.setAttribute('aria-pressed', can && state.flip && state.flip[cat.key] ? 'true' : 'false');
+        // 좌우가 같은 파츠에서는 흐리게만 보이고, 켠 상태는 그대로 남는다
+        flip.className = 'flip tool' + (can ? '' : ' idle');
+        flip.setAttribute('aria-pressed', state.flip && state.flip[cat.key] ? 'true' : 'false');
       }
     };
     return row;
@@ -464,6 +465,44 @@
         $bstat.textContent = '서버에 연결하지 못했습니다. start.bat 창이 켜져 있는지 확인하세요.';
       });
     });
+    // 4×4 샘플: 고정한 항목은 그대로 두고 16명을 뽑아 한 장으로 보여 준다. 저장하면 samples 폴더에 PNG 로 남는다
+    var sheetStates = [], $sdlg = $('sheet-dialog'), $sgrid = $('sheet-grid'), $sstat = $('sheet-status');
+    var drawSheet = function () {
+      sheetStates = [];
+      $sgrid.textContent = '';
+      $sstat.textContent = '';
+      for (var i = 0; i < 16; i++) {
+        var st = CG.randomState(state, locks);
+        sheetStates.push(st);
+        var b = el('button', { type: 'button', 'aria-label': '샘플 ' + (i + 1) + ' 불러오기' });
+        b.innerHTML = CG.compose(st);
+        b.onclick = (function (one) { return function () { commit(one); $sdlg.close(); }; })(st);
+        $sgrid.appendChild(b);
+      }
+    };
+    var sheetPng = function () {
+      var cell = 512, canvas = el('canvas', { width: cell * 4, height: cell * 4 }), ctx = canvas.getContext('2d');
+      return Promise.all(sheetStates.map(function (st, i) {
+        return new Promise(function (resolve, reject) {
+          var url = URL.createObjectURL(new Blob([CG.compose(st, { size: cell })], { type: 'image/svg+xml' })), img = new Image();
+          img.onload = function () { ctx.drawImage(img, (i % 4) * cell, Math.floor(i / 4) * cell, cell, cell); URL.revokeObjectURL(url); resolve(); };
+          img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('svg')); };
+          img.src = url;
+        });
+      })).then(function () {
+        return new Promise(function (resolve, reject) { canvas.toBlob(function (bl) { if (bl) resolve(bl); else reject(new Error('png')); }, 'image/png'); });
+      });
+    };
+    $('btn-sheet').onclick = function () { drawSheet(); $sdlg.showModal(); };
+    $('sheet-again').onclick = drawSheet;
+    $('sheet-save').onclick = function () {
+      $sstat.textContent = '저장 중…';
+      sheetPng().then(function (blob) {
+        return fetch('/api/sample?name=random-4x4-' + stamp() + '.png', { method: 'POST', body: blob }).then(function (r) { return r.json(); });
+      }).then(function (j) { $sstat.textContent = j.error ? j.error : j.saved + ' 에 저장했습니다.'; },
+        function () { $sstat.textContent = '저장하지 못했습니다.'; });
+    };
+
     // 빌드가 끝나면 새 파츠 데이터로 다시 연다 (지금 캐릭터는 주소의 조합 코드로 유지된다)
     try {
       var es = new EventSource('/api/events');

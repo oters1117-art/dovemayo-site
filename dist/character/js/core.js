@@ -214,7 +214,8 @@
       s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd);
     });
     s.flip = {};
-    FLIP_KEYS.forEach(function (k) { if (locks[k] ? b.flip[k] : rnd() < 0.5) s.flip[k] = true; });
+    // 좌우 반전은 켜 둔 대로 유지한다 (랜덤이 바꾸지 않는다)
+    FLIP_KEYS.forEach(function (k) { if (b.flip[k]) s.flip[k] = true; });
     COLOR_SLOTS.forEach(function (c) {
       s[c.key] = locks[c.key] ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
     });
@@ -243,7 +244,7 @@
   function encode(state) {
     var s = normalize(state), out = [];
     CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) { out.push(c.code + ':' + s[c.key]); });
-    var fl = CATEGORIES.filter(function (c) { return s.flip[c.key] && canFlip(s, c.key); }).map(function (c) { return c.code; });
+    var fl = CATEGORIES.filter(function (c) { return s.flip[c.key]; }).map(function (c) { return c.code; });
     if (fl.length) out.push('fl:' + fl.join('.'));
     return out.join(',');
   }
