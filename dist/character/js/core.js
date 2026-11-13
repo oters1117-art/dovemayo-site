@@ -472,10 +472,16 @@
 
   // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
   function lowLashes(p, o, c) {
-    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.35;
+    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.5;
     bx /= bl; by /= bl;
-    return spread(p, o, 13, 0.28).map(function (f) {
-      var q = along(p, f).q, rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
+    // shift: 가닥 전체를 바깥으로 미는 칸 수. 윤곽 끝을 넘어가면 끝의 방향대로 이어서 놓는다
+    var at = spread(p, o, 13, 0.28), stepF = at.length > 1 ? at[1] - at[0] : 0, len = 0;
+    for (var k = 1; k < p.length; k++) len += Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]);
+    return at.map(function (f) {
+      f -= (o.shift || 0) * stepF;
+      var q = along(p, f).q;
+      if (f < 0) q = [end.q[0] + end.out[0] * -f * len, end.q[1] + end.out[1] * -f * len];
+      var rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
       var dx = bx + rx / rl * R, dy = by + ry / rl * R, dl = Math.hypot(dx, dy) || 1;
       // 흰자 윤곽에서 조금 띄워서 시작한다 (아래 아이라인 밑에서 시작하도록)
       var G = o.offset != null ? o.offset : 3, ux = dx / dl, uy = dy / dl;
