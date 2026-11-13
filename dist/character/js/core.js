@@ -468,7 +468,7 @@
 
   // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
   function lowLashes(p, o, c) {
-    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.35;
+    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.2, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.15;
     bx /= bl; by /= bl;
     return spread(p, o, 13, 0.28).map(function (f) {
       var q = along(p, f).q, rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
