@@ -167,11 +167,10 @@ button.primary:hover { background: #4d403b; }
 
 .row {
   display: grid;
-  grid-template-columns: 104px 34px 1fr 34px auto auto;
+  grid-template-columns: 104px 34px 1fr 34px auto;
   gap: 6px;
   align-items: center;
 }
-.row.has-file { grid-template-columns: 104px 34px 1fr 34px auto auto auto; }
 .row .name, .color-head .name { font-weight: 600; white-space: nowrap; }
 
 .row select {
@@ -187,7 +186,13 @@ button.primary:hover { background: #4d403b; }
 
 .row button { padding: 7px 0; }
 .row .step { width: 34px; }
-.row .dice, .row .lock, .row .file, .color-head .dice, .color-head .lock { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
+.row .file { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
+.row .tools { display: flex; gap: 6px; }
+.tool, .tool-gap { width: 34px; height: 34px; flex: none; }
+.row .tool, .color-head .tool { padding: 0; display: grid; place-items: center; }
+.tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tool:disabled { opacity: .28; cursor: default; }
+.flip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .lock[aria-pressed="true"] {
   background: var(--on);
@@ -247,12 +252,13 @@ button.primary:hover { background: #4d403b; }
   .panel h2 { margin: 16px 0 8px; padding-top: 12px; }
   .panel h3 { margin: 10px 0 6px; }
   .rows { gap: 6px; }
-  .row { grid-template-columns: 82px minmax(0, 1fr) auto auto; gap: 5px; }
-  .row.has-file { grid-template-columns: 82px minmax(0, 1fr) auto auto auto; }
+  .row { grid-template-columns: 82px minmax(0, 1fr) auto; gap: 5px; }
+  .row .tools { gap: 5px; }
+  .tool-gap { display: none; }
   .row .step { display: none; }
   .row .name, .color-head .name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
   .row select { padding: 7px 4px; }
-  .row .dice, .row .lock, .row .file, .color-head .dice, .color-head .lock { padding: 7px 8px; }
+  .row .file { padding: 7px 8px; }
   .color-head { grid-template-columns: 82px minmax(0, 1fr) auto auto; gap: 5px; }
   .swatch { width: 28px; height: 28px; }
 }

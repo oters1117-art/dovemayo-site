@@ -157,9 +157,22 @@
     return s;
   }
 
+  // 좌우 반전할 수 있는 항목 (그대로 한 번만 그리는 full 조각이 뒤집힌다). 조합 코드에는 fl:hf.hs 처럼 적힌다
+  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx'];
+  // 지금 고른 파츠가 좌우가 다른 그림인지 (half 만 있으면 뒤집어도 같다)
+  function canFlip(state, key) {
+    if (FLIP_KEYS.indexOf(key) < 0) return false;
+    var p = findIn(parts[key] || [], state[key]);
+    if (!p || !p.pieces) return false;
+    for (var l in p.pieces) if (p.pieces[l].full) return true;
+    return false;
+  }
+
   function normalize(state) {
     var s = defaultState();
+    s.flip = {};
     if (!state) return s;
+    FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
     CATEGORIES.forEach(function (c) {
       if (findIn(parts[c.key], state[c.key])) s[c.key] = state[c.key];
     });
@@ -200,6 +213,8 @@
     CATEGORIES.forEach(function (c) {
       s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd);
     });
+    s.flip = {};
+    FLIP_KEYS.forEach(function (k) { if (locks[k] ? b.flip[k] : rnd() < 0.5) s.flip[k] = true; });
     COLOR_SLOTS.forEach(function (c) {
       s[c.key] = locks[c.key] ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
     });
@@ -228,6 +243,8 @@
   function encode(state) {
     var s = normalize(state), out = [];
     CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) { out.push(c.code + ':' + s[c.key]); });
+    var fl = CATEGORIES.filter(function (c) { return s.flip[c.key] && canFlip(s, c.key); }).map(function (c) { return c.code; });
+    if (fl.length) out.push('fl:' + fl.join('.'));
     return out.join(',');
   }
 
@@ -239,6 +256,10 @@
       if (i < 1) return;
       var key = map[pair.slice(0, i).trim()];
       if (key) s[key] = pair.slice(i + 1).trim();
+      else if (pair.slice(0, i).trim() === 'fl') {
+        s.flip = {};
+        pair.slice(i + 1).trim().split('.').forEach(function (code) { if (map[code]) s.flip[map[code]] = true; });
+      }
     });
     return normalize(s);
   }
@@ -621,7 +642,7 @@
       for (var bl in backPart.pieces || {}) {
         var bp = backPart.pieces[bl];
         if (bp.half) bm += bp.half + '<g transform="' + MIRROR + '">' + bp.half + '</g>';
-        bm += bp.full || '';
+        bm += bp.full ? (s.flip.back ? '<g transform="' + MIRROR + '">' + bp.full + '</g>' : bp.full) : '';
       }
       defs += '<filter id="cg-blk@@"><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>' +
         '<mask id="cg-cap@@" maskUnits="userSpaceOnUse" x="0" y="0" width="' + SIZE + '" height="' + SIZE + '">' +
@@ -643,6 +664,7 @@
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
       for (var l in p.pieces) {
         var pc = p.pieces[l];
+        if (s.flip[c.key] && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
         if (tf && (tf[0] || tf[1])) {
           pc = {
             half: pc.half ? '<g transform="translate(' + tf[0] + ' ' + tf[1] + ')">' + pc.half + '</g>' : '',
@@ -723,6 +745,8 @@
     randomState: randomState,
     randomOne: randomOne,
     encode: encode,
+    FLIP_KEYS: FLIP_KEYS,
+    canFlip: canFlip,
     decode: decode,
     compose: compose,
     eyeDetails: eyeDetails,

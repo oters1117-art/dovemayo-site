@@ -69,11 +69,32 @@
   }
 
   // ---------- 파츠 줄 ----------
+  var ICON = {
+    random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
+    flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 7 3.5 17h5z"/><path d="M15.5 7l5 10h-5z" fill="currentColor"/></svg>'
+  };
+  function iconButton(cls, icon, label, title) {
+    var b = el('button', { type: 'button', class: cls + ' tool', 'aria-label': label, title: title || label });
+    b.innerHTML = ICON[icon];
+    return b;
+  }
+  // 좌우 반전: 좌우가 다른 그림(가르마, 한쪽 머리, 점 등)을 뒤집는다. 좌우가 같은 파츠에서는 꺼져 있다
+  function flipButton(cat) {
+    var b = iconButton('flip', 'flip', cat.name + ' 좌우 반전', '좌우 반전');
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () {
+      var next = JSON.parse(JSON.stringify(state));
+      next.flip = next.flip || {};
+      if (next.flip[cat.key]) delete next.flip[cat.key]; else next.flip[cat.key] = true;
+      commit(next);
+    });
+    return b;
+  }
   function lockButton(key) {
-    var b = el('button', {
-      type: 'button', class: 'lock', 'data-key': key,
-      'aria-pressed': locks[key] ? 'true' : 'false', title: '랜덤에서 이 항목을 바꾸지 않음'
-    }, '고정');
+    var b = iconButton('lock', 'pin', '고정', '고정: 랜덤에서 이 항목을 바꾸지 않음');
+    b.setAttribute('data-key', key);
+    b.setAttribute('aria-pressed', locks[key] ? 'true' : 'false');
     b.addEventListener('click', function () {
       locks[key] = !locks[key];
       b.setAttribute('aria-pressed', locks[key] ? 'true' : 'false');
@@ -82,7 +103,8 @@
   }
 
   function diceButton(key) {
-    var b = el('button', { type: 'button', class: 'dice', 'data-key': key, title: '이 항목만 랜덤' }, '랜덤');
+    var b = iconButton('dice', 'random', '랜덤', '이 항목만 랜덤');
+    b.setAttribute('data-key', key);
     b.addEventListener('click', function () { commit(CG.randomOne(state, key)); });
     return b;
   }
@@ -128,11 +150,22 @@
     row.appendChild(prev);
     row.appendChild(select);
     row.appendChild(next);
-    row.appendChild(diceButton(cat.key));
-    row.appendChild(lockButton(cat.key));
-    if (SERVER) { row.appendChild(fileButton(cat)); row.className += ' has-file'; }
+    var tools = el('span', { class: 'tools' });
+    var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
+    tools.appendChild(flip || el('span', { class: 'tool-gap' }));
+    tools.appendChild(diceButton(cat.key));
+    tools.appendChild(lockButton(cat.key));
+    if (SERVER) tools.appendChild(fileButton(cat));
+    row.appendChild(tools);
 
-    controls[cat.key] = function () { select.value = state[cat.key]; };
+    controls[cat.key] = function () {
+      select.value = state[cat.key];
+      if (flip) {
+        var can = CG.canFlip(state, cat.key);
+        flip.disabled = !can;
+        flip.setAttribute('aria-pressed', can && state.flip && state.flip[cat.key] ? 'true' : 'false');
+      }
+    };
     return row;
   }
 
