@@ -36,6 +36,7 @@ h2 small{font-weight:400;color:var(--muted)}
 .post .meta button{padding:4px 10px;font-size:12px}
 .empty{color:var(--muted);font-size:13px}
 [hidden]{display:none!important}
+.adminlink{position:fixed;right:8px;bottom:6px;font-size:11px;color:var(--muted);opacity:.35;background:none;border:0;padding:4px;cursor:pointer}.adminlink:hover,.adminlink:focus-visible{opacity:.9}
 </style>
 </head>
 <body>
@@ -64,6 +65,7 @@ h2 small{font-weight:400;color:var(--muted)}
   <h2>검토한 제안 <small id="waiting"></small></h2>
   <div id="approved" class="list"></div>
 </main>
+<button type="button" id="admin-login" class="adminlink">관리자 로그인</button>
 <script>
 (function () {
   'use strict';
@@ -163,6 +165,18 @@ h2 small{font-weight:400;color:var(--muted)}
       fill($('approved'), r.approved, r.admin, '아직 없습니다.');
     }, function () { fill($('approved'), [], false, '목록을 불러오지 못했습니다.'); });
   }
+  // 오른쪽 아래의 작은 "관리자 로그인": 비밀번호가 맞으면 이 브라우저에서 관리 버튼이 보인다
+  $('admin-login').onclick = function () {
+    if (key && confirm('관리자 로그아웃할까요?')) { key = ''; try { localStorage.removeItem('board-admin'); } catch (e) {} load(); return; }
+    if (key) return;
+    var pw = prompt('관리자 비밀번호');
+    if (!pw) return;
+    fetch('/api/board/list', { headers: { 'x-admin-key': pw.trim() } }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.admin) { alert('비밀번호가 맞지 않습니다.'); return; }
+      key = pw.trim(); try { localStorage.setItem('board-admin', key); } catch (e) {}
+      load();
+    }, function () { alert('확인하지 못했습니다.'); });
+  };
   load();
 })();
 </script>
