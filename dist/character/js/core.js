@@ -456,12 +456,12 @@
       var nx = -oy, ny = ox;
       if (nx * (q[0] - c[0]) + ny * (q[1] - c[1]) < 0) { nx = -nx; ny = -ny; }
       var dx, dy, bx, by;
-      if (dir === 'down') { dx = ox + nx * 0.25; dy = oy + ny * 0.25 + 1.0; bx = 0; by = -1; }
+      if (dir === 'down') { dx = ox * 0.3; dy = 1; bx = 0; by = 0; }
       else { dx = nx * 0.6 + ox * 1.6; dy = ny * 0.6 + oy * 1.6 - 1; bx = -ox; by = -oy; }
       var dl = Math.hypot(dx, dy) || 1;
       dx /= dl; dy /= dl;
       // 눈 중심에서 바깥으로 퍼지는 방향을 조금 섞어서 가닥마다 각도가 살짝 달라지게 한다
-      var rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1, R = o.radial != null ? o.radial : 0.35;
+      var rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1, R = o.radial != null ? o.radial : (dir === 'down' ? 0.1 : 0.35);
       dx += rx / rl * R; dy += ry / rl * R; dl = Math.hypot(dx, dy) || 1;
       dx /= dl; dy /= dl;
       return 'M' + r1(q[0]) + ' ' + r1(q[1]) +
@@ -470,15 +470,15 @@
     }).join(' ');
   }
 
-  // 아래 속눈썹: 아래 라인에 붙여서, 전부 같은 방향(바깥쪽 아래로 비스듬히)으로 짧고 굵게 긋는다
+  // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
   function lowLashes(p, o, c) {
-    var L = o.len || 11, end = along(p, 0), bx = (end.out[0] < 0 ? -1 : 1), by = 0.85, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0;
+    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.35;
     bx /= bl; by /= bl;
     return spread(p, o, 13, 0.28).map(function (f) {
       var q = along(p, f).q, rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
       var dx = bx + rx / rl * R, dy = by + ry / rl * R, dl = Math.hypot(dx, dy) || 1;
       // 흰자 윤곽에서 조금 띄워서 시작한다 (아래 아이라인 밑에서 시작하도록)
-      var G = o.offset != null ? o.offset : 1, ux = dx / dl, uy = dy / dl;
+      var G = o.offset != null ? o.offset : 5, ux = dx / dl, uy = dy / dl;
       return 'M' + r1(q[0] + ux * G) + ' ' + r1(q[1] + uy * G) + ' L' + r1(q[0] + ux * (G + L)) + ' ' + r1(q[1] + uy * (G + L));
     }).join(' ');
   }
@@ -567,7 +567,7 @@
       else {
         // 흰자 아래 윤곽 전체를 기준선으로 쓴다 (노란 아래 라인은 짧아서 속눈썹을 다 못 놓는다)
         var wb = whiteBottom(eye), base = wb ? resample(wb, 60) : lo;
-        if (base.length) out += stroke(lowLashes(base, opt.lowlash, c), 'cg-lash', W(opt.lowlash, 5));
+        if (base.length) out += stroke(lowLashes(base, opt.lowlash, c), 'cg-lash', W(opt.lowlash, 4));
       }
     }
     return out;
