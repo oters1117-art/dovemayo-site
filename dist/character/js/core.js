@@ -456,12 +456,12 @@
       var nx = -oy, ny = ox;
       if (nx * (q[0] - c[0]) + ny * (q[1] - c[1]) < 0) { nx = -nx; ny = -ny; }
       var dx, dy, bx, by;
-      if (dir === 'down') { dx = ox * 0.3; dy = 1; bx = 0; by = 0; }
+      if (dir === 'down') { dx = ox + nx * 0.25; dy = oy + ny * 0.25 + 1.0; bx = 0; by = -1; }
       else { dx = nx * 0.6 + ox * 1.6; dy = ny * 0.6 + oy * 1.6 - 1; bx = -ox; by = -oy; }
       var dl = Math.hypot(dx, dy) || 1;
       dx /= dl; dy /= dl;
       // 눈 중심에서 바깥으로 퍼지는 방향을 조금 섞어서 가닥마다 각도가 살짝 달라지게 한다
-      var rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1, R = o.radial != null ? o.radial : (dir === 'down' ? 0.1 : 0.35);
+      var rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1, R = o.radial != null ? o.radial : 0.35;
       dx += rx / rl * R; dy += ry / rl * R; dl = Math.hypot(dx, dy) || 1;
       dx /= dl; dy /= dl;
       return 'M' + r1(q[0]) + ' ' + r1(q[1]) +
@@ -478,7 +478,7 @@
       var q = along(p, f).q, rx = q[0] - c[0], ry = q[1] - c[1], rl = Math.hypot(rx, ry) || 1;
       var dx = bx + rx / rl * R, dy = by + ry / rl * R, dl = Math.hypot(dx, dy) || 1;
       // 흰자 윤곽에서 조금 띄워서 시작한다 (아래 아이라인 밑에서 시작하도록)
-      var G = o.offset != null ? o.offset : 5, ux = dx / dl, uy = dy / dl;
+      var G = o.offset != null ? o.offset : 3, ux = dx / dl, uy = dy / dl;
       return 'M' + r1(q[0] + ux * G) + ' ' + r1(q[1] + uy * G) + ' L' + r1(q[0] + ux * (G + L)) + ' ' + r1(q[1] + uy * (G + L));
     }).join(' ');
   }
