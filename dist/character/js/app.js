@@ -1,0 +1,402 @@
+/* 화면: 미리보기, 랜덤, 고정, 수동 선택, 저장 */
+(function () {
+  'use strict';
+
+  var HISTORY_MAX = 100;
+
+  var state = CG.defaultState();
+  // 얼굴형(둥근형)과 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다)
+  var locks = { face: true, skinColor: true };
+  var history = [];
+  var cursor = -1;
+  var controls = {}; // key -> 화면 갱신 함수
+
+  var $ = function (id) { return document.getElementById(id); };
+  // start.bat 로 띄운 로컬 서버에서 열었는지 (파일 열기·빌드·항목 편집은 서버가 있어야 된다).
+  // 홈페이지에 올린 것도 http 로 열리므로 주소가 이 컴퓨터일 때만 켠다
+  var SERVER = location.protocol.indexOf('http') === 0 && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  var $preview = $('preview'), $code = $('code'), $status = $('status');
+  var statusTimer = null;
+
+  function el(tag, attrs, text) {
+    var node = document.createElement(tag);
+    for (var k in attrs || {}) {
+      if (k === 'class') node.className = attrs[k];
+      else node.setAttribute(k, attrs[k]);
+    }
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function say(text) {
+    $status.textContent = text;
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(function () { $status.textContent = ''; }, 2500);
+  }
+
+  // ---------- 상태 ----------
+  function render() {
+    $preview.innerHTML = CG.compose(state);
+    $code.value = CG.encode(state);
+    for (var k in controls) controls[k]();
+    $('btn-prev').disabled = cursor <= 0;
+    $('btn-next').disabled = cursor >= history.length - 1;
+    try { window.history.replaceState(null, '', '#' + $code.value); } catch (e) { /* file:// 에서 막히면 무시 */ }
+  }
+
+  function commit(next) {
+    state = CG.normalize(next);
+    history = history.slice(0, cursor + 1);
+    history.push(JSON.stringify(state));
+    if (history.length > HISTORY_MAX) history.shift();
+    cursor = history.length - 1;
+    render();
+  }
+
+  function travel(step) {
+    var i = cursor + step;
+    if (i < 0 || i >= history.length) return;
+    cursor = i;
+    state = CG.normalize(JSON.parse(history[i]));
+    render();
+  }
+
+  function set(key, id) {
+    if (state[key] === id) return;
+    var next = JSON.parse(JSON.stringify(state));
+    next[key] = id;
+    commit(next);
+  }
+
+  // ---------- 파츠 줄 ----------
+  function lockButton(key) {
+    var b = el('button', {
+      type: 'button', class: 'lock', 'data-key': key,
+      'aria-pressed': locks[key] ? 'true' : 'false', title: '랜덤에서 이 항목을 바꾸지 않음'
+    }, '고정');
+    b.addEventListener('click', function () {
+      locks[key] = !locks[key];
+      b.setAttribute('aria-pressed', locks[key] ? 'true' : 'false');
+    });
+    return b;
+  }
+
+  function diceButton(key) {
+    var b = el('button', { type: 'button', class: 'dice', 'data-key': key, title: '이 항목만 랜덤' }, '랜덤');
+    b.addEventListener('click', function () { commit(CG.randomOne(state, key)); });
+    return b;
+  }
+
+  // 지금 고른 파츠의 SVG 를 연결된 편집기로 연다. 수치만 있는 항목은 그 폴더의 _parts.json 을 연다
+  function fileButton(cat) {
+    var b = el('button', { type: 'button', class: 'file', title: '지금 고른 파츠 파일을 편집기로 열기' }, '파일');
+    b.addEventListener('click', function () {
+      fetch('/api/open?cat=' + encodeURIComponent(cat.key) + '&id=' + encodeURIComponent(state[cat.key]) + '&fallback=1', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { say(j.error ? j.error : (j.opened || '파일') + ' 을(를) 열었습니다.'); },
+          function () { say('서버에 연결하지 못했습니다. start.bat 창이 켜져 있는지 확인하세요.'); });
+    });
+    return b;
+  }
+
+  function buildPartRow(cat) {
+    var list = CG.parts[cat.key];
+    var row = el('div', { class: 'row' });
+    var select = el('select', { 'aria-label': cat.name });
+    // _parts.json 의 group 이 있으면 그 이름으로 묶어 보여 준다 (순서는 목록 그대로)
+    var box = select, boxName = null;
+    list.forEach(function (p) {
+      if ((p.group || null) !== boxName) {
+        boxName = p.group || null;
+        box = boxName ? select.appendChild(el('optgroup', { label: boxName })) : select;
+      }
+      box.appendChild(el('option', { value: p.id }, p.name));
+    });
+    select.addEventListener('change', function () { set(cat.key, select.value); });
+
+    function step(d) {
+      var i = 0;
+      for (var n = 0; n < list.length; n++) if (list[n].id === state[cat.key]) i = n;
+      set(cat.key, list[(i + d + list.length) % list.length].id);
+    }
+    var prev = el('button', { type: 'button', class: 'step', 'aria-label': cat.name + ' 이전' }, '‹');
+    var next = el('button', { type: 'button', class: 'step', 'aria-label': cat.name + ' 다음' }, '›');
+    prev.addEventListener('click', function () { step(-1); });
+    next.addEventListener('click', function () { step(1); });
+
+    row.appendChild(el('span', { class: 'name' }, cat.name));
+    row.appendChild(prev);
+    row.appendChild(select);
+    row.appendChild(next);
+    row.appendChild(diceButton(cat.key));
+    row.appendChild(lockButton(cat.key));
+    if (SERVER) { row.appendChild(fileButton(cat)); row.className += ' has-file'; }
+
+    controls[cat.key] = function () { select.value = state[cat.key]; };
+    return row;
+  }
+
+  // ---------- 색 줄 ----------
+  function buildColorRow(slot) {
+    var list = CG.palettes[slot.palette];
+    var wrap = el('div', { class: 'color-row' });
+    var head = el('div', { class: 'color-head' });
+    var picked = el('span', { class: 'picked' });
+    head.appendChild(el('span', { class: 'name' }, slot.name));
+    head.appendChild(picked);
+    head.appendChild(diceButton(slot.key));
+    head.appendChild(lockButton(slot.key));
+
+    var box = el('div', { class: 'swatches' });
+    var buttons = list.map(function (c) {
+      var b = el('button', {
+        type: 'button', class: 'swatch' + (c.hex ? '' : ' none'),
+        title: c.name, 'aria-label': slot.name + ' ' + c.name, 'aria-pressed': 'false'
+      });
+      if (c.hex) b.style.background = c.hex;
+      b.addEventListener('click', function () { set(slot.key, c.id); });
+      box.appendChild(b);
+      return b;
+    });
+
+    wrap.appendChild(head);
+    wrap.appendChild(box);
+
+    controls[slot.key] = function () {
+      list.forEach(function (c, i) {
+        var on = c.id === state[slot.key];
+        buttons[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (on) picked.textContent = c.name;
+      });
+    };
+    return wrap;
+  }
+
+  // ---------- 저장 ----------
+  function stamp() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
+
+  function download(name, blob) {
+    var a = el('a', { href: URL.createObjectURL(blob), download: name });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  function saveSvg() {
+    var svg = CG.compose(state, { size: CG.SIZE });
+    download('character-' + stamp() + '.svg', new Blob([svg], { type: 'image/svg+xml' }));
+    say('SVG로 저장했습니다.');
+  }
+
+  function savePng() {
+    var size = 1024;
+    var url = URL.createObjectURL(new Blob([CG.compose(state, { size: size })], { type: 'image/svg+xml' }));
+    var img = new Image();
+    img.onload = function () {
+      var canvas = el('canvas', { width: size, height: size });
+      canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (blob) {
+        if (!blob) { say('PNG 저장에 실패했습니다.'); return; }
+        download('character-' + stamp() + '.png', blob);
+        say('PNG로 저장했습니다.');
+      }, 'image/png');
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); say('PNG 저장에 실패했습니다.'); };
+    img.src = url;
+  }
+
+  function copyCode() {
+    function fallback() {
+      $code.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      say(ok ? '조합 코드를 복사했습니다.' : '복사하지 못했습니다. 직접 선택해 복사해 주세요.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText($code.value).then(function () { say('조합 코드를 복사했습니다.'); }, fallback);
+    } else fallback();
+  }
+
+  function applyCode() {
+    var text = $code.value.trim().replace(/^#/, '');
+    if (text.indexOf(':') < 0) { say('조합 코드 형식이 아닙니다.'); return; }
+    commit(CG.decode(text));
+    say('조합 코드를 적용했습니다.');
+  }
+
+  // ---------- 시작 ----------
+  // 묶음(헤어 / 눈 / 얼굴 / 악세사리 / 배경) 순서와 그 안의 줄 순서는 core.js 의 panel() 이 정한다
+  var $groups = $('groups'), lastGroup = null, sec = null;
+  CG.panel().forEach(function (block) {
+    var rows = el('div', { class: 'rows' });
+    block.items.forEach(function (it) {
+      if (it.kind === 'color') rows.appendChild(buildColorRow(it.def));
+      else if (CG.parts[it.def.key].length) rows.appendChild(buildPartRow(it.def));
+    });
+    if (!rows.children.length) return;
+    if (block.group !== lastGroup) {
+      sec = el('section', { class: 'group' });
+      sec.appendChild(el('h2', null, block.group.name));
+      $groups.appendChild(sec);
+      lastGroup = block.group;
+    }
+    if (block.sub) sec.appendChild(el('h3', null, block.sub.name));
+    sec.appendChild(rows);
+  });
+
+  $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks)); });
+  $('btn-prev').addEventListener('click', function () { travel(-1); });
+  $('btn-next').addEventListener('click', function () { travel(1); });
+  $('btn-reset').addEventListener('click', function () { commit(CG.defaultState()); });
+  $('btn-png').addEventListener('click', savePng);
+  $('btn-svg').addEventListener('click', saveSvg);
+  $('btn-copy').addEventListener('click', copyCode);
+  $('btn-apply').addEventListener('click', applyCode);
+  $code.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyCode(); });
+
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks)); }
+    else if (e.key === 'ArrowLeft') travel(-1);
+    else if (e.key === 'ArrowRight') travel(1);
+  });
+
+  // ---------- 항목 편집 (로컬 서버에서만) ----------
+  function setupItemEditor() {
+    var dlg = $('items-dialog'), $cat = $('items-cat'), $body = $('items-body'), $st = $('items-status');
+    var cur = null, rows = [];
+
+    CG.groups.forEach(function (grp) {
+      var og = el('optgroup', { label: grp.name });
+      CG.categories.forEach(function (c) { if (c.group === grp.key) og.appendChild(el('option', { value: c.key }, c.name)); });
+      if (og.children.length) $cat.appendChild(og);
+    });
+
+    function api(url, opts) {
+      return fetch(url, opts).then(function (r) {
+        return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || '실패'); return j; });
+      });
+    }
+    function status(t) { $st.textContent = t; }
+
+    function draw() {
+      $body.innerHTML = '';
+      rows.forEach(function (e, i) {
+        var tr = el('tr');
+        var order = el('td', { class: 'order' });
+        var up = el('button', { type: 'button', 'aria-label': '위로' }, '↑');
+        var dn = el('button', { type: 'button', 'aria-label': '아래로' }, '↓');
+        up.disabled = i === 0; dn.disabled = i === rows.length - 1;
+        up.onclick = function () { rows.splice(i - 1, 0, rows.splice(i, 1)[0]); draw(); };
+        dn.onclick = function () { rows.splice(i + 1, 0, rows.splice(i, 1)[0]); draw(); };
+        order.appendChild(up); order.appendChild(dn);
+
+        var name = el('input', { type: 'text', value: e.name || e.id, 'aria-label': '이름' });
+        name.oninput = function () { e.name = name.value; };
+        var w = el('input', { type: 'number', min: '0', step: '0.1', value: e.w == null ? 1 : e.w, 'aria-label': '랜덤 비중' });
+        w.oninput = function () { e.w = w.value === '' ? undefined : Number(w.value); };
+        var def = el('input', { type: 'radio', name: 'items-default', 'aria-label': '기본값' });
+        def.checked = !!e.default;
+        def.onchange = function () { rows.forEach(function (x) { delete x.default; }); e.default = true; };
+
+        var acts = el('td', { class: 'acts' });
+        var hasFile = cur.files.indexOf(e.id) >= 0;
+        if (hasFile) {
+          var open = el('button', { type: 'button' }, '열기');
+          open.onclick = function () { api('/api/open?cat=' + cur.cat + '&id=' + e.id, { method: 'POST' }).catch(function (x) { status(x.message); }); };
+          var copy = el('button', { type: 'button' }, '복제');
+          copy.onclick = function () {
+            status('복제하는 중…');
+            sessionStorage.setItem('cg-items', cur.cat);
+            api('/api/copy?cat=' + cur.cat + '&id=' + e.id, { method: 'POST' }).then(function (r) { status(r.id + '.svg 를 만들었습니다'); }, function (x) { status(x.message); });
+          };
+          acts.appendChild(open); acts.appendChild(copy);
+        }
+        if (!cur.dataOnly || !e.none) {
+          var del = el('button', { type: 'button', class: 'danger' }, '삭제');
+          del.onclick = function () {
+            if (!confirm('"' + (e.name || e.id) + '" 을(를) 삭제할까요?' + (hasFile ? '\n파일은 parts/_trash 폴더로 옮겨집니다.' : ''))) return;
+            sessionStorage.setItem('cg-items', cur.cat);
+            if (hasFile) api('/api/remove?cat=' + cur.cat + '&id=' + e.id, { method: 'POST' }).catch(function (x) { status(x.message); });
+            else { rows.splice(i, 1); draw(); status('저장을 눌러야 반영됩니다'); }
+          };
+          acts.appendChild(del);
+        }
+
+        var tdName = el('td'); tdName.appendChild(name);
+        var tdW = el('td'); tdW.appendChild(w);
+        var tdD = el('td'); tdD.appendChild(def);
+        tr.appendChild(order); tr.appendChild(tdName);
+        tr.appendChild(el('td', { class: 'file' }, hasFile ? e.id + '.svg' : (e.none ? '(없음)' : '(수치만)')));
+        tr.appendChild(tdW); tr.appendChild(tdD); tr.appendChild(acts);
+        $body.appendChild(tr);
+      });
+    }
+
+    function load(cat) {
+      status('불러오는 중…');
+      api('/api/list?cat=' + cat).then(function (r) {
+        cur = { cat: cat, files: r.files, dataOnly: r.dataOnly };
+        rows = r.entries.map(function (e) { return JSON.parse(JSON.stringify(e)); });
+        draw();
+        status(rows.length + '개');
+      }, function (x) { status(x.message); });
+    }
+
+    $cat.onchange = function () { load($cat.value); };
+    $('btn-items').onclick = function () { dlg.showModal(); load($cat.value); };
+    $('items-folder').onclick = function () { api('/api/open?cat=' + $cat.value, { method: 'POST' }).catch(function (x) { status(x.message); }); };
+    $('items-save').onclick = function () {
+      status('저장하는 중…');
+      sessionStorage.setItem('cg-items', cur.cat);
+      api('/api/list?cat=' + cur.cat, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rows) })
+        .then(function () { status('저장했습니다. 빌드 후 화면이 새로 고쳐집니다.'); }, function (x) { status(x.message); });
+    };
+    dlg.addEventListener('close', function () { sessionStorage.removeItem('cg-items'); });
+
+    // 저장·복제·삭제 뒤 화면이 새로 고쳐지면 편집 창을 다시 연다
+    var reopen = sessionStorage.getItem('cg-items');
+    if (reopen) { $cat.value = reopen; dlg.showModal(); load(reopen); }
+  }
+
+  // ---------- 빌드 (start.bat 로 띄운 로컬 서버에서만 보인다) ----------
+  if (SERVER) {
+    var $bstat = $('build-status');
+    $('build-bar').hidden = false;
+    var showBuild = function (r) {
+      var warn = /확인할 것 (\d+)건/.exec(r.output || '');
+      $bstat.textContent = (r.ok ? '빌드 완료' : '빌드 실패') + (warn ? ' · 확인할 것 ' + warn[1] + '건' : '') + (r.at ? ' (' + r.at + ')' : '');
+      $bstat.title = r.output || '';
+    };
+    $('btn-build').addEventListener('click', function () {
+      $bstat.textContent = '빌드 중…';
+      fetch('/api/build', { method: 'POST' }).then(function (x) { return x.json(); }).then(showBuild, function () {
+        $bstat.textContent = '서버에 연결하지 못했습니다. start.bat 창이 켜져 있는지 확인하세요.';
+      });
+    });
+    // 빌드가 끝나면 새 파츠 데이터로 다시 연다 (지금 캐릭터는 주소의 조합 코드로 유지된다)
+    try {
+      var es = new EventSource('/api/events');
+      es.onmessage = function (m) {
+        var msg = JSON.parse(m.data);
+        if (msg.type !== 'built') return;
+        if (msg.ok) { try { sessionStorage.setItem('cg-built', JSON.stringify(msg)); } catch (e) { /* 무시 */ } location.reload(); }
+        else showBuild(msg);
+      };
+    } catch (e) { /* 자동 새로고침 없이 버튼만 쓴다 */ }
+    setupItemEditor();
+    try {
+      var prev = sessionStorage.getItem('cg-built');
+      if (prev) { showBuild(JSON.parse(prev)); sessionStorage.removeItem('cg-built'); }
+    } catch (e) { /* 무시 */ }
+  }
+
+  var initial = decodeURIComponent(window.location.hash.replace(/^#/, ''));
+  commit(initial.indexOf(':') > 0 ? CG.decode(initial) : CG.defaultState());
+})();

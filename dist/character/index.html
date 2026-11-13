@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>랜덤 캐릭터 생성기</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="stage">
+      <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
+
+      <div class="actions">
+        <button id="btn-random" class="primary" type="button" title="단축키: 스페이스">랜덤</button>
+        <button id="btn-prev" type="button" title="이전 캐릭터 (←)">이전</button>
+        <button id="btn-next" type="button" title="다음 캐릭터 (→)">다음</button>
+      </div>
+
+      <div class="actions">
+        <button id="btn-png" type="button">PNG 저장</button>
+        <button id="btn-svg" type="button">SVG 저장</button>
+        <button id="btn-reset" type="button">기본으로</button>
+      </div>
+
+      <div id="build-bar" class="build-bar" hidden>
+        <button id="btn-build" type="button">빌드</button>
+        <button id="btn-items" type="button">항목 편집</button>
+        <span id="build-status" class="status">parts 폴더를 저장하면 자동으로 빌드됩니다.</span>
+      </div>
+
+      <div class="code">
+        <label for="code">조합 코드</label>
+        <div class="code-row">
+          <input id="code" type="text" spellcheck="false" autocomplete="off">
+          <button id="btn-copy" type="button">복사</button>
+          <button id="btn-apply" type="button">적용</button>
+        </div>
+        <p id="status" class="status" role="status"></p>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <header class="panel-head">
+        <h1>랜덤 캐릭터 생성기</h1>
+        <a class="repo" href="https://dovemayo.com/">dovemayo.com</a>
+      </header>
+      <div id="groups"></div>
+    </aside>
+  </main>
+
+  <dialog id="items-dialog" class="items-dialog">
+    <form method="dialog" class="items-head">
+      <h2>항목 편집</h2>
+      <select id="items-cat" aria-label="항목"></select>
+      <button id="items-folder" type="button">폴더 열기</button>
+      <button value="close" aria-label="닫기">닫기</button>
+    </form>
+    <p class="items-help">이름·순서·랜덤 비중을 고치고 저장하세요. 파일을 폴더에 넣거나 빼도 다음 빌드 때 목록이 자동으로 맞춰집니다.</p>
+    <div class="items-table-wrap">
+      <table class="items-table">
+        <thead><tr><th>순서</th><th>이름</th><th>파일</th><th>비중</th><th>기본</th><th></th></tr></thead>
+        <tbody id="items-body"></tbody>
+      </table>
+    </div>
+    <div class="items-foot">
+      <span id="items-status" class="status"></span>
+      <button id="items-save" type="button" class="primary">저장</button>
+    </div>
+  </dialog>
+
+  <script src="js/core.js"></script>
+  <script src="js/palettes.js"></script>
+  <script src="js/parts-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
