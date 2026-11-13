@@ -159,7 +159,7 @@ button.primary:hover { background: #4d403b; }
   letter-spacing: .02em;
 }
 .panel h2 + h3 { margin-top: 0; }
-.panel-head .repo { display: inline-block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+.panel-head .repo { display: inline-block; margin: 2px 10px 0 0; font-size: 13px; color: var(--muted); }
 
 .rows { display: grid; gap: 8px; }
 

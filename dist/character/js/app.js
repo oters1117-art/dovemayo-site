@@ -219,15 +219,15 @@
       var n = parseInt(bg.slice(1), 16);
       dark = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 110;
     }
-    ctx.font = Math.round(size * 0.036) + 'px "Dovemayo Gothic", Arial, sans-serif';
+    ctx.font = Math.round(size * 0.03) + 'px "Dovemayo Gothic", Arial, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillStyle = dark ? 'rgba(255,255,255,.42)' : 'rgba(43,37,35,.30)';
-    ctx.fillText('dovemayo.com', size * 0.04, size * 0.036);
+    ctx.fillText('DOVEMAYO.COM', size * 0.022, size * 0.02);
   }
 
   function markFont() {
     if (!document.fonts || !document.fonts.load) return Promise.resolve();
-    return document.fonts.load('32px "Dovemayo Gothic"', 'dovemayo.com').catch(function () { /* 기본 글꼴로 적는다 */ });
+    return document.fonts.load('32px "Dovemayo Gothic"', 'DOVEMAYO.COM').catch(function () { /* 기본 글꼴로 적는다 */ });
   }
 
   function savePng() {

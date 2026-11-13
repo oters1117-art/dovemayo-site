@@ -613,9 +613,21 @@
     // 그래서 기본머리(칠 + 윤곽선)를 뒷머리 밑에 깐다. 뒷머리가 덮은 곳의 윤곽선은 가려지고,
     // 뒷머리가 덮지 않은 곳(곱슬 숏의 정수리 등)은 윤곽선이 그대로 보인다.
     var noCap = backPart && backPart.noCap, noTuck = noCap || (backPart && backPart.down);
-    if (noCap) put('hairBack', { half: (hair.fill || '') + (hair.cap || '') });
     put('body', base.body);
-    put('hairBase', { half: noCap ? '' : (hair.fill || '') + (hair.cap || '') + (noTuck ? '' : hair.tuck || '') });
+    put('hairBase', { half: (hair.fill || '') + (noCap ? '' : hair.cap || '') + (noTuck ? '' : hair.tuck || '') });
+    if (noCap && hair.cap) {
+      // 칠은 제자리에 두고 윤곽선만, 뒷머리 모양이 겹치는 곳을 지워서 긋는다 (마스크: 뒷머리 = 검정)
+      var bm = '';
+      for (var bl in backPart.pieces || {}) {
+        var bp = backPart.pieces[bl];
+        if (bp.half) bm += bp.half + '<g transform="' + MIRROR + '">' + bp.half + '</g>';
+        bm += bp.full || '';
+      }
+      defs += '<filter id="cg-blk@@"><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>' +
+        '<mask id="cg-cap@@" maskUnits="userSpaceOnUse" x="0" y="0" width="' + SIZE + '" height="' + SIZE + '">' +
+        '<rect width="' + SIZE + '" height="' + SIZE + '" fill="#fff"/><g filter="url(#cg-blk@@)">' + bm + '</g></mask>';
+      put('hairBase', { full: '<g mask="url(#cg-cap@@)">' + hair.cap + '<g transform="' + MIRROR + '">' + hair.cap + '</g></g>' });
+    }
     put('hairLine', { half: hair.edge || '' });
     put('ear', base.ear);
     put('mouth', base.nose);

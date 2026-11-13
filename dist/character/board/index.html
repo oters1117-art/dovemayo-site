@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제안 게시판 · 랜덤 캐릭터 생성기</title>
+<style>
+:root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+main{max-width:620px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:22px;margin:0}
+.back{font-size:13px;color:var(--muted)}
+.lead{color:var(--muted);margin:10px 0 18px}
+.box{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:16px}
+textarea{width:100%;min-height:96px;resize:vertical;font:inherit;color:inherit;border:1px solid var(--rule);border-radius:12px;padding:10px 12px;background:#fff}
+textarea:focus-visible,button:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+.bar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.bar .hint{font-size:12px;color:var(--muted);margin-right:auto}
+button{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:10px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.danger{color:var(--on)}
+button:disabled{opacity:.45;cursor:default}
+.thumb{position:relative;display:inline-block;margin-top:10px}
+.thumb img{display:block;max-width:180px;max-height:180px;border-radius:12px;border:1px solid var(--rule)}
+.thumb button{position:absolute;top:6px;right:6px;padding:2px 8px;font-size:12px;background:rgba(255,255,255,.9)}
+.msg{min-height:1.5em;font-size:13px;color:var(--muted);margin:8px 0 0}
+h2{font-size:15px;margin:28px 0 10px}
+h2 small{font-weight:400;color:var(--muted)}
+.list{display:grid;gap:10px}
+.post{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:12px 14px}
+.post p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.post img{display:block;max-width:100%;max-height:360px;border-radius:10px;margin-top:8px;border:1px solid var(--rule)}
+.post .meta{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)}
+.post .meta span{margin-right:auto}
+.post .meta button{padding:4px 10px;font-size:12px}
+.empty{color:var(--muted);font-size:13px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← 랜덤 캐릭터 생성기</a>
+  <h1>제안 게시판</h1>
+  <p class="lead">추가했으면 하는 요소들을 제안해주세요. 안바쁘다면 검토 후 추가 하겠습니다</p>
+
+  <form id="form" class="box">
+    <textarea id="text" maxlength="500" placeholder="버그 제보나 추가했으면 하는 것을 적어 주세요. 이미지는 Ctrl+V로 붙여 넣을 수 있습니다."></textarea>
+    <div id="thumb" class="thumb" hidden><img id="thumb-img" alt="붙여 넣은 이미지"><button type="button" id="thumb-x" aria-label="이미지 빼기">빼기</button></div>
+    <div class="bar">
+      <span class="hint">Ctrl+V 로 이미지 붙여넣기</span>
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <button type="button" id="pick">이미지 선택</button>
+      <button type="submit" id="send" class="primary">제출</button>
+    </div>
+    <p id="msg" class="msg" role="status"></p>
+  </form>
+
+  <section id="pending-sec" hidden>
+    <h2>검토 대기 <small id="pending-n"></small></h2>
+    <div id="pending" class="list"></div>
+  </section>
+
+  <h2>승인된 제안 <small id="waiting"></small></h2>
+  <div id="approved" class="list"></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var image = null;              // dataURL (크기를 줄인 것)
+  var key = '';
+  try {
+    var m = /admin=([^&]+)/.exec(location.hash);
+    if (m) { localStorage.setItem('board-admin', decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname); }
+    key = localStorage.getItem('board-admin') || '';
+  } catch (e) { /* 저장소를 못 쓰면 일반 방문자로 본다 */ }
+
+  function say(t) { $('msg').textContent = t; }
+  function api(path, body) {
+    var opt = { headers: {} };
+    if (key) opt.headers['x-admin-key'] = key;
+    if (body) { opt.method = 'POST'; opt.headers['content-type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch('/api/board/' + path, opt).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || '실패했습니다.'); return j; });
+    });
+  }
+
+  // 큰 이미지는 긴 변 1280px JPEG 로 줄여서 보낸다
+  function takeImage(file) {
+    if (!file || !/^image\//.test(file.type)) return;
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var k = Math.min(1, 1280 / Math.max(img.width, img.height));
+      var c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      var g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      image = c.toDataURL('image/jpeg', 0.85);
+      $('thumb-img').src = image; $('thumb').hidden = false; say('');
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); say('이미지를 읽지 못했습니다.'); };
+    img.src = url;
+  }
+  document.addEventListener('paste', function (e) {
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    for (var i = 0; i < items.length; i++) if (items[i].kind === 'file' && /^image\//.test(items[i].type)) { takeImage(items[i].getAsFile()); e.preventDefault(); return; }
+  });
+  $('pick').onclick = function () { $('file').click(); };
+  $('file').onchange = function () { takeImage($('file').files[0]); $('file').value = ''; };
+  $('thumb-x').onclick = function () { image = null; $('thumb').hidden = true; };
+
+  $('form').onsubmit = function (e) {
+    e.preventDefault();
+    var text = $('text').value.trim();
+    if (!text && !image) { say('내용을 적어 주세요.'); return; }
+    $('send').disabled = true; say('보내는 중…');
+    api('submit', { text: text, image: image }).then(function () {
+      $('text').value = ''; image = null; $('thumb').hidden = true;
+      say('제출했습니다. 검토 뒤에 아래 목록에 올라갑니다.');
+      load();
+    }, function (x) { say(x.message); }).then(function () { $('send').disabled = false; });
+  };
+  $('text').addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('send').click(); });
+
+  function card(p, admin) {
+    var d = document.createElement('div'); d.className = 'post';
+    if (p.text) { var t = document.createElement('p'); t.textContent = p.text; d.appendChild(t); }
+    if (p.img) {
+      var a = document.createElement('a'), im = document.createElement('img');
+      var src = '/api/board/img/' + p.id + (p.status === 'approved' ? '' : '?k=' + encodeURIComponent(key));
+      a.href = src; a.target = '_blank'; a.rel = 'noopener';
+      im.src = src; im.alt = '첨부 이미지'; im.loading = 'lazy';
+      a.appendChild(im); d.appendChild(a);
+    }
+    var meta = document.createElement('div'); meta.className = 'meta';
+    var when = document.createElement('span'); when.textContent = new Date(p.at).toLocaleDateString('ko-KR'); meta.appendChild(when);
+    if (admin) {
+      if (p.status === 'pending') {
+        var ok = document.createElement('button'); ok.textContent = '승인';
+        ok.onclick = function () { api('approve', { id: p.id }).then(load, function (x) { alert(x.message); }); };
+        meta.appendChild(ok);
+      }
+      var del = document.createElement('button'); del.textContent = '삭제'; del.className = 'danger';
+      del.onclick = function () { if (confirm('삭제할까요?')) api('delete', { id: p.id }).then(load, function (x) { alert(x.message); }); };
+      meta.appendChild(del);
+    }
+    d.appendChild(meta);
+    return d;
+  }
+  function fill(box, list, admin, empty) {
+    box.textContent = '';
+    if (!list.length) { var e = document.createElement('p'); e.className = 'empty'; e.textContent = empty; box.appendChild(e); return; }
+    list.forEach(function (p) { box.appendChild(card(p, admin)); });
+  }
+  function load() {
+    api('list').then(function (r) {
+      $('pending-sec').hidden = !r.admin;
+      if (r.admin) { $('pending-n').textContent = r.pending.length + '개'; fill($('pending'), r.pending, true, '검토할 제안이 없습니다.'); }
+      $('waiting').textContent = !r.admin && r.waiting ? '검토 대기 ' + r.waiting + '개' : '';
+      fill($('approved'), r.approved, r.admin, '아직 없습니다.');
+    }, function () { fill($('approved'), [], false, '목록을 불러오지 못했습니다.'); });
+  }
+  load();
+})();
+</script>
+</body>
+</html>
