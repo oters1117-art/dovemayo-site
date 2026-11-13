@@ -78,13 +78,26 @@
     { id: 'deep', name: '딥 브라운', hex: '#77503a', line: '#3b2116', group: '어두운', w: 0.25 }
   ]);
 
+  // 악세사리 색: 채도를 낮춘 색 위주. pink·yellow 는 예전 조합 코드가 깨지지 않게 id 를 그대로 두고 색만 바꿨다
   CG.addPalette('acc', [
-    { id: 'red', name: '빨강', hex: '#d8433b', isDefault: true },
-    { id: 'pink', name: '핑크', hex: '#f29bb5' },
-    { id: 'yellow', name: '노랑', hex: '#f2c94c' },
+    { id: 'red', name: '빨강', hex: '#d8433b', isDefault: true, w: 2 },
+    { id: 'burgundy', name: '버건디', hex: '#8e2f3a' },
+    { id: 'pink', name: '더스티 핑크', hex: '#e4a9ae' },
+    { id: 'babypink', name: '베이비 핑크', hex: '#f6d3d8' },
+    { id: 'yellow', name: '버터', hex: '#f3dc9a' },
+    { id: 'mustard', name: '머스터드', hex: '#d3a53f' },
+    { id: 'beige', name: '베이지', hex: '#e2d2bd' },
+    { id: 'brown', name: '브라운', hex: '#7a5a44' },
+    { id: 'sage', name: '세이지', hex: '#a8b89a' },
+    { id: 'khaki', name: '카키', hex: '#7d8259' },
+    { id: 'skyblue', name: '스카이 블루', hex: '#a9c6e3' },
     { id: 'navy', name: '네이비', hex: '#2f3f6e' },
-    { id: 'white', name: '흰색', hex: '#f7f3ee' },
-    { id: 'black', name: '검정', hex: '#2b2627' }
+    { id: 'lavender', name: '라벤더', hex: '#b9a9d6' },
+    { id: 'gold', name: '골드', hex: '#d4b06a' },
+    { id: 'silver', name: '실버', hex: '#c9ccd2' },
+    { id: 'white', name: '흰색', hex: '#f7f3ee', w: 1.5 },
+    { id: 'gray', name: '그레이', hex: '#a7a4a6' },
+    { id: 'black', name: '검정', hex: '#2b2627', w: 2 }
   ]);
 
   // hex 가 null 이면 배경 없이 투명
