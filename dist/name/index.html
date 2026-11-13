@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>랜덤 이름 생성기</title>
+<meta name="description" content="흔한 정도를 조절해서 한국 이름을 뽑는 랜덤 이름 생성기. 이름을 누르면 복사됩니다.">
+<style>
+:root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 16px 72px}
+h1{font-size:22px;margin:0}
+.back{font-size:13px;color:var(--muted)}
+.lead{color:var(--muted);margin:8px 0 16px}
+.box{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:14px 16px}
+.row{display:grid;grid-template-columns:5.5em 1fr 2.2em;gap:10px;align-items:center;margin:4px 0}
+.row label{font-weight:600}
+.row output{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.note{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bar label{font-size:13px;color:var(--muted);margin-right:auto;display:flex;gap:6px;align-items:center}
+button{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:10px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;padding:9px 22px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+h2{font-size:15px;margin:24px 0 8px}
+.names{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.names button{padding:9px 4px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.names button:hover{border-color:#c9bfb9}
+.names button.done{background:var(--accent);border-color:var(--accent);color:#fff}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:8px 14px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s}
+#toast.on{opacity:.92}
+@media(max-width:520px){.names{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="https://dovemayo.com/">← dovemayo.com</a>
+  <h1>랜덤 이름 생성기</h1>
+  <p class="lead">이름을 누르면 복사됩니다.</p>
+
+  <div class="box">
+    <div class="row"><label for="w-sur">성 가중치</label><input id="w-sur" type="range" min="0" max="10" step="1" value="5"><output id="o-sur"></output></div>
+    <div class="row"><label for="w-name">이름 가중치</label><input id="w-name" type="range" min="0" max="10" step="1" value="5"><output id="o-name"></output></div>
+    <p class="note">높을수록 흔한 성·이름이 많이 나옵니다. 0이면 모두 같은 확률입니다.</p>
+    <div class="bar">
+      <label><input id="space" type="checkbox"> 성과 이름 띄어 쓰기</label>
+      <button type="button" id="again" class="primary">다시 뽑기</button>
+    </div>
+  </div>
+
+  <h2>여자</h2>
+  <div id="female" class="names"></div>
+  <h2>남자</h2>
+  <div id="male" class="names"></div>
+</main>
+<div id="toast" role="status"></div>
+<script src="names-data.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = window.NAME_DATA, COUNT = 30;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // 순위 i (0 = 가장 흔함) 의 비중 = 기본 비중 × exp(-가중치 × i / 개수).
+  // 가중치 0 은 모두 같고, 10 이면 앞쪽 10% 안에서 거의 다 나온다.
+  function table(list, weight) {
+    var n = list.length, sum = 0, acc = [];
+    for (var i = 0; i < n; i++) {
+      var base = typeof list[i] === 'string' ? 1 : list[i][1];
+      sum += base * Math.exp(-weight * i / n);
+      acc.push(sum);
+    }
+    return function () {
+      var r = Math.random() * sum, lo = 0, hi = n - 1;
+      while (lo < hi) { var mid = (lo + hi) >> 1; if (acc[mid] < r) lo = mid + 1; else hi = mid; }
+      return typeof list[lo] === 'string' ? list[lo] : list[lo][0];
+    };
+  }
+
+  var toastTimer = 0;
+  function toast(t) {
+    var el = $('toast'); el.textContent = t; el.className = 'on';
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.className = ''; }, 1400);
+  }
+  function copy(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    return new Promise(function (ok, no) {
+      var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var done = false; try { done = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(t); done ? ok() : no();
+    });
+  }
+
+  function fill(box, pickSur, pickName, gap) {
+    box.textContent = '';
+    var seen = {};
+    for (var i = 0, tries = 0; i < COUNT && tries < COUNT * 20; tries++) {
+      var name = pickSur() + gap + pickName();
+      if (seen[name]) continue;
+      seen[name] = 1; i++;
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = name;
+      box.appendChild(b);
+    }
+  }
+  function draw() {
+    var ws = +$('w-sur').value, wn = +$('w-name').value, gap = $('space').checked ? ' ' : '';
+    $('o-sur').textContent = ws; $('o-name').textContent = wn;
+    var sur = table(D.surnames, ws);
+    fill($('female'), sur, table(D.female, wn), gap);
+    fill($('male'), sur, table(D.male, wn), gap);
+    try { localStorage.setItem('name-gen', JSON.stringify({ s: ws, n: wn, g: !!gap })); } catch (e) {}
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.names button');
+    if (!b) return;
+    copy(b.textContent).then(function () {
+      var old = document.querySelector('.names button.done'); if (old) old.className = '';
+      b.className = 'done'; toast('복사했습니다: ' + b.textContent);
+    }, function () { toast('복사하지 못했습니다.'); });
+  });
+
+  try {
+    var saved = JSON.parse(localStorage.getItem('name-gen') || 'null');
+    if (saved) { $('w-sur').value = saved.s; $('w-name').value = saved.n; $('space').checked = !!saved.g; }
+  } catch (e) {}
+  $('w-sur').oninput = $('w-name').oninput = $('space').onchange = $('again').onclick = draw;
+  draw();
+})();
+</script>
+</body>
+</html>
