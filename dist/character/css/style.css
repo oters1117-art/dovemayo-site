@@ -9,6 +9,13 @@
   --on: #c9573f;
 }
 
+/* 복사한 이미지의 dovemayo.com 글자에 쓴다 (둘기마요고딕 소문자) */
+@font-face {
+  font-family: "Dovemayo Gothic";
+  src: url("../fonts/dovemayo-gothic-latin.woff2") format("woff2");
+  font-display: swap;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -41,6 +48,41 @@ body {
   box-shadow: 0 1px 2px rgba(60, 40, 30, .08), 0 12px 32px rgba(60, 40, 30, .10);
 }
 .preview svg { display: block; width: 100%; height: 100%; }
+.preview-wrap { position: relative; }
+
+/* 카드 위 버튼: 휴대폰에서만 보인다 */
+.card-tools { position: absolute; top: 10px; display: none; gap: 6px; }
+.card-tools.left { left: 10px; }
+.card-tools.right { right: 10px; }
+.ico {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  border: 1px solid rgba(43, 37, 35, .10);
+  background: rgba(255, 255, 255, .86);
+  -webkit-tap-highlight-color: transparent;
+}
+.ico svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 안내 글: 카드 아래쪽에 잠깐 뜬다 */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 11px;
+  border-radius: 9px;
+  background: rgba(43, 37, 35, .84);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.toast:empty { display: none; }
 
 .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
@@ -178,24 +220,39 @@ button.primary:hover { background: #4d403b; }
     #fff;
 }
 
+/* ---------- 휴대폰 ----------
+   얼굴 카드는 화면 위에 붙어 있고, 버튼은 카드 위의 아이콘 셋뿐이다 (랜덤 / 이전 · 이미지 복사).
+   항목은 한 줄에 하나: 이름 · 선택 · 랜덤 · 고정 */
 @media (max-width: 760px) {
-  .app { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
-  .stage { position: static; }
-  .row { grid-template-columns: 96px 30px 1fr 30px auto auto; }
-  .row.has-file { grid-template-columns: 96px 30px 1fr 30px auto auto auto; }
-  .row .step { width: 30px; }
-  .color-head { grid-template-columns: 96px 1fr auto auto; }
-}
+  .app { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 12px 40px; }
+  .stage {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: block;
+    margin: 0 -12px;
+    padding: 10px 12px 8px;
+    background: var(--page);
+    box-shadow: 0 6px 10px -8px rgba(60, 40, 30, .35);
+  }
+  .preview-wrap { width: min(100%, 42vh, 400px); width: min(100%, 42svh, 400px); margin: 0 auto; }
+  .preview { border-radius: 22px; box-shadow: 0 1px 2px rgba(60, 40, 30, .08); }
+  .stage .actions, .stage .code, .stage .build-bar { display: none; }
+  .card-tools { display: flex; }
 
-/* 휴대폰: 항목 이름을 윗줄로 올리고 선택 칸을 넓게 쓴다 */
-@media (max-width: 520px) {
-  .panel { padding: 16px; }
-  .row { grid-template-columns: 30px 1fr 30px auto auto; }
-  .row.has-file { grid-template-columns: 30px 1fr 30px auto auto auto; }
-  .row .name { grid-column: 1 / -1; margin-bottom: -2px; font-size: 13px; }
-  .rows { gap: 10px; }
-  .code-row { grid-template-columns: 1fr auto auto; }
-  .actions button { padding-inline: 4px; }
+  .panel { padding: 14px 12px; border-radius: 16px; }
+  .panel-head h1 { font-size: 17px; }
+  .panel h2 { margin: 16px 0 8px; padding-top: 12px; }
+  .panel h3 { margin: 10px 0 6px; }
+  .rows { gap: 6px; }
+  .row { grid-template-columns: 82px minmax(0, 1fr) auto auto; gap: 5px; }
+  .row.has-file { grid-template-columns: 82px minmax(0, 1fr) auto auto auto; }
+  .row .step { display: none; }
+  .row .name, .color-head .name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+  .row select { padding: 7px 4px; }
+  .row .dice, .row .lock, .row .file, .color-head .dice, .color-head .lock { padding: 7px 8px; }
+  .color-head { grid-template-columns: 82px minmax(0, 1fr) auto auto; gap: 5px; }
+  .swatch { width: 28px; height: 28px; }
 }
 
 /* ---------- 항목 편집 ---------- */

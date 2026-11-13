@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 const src=process.argv[2]||'X:\\AI\\캐릭터생성기';
 const dest=join(dirname(fileURLToPath(import.meta.url)),'..','dist','character');
-const files=['index.html','css/style.css','js/core.js','js/palettes.js','js/parts-data.js','js/app.js'];
+const files=['index.html','css/style.css','js/core.js','js/palettes.js','js/parts-data.js','js/app.js','fonts/dovemayo-gothic-latin.woff2'];
 
 if(!existsSync(join(src,'index.html'))){console.error('generator not found at '+src);process.exit(1);}
 let bytes=0;

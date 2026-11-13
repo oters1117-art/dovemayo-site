@@ -9,7 +9,18 @@
 <body>
   <main class="app">
     <section class="stage">
-      <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
+      <div class="preview-wrap">
+        <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
+        <!-- 휴대폰에서만 보이는 카드 위 버튼 (카드 아래 버튼 대신) -->
+        <div class="card-tools left">
+          <button id="ico-random" class="ico" type="button" aria-label="랜덤" title="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
+        </div>
+        <div class="card-tools right">
+          <button id="ico-prev" class="ico" type="button" aria-label="이전 캐릭터" title="이전"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></svg></button>
+          <button id="ico-copy" class="ico" type="button" aria-label="이미지 복사" title="이미지 복사"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 9V6.5A2.5 2.5 0 0 0 12.5 4h-6A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15H9"/></svg></button>
+        </div>
+        <p id="status" class="toast" role="status"></p>
+      </div>
 
       <div class="actions">
         <button id="btn-random" class="primary" type="button" title="단축키: 스페이스">랜덤</button>
@@ -20,7 +31,7 @@
       <div class="actions">
         <button id="btn-png" type="button">PNG 저장</button>
         <button id="btn-svg" type="button">SVG 저장</button>
-        <button id="btn-reset" type="button">기본으로</button>
+        <button id="btn-copy-image" type="button" title="왼쪽 위에 dovemayo.com 이 작게 들어간 이미지를 복사합니다">이미지 복사</button>
       </div>
 
       <div id="build-bar" class="build-bar" hidden>
@@ -36,7 +47,6 @@
           <button id="btn-copy" type="button">복사</button>
           <button id="btn-apply" type="button">적용</button>
         </div>
-        <p id="status" class="status" role="status"></p>
       </div>
     </section>
 

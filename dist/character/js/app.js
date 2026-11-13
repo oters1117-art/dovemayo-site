@@ -39,7 +39,7 @@
     $preview.innerHTML = CG.compose(state);
     $code.value = CG.encode(state);
     for (var k in controls) controls[k]();
-    $('btn-prev').disabled = cursor <= 0;
+    $('btn-prev').disabled = $('ico-prev').disabled = cursor <= 0;
     $('btn-next').disabled = cursor >= history.length - 1;
     try { window.history.replaceState(null, '', '#' + $code.value); } catch (e) { /* file:// 에서 막히면 무시 */ }
   }
@@ -192,22 +192,66 @@
     say('SVG로 저장했습니다.');
   }
 
+  // 지금 캐릭터를 PNG 로 만든다. mark 가 참이면 왼쪽 위에 dovemayo.com 을 작고 흐리게 적는다
+  function renderPng(size, mark) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(new Blob([CG.compose(state, { size: size })], { type: 'image/svg+xml' }));
+      var img = new Image();
+      img.onload = function () {
+        var canvas = el('canvas', { width: size, height: size });
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        if (mark) watermark(ctx, size);
+        canvas.toBlob(function (blob) { if (blob) resolve(blob); else reject(new Error('png')); }, 'image/png');
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('svg')); };
+      img.src = url;
+    });
+  }
+
+  // 배경이 어두우면 흰 글자, 밝거나 투명하면 어두운 글자
+  function watermark(ctx, size) {
+    var bg = null;
+    CG.palettes.bg.forEach(function (c) { if (c.id === state.bgColor) bg = c.hex; });
+    var dark = false;
+    if (bg) {
+      var n = parseInt(bg.slice(1), 16);
+      dark = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 110;
+    }
+    ctx.font = Math.round(size * 0.036) + 'px "Dovemayo Gothic", Arial, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = dark ? 'rgba(255,255,255,.42)' : 'rgba(43,37,35,.30)';
+    ctx.fillText('dovemayo.com', size * 0.04, size * 0.036);
+  }
+
+  function markFont() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return document.fonts.load('32px "Dovemayo Gothic"', 'dovemayo.com').catch(function () { /* 기본 글꼴로 적는다 */ });
+  }
+
   function savePng() {
-    var size = 1024;
-    var url = URL.createObjectURL(new Blob([CG.compose(state, { size: size })], { type: 'image/svg+xml' }));
-    var img = new Image();
-    img.onload = function () {
-      var canvas = el('canvas', { width: size, height: size });
-      canvas.getContext('2d').drawImage(img, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      canvas.toBlob(function (blob) {
-        if (!blob) { say('PNG 저장에 실패했습니다.'); return; }
-        download('character-' + stamp() + '.png', blob);
-        say('PNG로 저장했습니다.');
-      }, 'image/png');
-    };
-    img.onerror = function () { URL.revokeObjectURL(url); say('PNG 저장에 실패했습니다.'); };
-    img.src = url;
+    renderPng(1024, false).then(function (blob) {
+      download('character-' + stamp() + '.png', blob);
+      say('PNG로 저장했습니다.');
+    }, function () { say('PNG 저장에 실패했습니다.'); });
+  }
+
+  // 이미지를 클립보드에 복사한다. 복사가 막힌 브라우저에서는 같은 이미지를 파일로 저장한다
+  function copyImage() {
+    var blob = markFont().then(function () { return renderPng(1024, true); });
+    function asFile() {
+      blob.then(function (b) {
+        download('character-' + stamp() + '.png', b);
+        say('복사가 안 돼서 파일로 저장했습니다.');
+      }, function () { say('이미지를 만들지 못했습니다.'); });
+    }
+    if (!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)) { asFile(); return; }
+    try {
+      // 누른 순간 바로 write 를 불러야 한다 (사파리). 이미지는 만들어지는 대로 넘어간다
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        .then(function () { say('이미지를 복사했습니다.'); }, asFile);
+    } catch (e) { asFile(); }
   }
 
   function copyCode() {
@@ -252,7 +296,10 @@
   $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks)); });
   $('btn-prev').addEventListener('click', function () { travel(-1); });
   $('btn-next').addEventListener('click', function () { travel(1); });
-  $('btn-reset').addEventListener('click', function () { commit(CG.defaultState()); });
+  $('btn-copy-image').addEventListener('click', copyImage);
+  $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks)); });
+  $('ico-prev').addEventListener('click', function () { travel(-1); });
+  $('ico-copy').addEventListener('click', copyImage);
   $('btn-png').addEventListener('click', savePng);
   $('btn-svg').addEventListener('click', saveSvg);
   $('btn-copy').addEventListener('click', copyCode);
