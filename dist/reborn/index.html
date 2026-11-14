@@ -8,16 +8,17 @@
 <style>
   /* dovemayo.com 랜덤 캐릭터 생성기와 같은 색·모서리·버튼 */
   :root {
-    --page: #f4f1ee;
+    --page: #faf8f3;
     --card: #ffffff;
-    --ink: #2b2523;
-    --muted: #7d726e;
-    --rule: #e4ddd8;
-    --accent: #5d4e48;
-    --on: #c9573f;
-    /* 원본의 밝은 포인트색: 파란 버튼, 노란 결과, 빨간 핀 */
-    --blue: #3069e6;
-    --blue-dark: #2457c9;
+    --ink: #292630;
+    --muted: #76707d;
+    --rule: #e4dfd8;
+    /* stickers.dovemayo.com 과 같은 부드러운 보라 */
+    --violet: #6951b4;
+    --violet-dark: #584397;
+    --violet-ring: #ae96e5;
+    --sea: #d3e6f6;
+    --sea-rule: #bcd6ec;
     --sun: #ffcc4d;
     --sun-soft: #fff6d6;
     --sun-rule: #efd27c;
@@ -53,8 +54,22 @@
   }
 
   h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     font-size: 24px;
+  }
+
+  .lineIcon {
+    width: 1.1em;
+    height: 1.1em;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .modeSwitch {
@@ -79,12 +94,12 @@
   }
 
   .modeSwitch button.active {
-    background: var(--ink);
+    background: var(--violet);
     color: #fff;
   }
 
   button:focus-visible, a:focus-visible {
-    outline: 2px solid var(--on);
+    outline: 3px solid var(--violet-ring);
     outline-offset: 2px;
   }
 
@@ -121,8 +136,8 @@
 
   #mapBox {
     position: relative;
-    background: #f3f8fc;
-    border: 1px solid var(--rule);
+    background: var(--sea);
+    border: 1px solid var(--sea-rule);
     border-radius: 28px;
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(60, 40, 30, .06), 0 10px 28px rgba(60, 40, 30, .08);
@@ -135,8 +150,8 @@
   }
 
   .country {
-    fill: #fffdf9;
-    stroke: #cdd9e3;
+    fill: #fffdf8;
+    stroke: #b4cde2;
     stroke-width: .55;
   }
 
@@ -177,13 +192,16 @@
   }
 
   #rebirthBtn {
-    display: block;
     width: 100%;
-    border: 1px solid var(--blue);
-    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 12px;
     padding: 15px;
     margin-top: 12px;
-    background: var(--blue);
+    background: var(--violet);
     color: #fff;
     font: inherit;
     font-size: 17px;
@@ -192,7 +210,7 @@
   }
 
   #rebirthBtn:hover {
-    background: var(--blue-dark);
+    background: var(--violet-dark);
   }
 
   #rebirthBtn:active {
@@ -306,7 +324,7 @@
   <a class="back" href="https://dovemayo.com/">← dovemayo.com</a>
 
   <div class="titleRow">
-    <h1>🌍 랜덤 다시 태어나기</h1>
+    <h1><svg class="lineIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.5 3.9 5.5 3.9 9s-1.3 6.5-3.9 9c-2.6-2.5-3.9-5.5-3.9-9S9.400 5.500 12 3z"/><path d="M5 7.200h14M5 16.800h14"/></svg>랜덤 다시 태어나기</h1>
 
     <div class="modeSwitch" role="group" aria-label="추첨 기준 선택">
       <button type="button" class="active" data-mode="births" aria-pressed="true">출생아 기준</button>
@@ -361,7 +379,7 @@
   </div>
 
   <button id="rebirthBtn" type="button">
-    🎲 랜덤으로 다시 태어나기
+    <svg class="lineIcon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.500"/><path d="M8.500 8.500h.01M15.500 8.500h.01M12 12h.01M8.500 15.500h.01M15.500 15.500h.01" stroke-width="2.600"/></svg>랜덤으로 다시 태어나기
   </button>
 
   <div class="bottom">
