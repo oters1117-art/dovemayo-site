@@ -165,8 +165,9 @@
   // 좌우 반전할 수 있는 항목 (그대로 한 번만 그리는 full 조각이 뒤집힌다). 조합 코드에는 fl:hf.hs 처럼 적힌다
   var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'earring', 'facewear', 'oddColor'];
   // 한쪽만 그릴 수 있는 항목 (half 조각만 있는 파츠를 왼쪽만 / 오른쪽만 그린다). 조합 코드에는 sl:s / sr:ae 처럼 적힌다
-  // 머리 네 줄은 빼달라고 하셨다(2026-11-14). 머리에서는 좌우 반전만 된다
-  var SIDE_KEYS = ['skinfx', 'acc', 'earring'];
+  var SIDE_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'earring'];
+  // 한쪽만 버튼으로 대신하게 되어 지운 '한쪽' 파츠. 예전 조합 코드는 원래 파츠 + 왼쪽만으로 읽는다
+  var ONE_SIDE = { side: { 'wavelong-one': 'wavelong', tuckone: 'long' } };
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
   function flipKind(state, key) {
     if (key === 'oddColor') return state.oddColor && state.oddColor !== 'none' ? 'flip' : null;
@@ -187,6 +188,8 @@
     FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
     SIDE_KEYS.forEach(function (k) { var v = state.only && state.only[k]; if (v === 'l' || v === 'r') s.only[k] = v; });
     CATEGORIES.forEach(function (c) {
+      var was = ONE_SIDE[c.key] && ONE_SIDE[c.key][state[c.key]];
+      if (was && findIn(parts[c.key], was) && !findIn(parts[c.key], state[c.key])) { s[c.key] = was; s.only[c.key] = 'l'; return; }
       if (findIn(parts[c.key], state[c.key])) s[c.key] = state[c.key];
     });
     COLOR_SLOTS.forEach(function (c) {
