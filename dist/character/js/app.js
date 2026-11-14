@@ -233,18 +233,105 @@
       return b;
     });
 
+    // 커스텀 색: 무지개 칸을 누르면 아래에 색 창 + 슬라이더 셋(색상·채도·밝기) + 색상 코드가 열린다
+    var cbtn = el('button', { type: 'button', class: 'swatch custom', title: '커스텀 색', 'aria-label': slot.name + ' 커스텀 색', 'aria-pressed': 'false', 'aria-expanded': 'false' });
+    box.appendChild(cbtn);
+    var cp = customPicker(slot);
+    cbtn.addEventListener('click', function () {
+      var open = cp.el.hidden;
+      cp.el.hidden = !open;
+      cbtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) cp.sync(true);
+    });
+
     wrap.appendChild(head);
     wrap.appendChild(box);
+    wrap.appendChild(cp.el);
 
     controls[slot.key] = function () {
+      var id = state[slot.key], custom = CG.isCustom(id);
       list.forEach(function (c, i) {
-        var on = c.id === state[slot.key];
+        var on = c.id === id;
         buttons[i].setAttribute('aria-pressed', on ? 'true' : 'false');
         if (on) picked.textContent = c.name;
       });
+      cbtn.setAttribute('aria-pressed', custom ? 'true' : 'false');
+      cbtn.style.setProperty('--c', custom ? '#' + id.slice(1) : 'transparent');
+      if (custom) picked.textContent = '커스텀 #' + id.slice(1);
+      if (!cp.el.hidden) cp.sync(false);
       if (flip) paintFlip(flip, slot);
     };
     return wrap;
+  }
+
+  // 커스텀 색 고르기. 슬라이더를 끄는 동안은 기록 없이 바로 그리고, 손을 떼면 한 번 기록한다(이전 버튼으로 돌아갈 수 있게)
+  function customPicker(slot) {
+    var root = el('div', { class: 'custom-pick', hidden: '' });
+    var preview = el('div', { class: 'cp-preview', 'aria-hidden': 'true' });
+    var side = el('div', { class: 'cp-side' });
+    var hsl = [0, 0, 0.5], sliders = [];
+    [['색상', 360], ['채도', 100], ['밝기', 100]].forEach(function (d, i) {
+      var line = el('label', { class: 'cp-line' });
+      var name = el('span', { class: 'cp-name' }, d[0]);
+      var r = el('input', { type: 'range', min: '0', max: String(d[1]), step: '1', 'aria-label': slot.name + ' ' + d[0] });
+      var num = el('span', { class: 'cp-num' });
+      r.addEventListener('input', function () {
+        hsl[i] = i === 0 ? +r.value : r.value / 100;
+        apply(CG.fromHsl(hsl[0], hsl[1], hsl[2]), false);
+      });
+      r.addEventListener('change', function () { apply(CG.fromHsl(hsl[0], hsl[1], hsl[2]), true); });
+      line.appendChild(name); line.appendChild(r); line.appendChild(num);
+      side.appendChild(line);
+      sliders.push({ r: r, num: num });
+    });
+    var codeLine = el('label', { class: 'cp-line' });
+    var hex = el('input', { type: 'text', class: 'cp-hex', maxlength: '7', spellcheck: 'false', 'aria-label': slot.name + ' 색상 코드' });
+    codeLine.appendChild(el('span', { class: 'cp-name' }, '코드'));
+    codeLine.appendChild(hex);
+    side.appendChild(codeLine);
+    hex.addEventListener('input', function () {
+      var m = /^#?([0-9a-fA-F]{6})$/.exec(hex.value.trim());
+      if (!m) return;
+      var h = '#' + m[1].toLowerCase(), t = CG.toHsl(h);
+      hsl = [Math.round(t[0]), t[1], t[2]];
+      apply(h, true, true);
+    });
+    root.appendChild(preview);
+    root.appendChild(side);
+
+    function paint(h) {
+      preview.style.background = h;
+      sliders[0].r.value = Math.round(hsl[0]); sliders[1].r.value = Math.round(hsl[1] * 100); sliders[2].r.value = Math.round(hsl[2] * 100);
+      sliders[0].num.textContent = Math.round(hsl[0]) + '°';
+      sliders[1].num.textContent = Math.round(hsl[1] * 100);
+      sliders[2].num.textContent = Math.round(hsl[2] * 100);
+      // 슬라이더 바탕에 그 슬라이더로 갈 수 있는 색을 깐다
+      var hs = [], k;
+      for (k = 0; k <= 6; k++) hs.push(CG.fromHsl(k * 60, hsl[1], hsl[2]));
+      sliders[0].r.style.background = 'linear-gradient(90deg,' + hs.join(',') + ')';
+      sliders[1].r.style.background = 'linear-gradient(90deg,' + CG.fromHsl(hsl[0], 0, hsl[2]) + ',' + CG.fromHsl(hsl[0], 1, hsl[2]) + ')';
+      sliders[2].r.style.background = 'linear-gradient(90deg,#000,' + CG.fromHsl(hsl[0], hsl[1], 0.5) + ',#fff)';
+    }
+    function apply(h, record, fromHex) {
+      paint(h);
+      if (!fromHex) hex.value = h;
+      var id = 'x' + h.slice(1);
+      if (record) { if (state[slot.key] !== id) set(slot.key, id); else commit(state); return; }
+      state[slot.key] = id;
+      render();
+    }
+    // 지금 색으로 슬라이더를 맞춘다. 끄는 중에 다시 맞추면 색상 값이 흔들려서, 열 때와 바깥에서 바뀌었을 때만 맞춘다
+    function sync(force) {
+      var c = CG.colorIn(slot.palette, state[slot.key]);
+      if (!c || !c.hex) c = CG.colorIn('eye', state.eyeColor);
+      var cur = CG.fromHsl(hsl[0], hsl[1], hsl[2]);
+      if (!force && c.hex === cur) return;
+      var t = CG.toHsl(c.hex);
+      hsl = [Math.round(t[0]), t[1], t[2]];
+      paint(c.hex);
+      if (document.activeElement !== hex) hex.value = c.hex;
+    }
+    return { el: root, sync: sync };
   }
 
   // ---------- 저장 ----------
@@ -552,6 +639,34 @@
       });
     };
     $('btn-sheet').onclick = function () { drawSheet(); $sdlg.showModal(); };
+    // 프롬프트 (로컬 테스트): 조합 코드를 이미지 AI용 글로 바꾼다. js/prompt.js 는 여기서만 불러오므로 공개판에는 없다
+    var $pdlg = $('prompt-dialog'), $pstat = $('prompt-status');
+    var showPrompt = function (st) {
+      var r = CG.prompt(st);
+      $('prompt-en').value = r.en; $('prompt-ko').value = r.ko; $('prompt-nai').value = r.nai; $pstat.textContent = '';
+    };
+    var withPrompt = function (fn) {
+      if (CG.prompt) { fn(); return; }
+      var sc = document.createElement('script'); sc.src = 'js/prompt.js?' + Date.now(); sc.onload = fn;
+      sc.onerror = function () { alert('js/prompt.js 를 불러오지 못했습니다.'); };
+      document.head.appendChild(sc);
+    };
+    $('btn-prompt').onclick = function () {
+      withPrompt(function () { $('prompt-code').value = CG.encode(state); showPrompt(state); $pdlg.showModal(); });
+    };
+    $('prompt-code').addEventListener('input', function () {
+      var v = $('prompt-code').value.trim().replace(/^#/, '');
+      if (v.indexOf(':') < 0) { $pstat.textContent = '조합 코드가 아닙니다.'; return; }
+      showPrompt(CG.decode(v));
+    });
+    ['en', 'nai', 'ko'].forEach(function (lang) {
+      $('prompt-copy-' + lang).onclick = function () {
+        var t = $('prompt-' + lang).value;
+        var done = function () { $pstat.textContent = ({ en: '영어', nai: 'NovelAI', ko: '한국어' })[lang] + ' 프롬프트를 복사했습니다.'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { $('prompt-' + lang).select(); document.execCommand('copy'); done(); });
+        else { $('prompt-' + lang).select(); document.execCommand('copy'); done(); }
+      };
+    });
     $('sheet-again').onclick = drawSheet;
     $('sheet-save').onclick = function () {
       $sstat.textContent = '저장 중…';

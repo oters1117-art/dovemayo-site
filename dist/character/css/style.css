@@ -121,7 +121,8 @@ button.primary {
 }
 button.primary:hover { background: #4d403b; }
 
-.build-bar { display: flex; align-items: center; gap: 10px; }
+.build-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.build-bar button { white-space: nowrap; }
 .build-bar .status { margin: 0; }
 .build-bar[hidden] { display: none; }
 
@@ -217,6 +218,19 @@ button.primary:hover { background: #4d403b; }
 .color-head .picked { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; }
 
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 커스텀 색 칸: 무지개 테두리, 고른 커스텀 색이 가운데에 */
+.swatch.custom { background: radial-gradient(circle, var(--c, transparent) 0 46%, transparent 47%), conic-gradient(#e0475a, #e8a23a, #e5d84a, #5fc06a, #4aa6d8, #7a5ad0, #d04aa8, #e0475a); }
+.custom-pick { display: flex; gap: 12px; align-items: stretch; padding: 10px; border: 1px solid var(--rule); border-radius: 14px; background: var(--card); }
+.custom-pick[hidden] { display: none; }
+.cp-preview { flex: none; width: 92px; border-radius: 12px; border: 1px solid rgba(43, 37, 35, .12); min-height: 92px; }
+.cp-side { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.cp-line { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.cp-name { flex: none; width: 28px; }
+.cp-num { flex: none; width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+.cp-line input[type=range] { flex: 1; min-width: 0; height: 14px; border-radius: 7px; -webkit-appearance: none; appearance: none; border: 1px solid rgba(43, 37, 35, .12); margin: 0; }
+.cp-line input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); cursor: pointer; }
+.cp-line input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); cursor: pointer; }
+.cp-hex { width: 100px; font: 13px ui-monospace, Consolas, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 4px 8px; }
 .swatch {
   width: 26px;
   height: 26px;
@@ -285,6 +299,12 @@ button.primary:hover { background: #4d403b; }
 .sheet-dialog { width: min(820px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--rule); border-radius: 18px; padding: 16px; color: var(--ink); background: var(--card); }
 .sheet-dialog::backdrop { background: rgba(40, 30, 25, .35); }
 .sheet-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
+/* 프롬프트 (로컬 테스트) */
+.prompt-dialog { width: min(720px, calc(100vw - 32px)); }
+.prompt-dialog h2 small { font-weight: 400; font-size: 12px; color: var(--muted); }
+.prompt-dialog input, .prompt-dialog textarea { width: 100%; font: 12.5px/1.5 ui-monospace, Consolas, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; resize: vertical; }
+.prompt-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.prompt-head button { padding: 4px 12px; font-size: 12px; }
 .sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow: auto; padding: 2px; }
 .sheet-cell { position: relative; border-radius: 14px; overflow: hidden; }
 .sheet-face { padding: 0; border: 0; border-radius: 0; background: none; display: block; width: 100%; cursor: pointer; }

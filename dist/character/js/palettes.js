@@ -61,15 +61,27 @@
     { id: 'brown', name: '브라운', hex: '#7e5647', w: 2, isDefault: true },
     { id: 'hazel', name: '헤이즐', hex: '#9a7a45' },
     { id: 'amber', name: '호박색', hex: '#c98a2b' },
+    { id: 'coral', name: '코랄', hex: '#df7a5c' },
     { id: 'gold', name: '금색', hex: '#d9b23c' },
+    { id: 'olive', name: '올리브', hex: '#7f8a3c' },
     { id: 'red', name: '빨강', hex: '#b8323a' },
+    { id: 'wine', name: '와인', hex: '#7c2b45' },
     { id: 'pink', name: '핑크', hex: '#d9668f' },
+    { id: 'magenta', name: '마젠타', hex: '#b8338a' },
     { id: 'purple', name: '보라', hex: '#7a52b3' },
+    { id: 'lavender', name: '라벤더', hex: '#a48fd6' },
+    { id: 'indigo', name: '인디고', hex: '#3f4a9a' },
+    { id: 'navy', name: '네이비', hex: '#2b3f73' },
     { id: 'blue', name: '블루', hex: '#3d6fc4' },
     { id: 'sky', name: '하늘색', hex: '#5fa8dc' },
+    { id: 'ice', name: '아이스블루', hex: '#a6d3ea' },
     { id: 'teal', name: '청록', hex: '#2f9c99' },
+    { id: 'aqua', name: '아쿠아', hex: '#4cc3c4' },
+    { id: 'emerald', name: '에메랄드', hex: '#1f8a6a' },
     { id: 'green', name: '녹색', hex: '#4c9a55' },
-    { id: 'gray', name: '회색', hex: '#7d858f' }
+    { id: 'mint', name: '민트', hex: '#7fd1b0' },
+    { id: 'gray', name: '회색', hex: '#7d858f' },
+    { id: 'silver', name: '실버', hex: '#b3b8c2' }
   ]);
 
   // 오드아이: 한쪽 눈의 색. '없음'이 기본이고, 고정을 풀고 랜덤을 돌리면 절반쯤은 '없음'이 나온다

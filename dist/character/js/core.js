@@ -139,6 +139,39 @@
     return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
   }
 
+  // ---------- 커스텀 색 ----------
+  // 팔레트에 없는 색은 id 를 'x' + 여섯 자리 hex 로 적는다 (조합 코드 ch:x3e2f2a). '#' 은 주소의 # 과 겹쳐서 쓰지 않는다
+  var CUSTOM = /^x[0-9a-f]{6}$/;
+  function isCustom(id) { return typeof id === 'string' && CUSTOM.test(id); }
+  function toHsl(hex) {
+    var c = hexToRgb(hex), r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, h = 0, s = 0, d = max - min;
+    if (d) {
+      s = d / (1 - Math.abs(2 * l - 1));
+      h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h = (h * 60 + 360) % 360;
+    }
+    return [h, s, l];
+  }
+  function fromHsl(h, s, l) {
+    var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, rgb;
+    h = ((h % 360) + 360) % 360;
+    rgb = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return '#' + rgb.map(function (v) { v = Math.round((v + m) * 255); v = Math.max(0, Math.min(255, v)); return (v < 16 ? '0' : '') + v.toString(16); }).join('');
+  }
+  function customColor(pal, id) {
+    var hex = '#' + id.slice(1), c = { id: id, name: '커스텀 ' + hex, hex: hex, custom: true };
+    // 피부는 외곽선 색도 필요하다: 팔레트의 피부색들처럼 같은 색조로 훨씬 어둡게 (밝기 약 0.53배, 채도 0.42)
+    if (pal === 'skin') { var t = toHsl(hex); c.line = fromHsl(t[0] - 3, 0.42, t[2] * 0.53); }
+    return c;
+  }
+  // 팔레트 색 또는 커스텀 색. 없으면 null
+  function colorIn(pal, id) {
+    var c = findIn(palettes[pal] || [], id);
+    if (c) return c;
+    return isCustom(id) ? customColor(pal, id) : null;
+  }
+
   function mix(a, b, t) {
     var x = hexToRgb(a), y = hexToRgb(b), out = '#';
     for (var i = 0; i < 3; i++) {
@@ -167,7 +200,7 @@
   // 한쪽만 그릴 수 있는 항목 (half 조각만 있는 파츠를 왼쪽만 / 오른쪽만 그린다). 조합 코드에는 sl:s / sr:ae 처럼 적힌다
   var SIDE_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'earring'];
   // 한쪽만 버튼으로 대신하게 되어 지운 '한쪽' 파츠. 예전 조합 코드는 원래 파츠 + 왼쪽만으로 읽는다
-  var ONE_SIDE = { side: { 'wavelong-one': 'wavelong', tuckone: 'long' } };
+  var ONE_SIDE = { side: { 'wavelong-one': 'wavelong', tuckone: 'long' }, extra: { onetail: 'sidetails' } };
   // 다른 항목으로 옮긴 파츠. 예전 조합 코드(자랑 게시판 글 등)는 새 자리에서 읽는다. 반전도 따라간다
   var MOVED = [{ from: 'skinfx', id: 'bandage', to: 'facewear' }];
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
@@ -201,7 +234,7 @@
       if (state.flip && state.flip[m.from]) s.flip[m.to] = true;
     });
     COLOR_SLOTS.forEach(function (c) {
-      if (findIn(palettes[c.palette], state[c.key])) s[c.key] = state[c.key];
+      if (colorIn(c.palette, state[c.key])) s[c.key] = state[c.key];
     });
     return s;
   }
@@ -306,7 +339,7 @@
   // 피부색: 팔레트(palettes.js 의 skin)의 hex 와 line 에서 볼터치·입술·코 색을 정한다.
   // 팔레트 항목에 blush, lip, lid, nose 를 직접 적으면 그 색을 쓴다 (기본 피부색이 그렇다).
   function skinOf(s) {
-    var c = findIn(palettes.skin || [], s.skinColor) || { hex: '#fdeeea', line: '#b46352' };
+    var c = colorIn('skin', s.skinColor) || { hex: '#fdeeea', line: '#b46352' };
     return {
       hex: c.hex,
       line: c.line,
@@ -323,9 +356,9 @@
   }
 
   function colorVars(s) {
-    var hair = findIn(palettes.hair, s.hairColor).hex;
-    var eye = eyeVars(findIn(palettes.eye, s.eyeColor).hex);
-    var acc = findIn(palettes.acc, s.accColor).hex;
+    var hair = colorIn('hair', s.hairColor).hex;
+    var eye = eyeVars(colorIn('eye', s.eyeColor).hex);
+    var acc = colorIn('acc', s.accColor).hex;
     var SKIN = skinOf(s);
     return {
       '--hair': hair,
@@ -760,7 +793,7 @@
       var eyeL = eyeSide(eye, iris, pupil, hl, opt, 'cg-eye@@', false);
       var eyeR = eyeSide(right, iris, pupil, hl, opt, right !== eye ? 'cg-eye2@@' : 'cg-eye@@', true);
       // 오드아이: 한쪽 눈만 다른 색으로 칠한다 (기본은 화면 오른쪽 눈, 반전하면 왼쪽 눈)
-      var odd = findIn(palettes.odd || [], s.oddColor);
+      var odd = colorIn('odd', s.oddColor);
       if (odd && odd.hex) {
         var ov = eyeVars(odd.hex);
         var tint = function (m) {
@@ -775,7 +808,7 @@
 
     var vars = colorVars(s), styleAttr = '';
     for (var k in vars) styleAttr += k + ':' + vars[k] + ';';
-    var bg = findIn(palettes.bg, s.bgColor).hex;
+    var bg = colorIn('bg', s.bgColor).hex;
     var sizeAttr = opts.size ? ' width="' + opts.size + '" height="' + opts.size + '"' : '';
 
     var out = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + SIZE + ' ' + SIZE + '"' + sizeAttr +
@@ -808,6 +841,10 @@
     groups: GROUPS,
     categories: CATEGORIES,
     colorSlots: COLOR_SLOTS,
+    colorIn: colorIn,
+    isCustom: isCustom,
+    toHsl: toHsl,
+    fromHsl: fromHsl,
     subs: SUBS,
     panel: panel,
     parts: parts,
