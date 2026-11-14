@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  // 헤어: 실제 염색 색상 기준 32색
+  // 헤어: 실제 염색 색상 기준 43색
   CG.addPalette('hair', [
     // 내추럴
     { id: 'black', name: '흑발', hex: '#2b2627', group: '내추럴', w: 3 },
@@ -26,12 +26,17 @@
     { id: 'silverash', name: '실버애쉬', hex: '#c3c6cc', group: '블론드·탈색', w: 1.5 },
     { id: 'ashgray', name: '애쉬그레이', hex: '#8e9299', group: '블론드·탈색', w: 1.5 },
     { id: 'white', name: '화이트', hex: '#f3f1ee', group: '블론드·탈색', w: 1.5 },
+    { id: 'lavsilver', name: '라벤더 실버', hex: '#cdc6da', group: '블론드·탈색', w: 1.5 },
+    { id: 'butter', name: '버터 블론드', hex: '#ecd590', group: '블론드·탈색', w: 1.5 },
     // 레드·핑크
     { id: 'cherry', name: '체리레드', hex: '#b3202e', group: '레드·핑크' },
     { id: 'coral', name: '코랄오렌지', hex: '#ef7d4f', group: '레드·핑크' },
     { id: 'rosegold', name: '로즈골드', hex: '#e0a391', group: '레드·핑크' },
     { id: 'babypink', name: '베이비핑크', hex: '#f6b9c9', group: '레드·핑크' },
     { id: 'hotpink', name: '핫핑크', hex: '#e8457e', group: '레드·핑크' },
+    { id: 'ashpink', name: '애쉬핑크', hex: '#c9a1a7', group: '레드·핑크' },
+    { id: 'peach', name: '피치', hex: '#f3b99b', group: '레드·핑크' },
+    { id: 'lilacpink', name: '라일락핑크', hex: '#dcb4d8', group: '레드·핑크' },
     // 퍼플·블루
     { id: 'lavender', name: '라벤더애쉬', hex: '#b3a6cf', group: '퍼플·블루' },
     { id: 'ashpurple', name: '애쉬퍼플', hex: '#7c6790', group: '퍼플·블루' },
@@ -39,8 +44,14 @@
     { id: 'navy', name: '네이비', hex: '#26365e', group: '퍼플·블루' },
     { id: 'ashblue', name: '애쉬블루', hex: '#6f87a6', group: '퍼플·블루' },
     { id: 'skyblue', name: '스카이블루', hex: '#8fc4ea', group: '퍼플·블루' },
+    { id: 'midnight', name: '미드나잇퍼플', hex: '#3d2f55', group: '퍼플·블루' },
+    { id: 'bluegray', name: '블루그레이', hex: '#66788a', group: '퍼플·블루' },
+    { id: 'aqua', name: '아쿠아', hex: '#92d2d6', group: '퍼플·블루' },
     // 그린
     { id: 'mint', name: '민트', hex: '#9adcc8', group: '그린' },
+    { id: 'pistachio', name: '피스타치오 민트', hex: '#bfe0b4', group: '그린' },
+    { id: 'sagegreen', name: '세이지그린', hex: '#9fb39a', group: '그린' },
+    { id: 'teal', name: '틸', hex: '#3e8a87', group: '그린' },
     { id: 'khakigreen', name: '카키그린', hex: '#5d6b47', group: '그린' }
   ]);
 
@@ -114,7 +125,7 @@
     { id: 'sage', name: '세이지', hex: '#b9c7b5' },
     { id: 'dustyblue', name: '더스티블루', hex: '#b3c2d1' },
     { id: 'lavender', name: '라벤더', hex: '#c9c0db' },
-    { id: 'charcoal', name: '차콜', hex: '#4a4648' },
+    { id: 'charcoal', name: '차콜', hex: '#655f62' },
     { id: 'none', name: '없음 (투명)', hex: null, w: 0 }
   ]);
 })();
