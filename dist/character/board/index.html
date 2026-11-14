@@ -33,6 +33,7 @@ h2 small{font-weight:400;color:var(--muted)}
 .post img{display:block;max-width:100%;max-height:360px;border-radius:10px;margin-top:8px;border:1px solid var(--rule)}
 .post .meta{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)}
 .post .meta span{margin-right:auto}
+.post .meta .me{margin-right:0;color:var(--accent)}
 .post .meta button{padding:4px 10px;font-size:12px}
 .post p.reply{color:var(--reply);margin-top:8px;padding-left:10px;border-left:3px solid #a9dcbd}
 .post .answer{margin-top:8px}
@@ -145,6 +146,29 @@ h2 small{font-weight:400;color:var(--muted)}
     if (p.reply) { var rp = document.createElement('p'); rp.className = 'reply'; rp.textContent = p.reply; d.appendChild(rp); }
     var meta = document.createElement('div'); meta.className = 'meta';
     var when = document.createElement('span'); when.textContent = new Date(p.at).toLocaleDateString('ko-KR'); meta.appendChild(when);
+    // 같은 IP로 올린 글: 지울 수 있고, 검토 전이면 고칠 수 있다
+    if (p.mine && !admin) {
+      var me = document.createElement('span'); me.className = 'me'; me.textContent = '내 글'; meta.appendChild(me);
+      if (p.status === 'pending') {
+        var fix = document.createElement('button'); fix.textContent = '수정';
+        fix.onclick = function () {
+          var old = d.querySelector('.answer');
+          if (old) { old.remove(); return; }
+          var box = document.createElement('div'); box.className = 'answer';
+          var ta = document.createElement('textarea'); ta.maxLength = 500; ta.value = p.text || '';
+          var bar = document.createElement('div'); bar.className = 'bar';
+          var save = document.createElement('button'); save.textContent = '수정 저장'; save.className = 'primary';
+          save.onclick = function () { save.disabled = true; api('edit', { id: p.id, text: ta.value.trim() }).then(load, function (x) { save.disabled = false; alert(x.message); }); };
+          ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.stopPropagation(); save.click(); } });
+          bar.appendChild(save); box.appendChild(ta); box.appendChild(bar);
+          d.appendChild(box); ta.focus();
+        };
+        meta.appendChild(fix);
+      }
+      var mdel = document.createElement('button'); mdel.textContent = '삭제'; mdel.className = 'danger';
+      mdel.onclick = function () { if (confirm('내 글을 삭제할까요?')) api('delete', { id: p.id }).then(load, function (x) { alert(x.message); }); };
+      meta.appendChild(mdel);
+    }
     if (admin) {
       var re = document.createElement('button'); re.textContent = p.reply ? '답글 수정' : '답글';
       re.onclick = function () {

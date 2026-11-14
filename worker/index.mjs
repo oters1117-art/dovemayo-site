@@ -1,12 +1,15 @@
 // dovemayo.com worker. Everything is static (dist/) except the suggestion board API:
 //   GET  /api/board/list            new (pending) and approved posts, all public
-//   GET|POST /api/board/show/list|submit|delete   showcase posts {code, text}
+//   GET|POST /api/board/show/list|submit|edit|delete   showcase posts {code, text}; edit/delete by the writer (same IP) or admin
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
-//   POST /api/board/approve|delete  {id}                      admin only
+//   POST /api/board/approve         {id}                      admin only
+//   POST /api/board/delete          {id}                      admin, or the writer (same IP)
+//   POST /api/board/edit            {id, text}                the writer (same IP), while the post is still pending
 //   POST /api/board/reply           {id, text}                admin only; the owner's answer under a post (empty text removes it)
 //   GET  /api/board/img/<id>        image of a post
 // Storage: one Durable Object (class Board, SQLite-backed). "index" = array of posts (newest first),
-// "img:<id>" = image bytes. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
+// "img:<id>" = image bytes. Each post keeps `by`, a salted hash of the writer's IP (never the IP itself),
+// so the writer can edit or delete it from the same IP; lists send only `mine: true/false`. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
 import { DurableObject } from 'cloudflare:workers';
 const MAX_TEXT = 500, MAX_IMAGE = 600 * 1024, MAX_POSTS = 400, PER_HOUR = 6;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -22,7 +25,14 @@ function isAdmin(request, env) {
 }
 const readIndex = async (env) => (await env.BOARD.get('index')) || [];
 const writeIndex = (env, list) => env.BOARD.put('index', list);
-const view = (p) => ({ id: p.id, text: p.text, at: p.at, status: p.status, img: !!p.img, reply: p.reply || '' });
+const viewOf = (p, me) => ({ id: p.id, text: p.text, at: p.at, status: p.status, img: !!p.img, reply: p.reply || '', mine: !!me && p.by === me });
+// who is asking: salted hash of the connecting IP (the admin key is the salt, so the hash cannot be matched to an IP from outside)
+async function writer(request, env) {
+  const ip = request.headers.get('cf-connecting-ip');
+  if (!ip) return '';
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode((env.BOARD_ADMIN_KEY || '') + '|' + ip));
+  return [...new Uint8Array(d)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 async function submit(request, env) {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
@@ -48,7 +58,7 @@ async function submit(request, env) {
   if (list.length >= MAX_POSTS) return fail('지금은 제안이 가득 찼습니다. 나중에 다시 보내 주세요.', 503);
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   if (bytes) await env.BOARD.put('img:' + id, bytes);
-  list.unshift({ id, text, at: new Date().toISOString(), status: 'pending', img: bytes ? type : '' });
+  list.unshift({ id, text, at: new Date().toISOString(), status: 'pending', img: bytes ? type : '', by: await writer(request, env) });
   await writeIndex(env, list);
   await env.BOARD.put(rateKey, { hour, n: used + 1 });
   return json({ ok: true, id });
@@ -57,8 +67,10 @@ async function submit(request, env) {
 // Showcase ("자랑 게시판"): a post is a combination code and a short text; the page draws the face from the code.
 const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300;
 async function show(request, env, path, admin) {
-  const list = (await env.BOARD.get('show')) || [];
-  if (path === 'list' && request.method === 'GET') return json({ admin, posts: list.slice(0, 600) });
+  const list = (await env.BOARD.get('show')) || [], me = await writer(request, env);
+  if (path === 'list' && request.method === 'GET') {
+    return json({ admin, posts: list.slice(0, 600).map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me })) });
+  }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   let body;
   try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
@@ -72,17 +84,19 @@ async function show(request, env, path, admin) {
     if (!/^[^<>"'&]{6,900}$/.test(code) || code.indexOf(':') < 0) return fail('조합 코드가 올바르지 않습니다.');
     const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-    list.unshift({ id, code, text, at: new Date().toISOString() });
+    list.unshift({ id, code, text, at: new Date().toISOString(), by: me });
     if (list.length > MAX_SHOW) list.length = MAX_SHOW;
     await env.BOARD.put('show', list);
     await env.BOARD.put(rateKey, { hour, n: used + 1 });
     return json({ ok: true, id });
   }
-  if (path === 'delete') {
-    if (!admin) return fail('권한이 없습니다.', 403);
+  if (path === 'delete' || path === 'edit') {
     const i = list.findIndex((p) => p.id === body.id);
     if (i < 0) return fail('없는 글입니다.', 404);
-    list.splice(i, 1);
+    const mine = !!me && list[i].by === me;
+    if (!mine && !admin) return fail('올린 곳(같은 IP)에서만 고치거나 지울 수 있습니다.', 403);
+    if (path === 'edit') list[i].text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
+    else list.splice(i, 1);
     await env.BOARD.put('show', list);
     return json({ ok: true });
   }
@@ -93,7 +107,7 @@ async function board(request, env, path) {
   const admin = isAdmin(request, env);
   if (path.startsWith('show/')) return show(request, env, path.slice(5), admin);
   if (path === 'list' && request.method === 'GET') {
-    const list = await readIndex(env);
+    const list = await readIndex(env), me = await writer(request, env), view = (p) => viewOf(p, me);
     return json({
       admin,
       // approved posts: most recently approved first (older ones without approvedAt fall back to the post time)
@@ -111,13 +125,22 @@ async function board(request, env, path) {
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   if (path === 'submit') return submit(request, env);
-  if (path === 'approve' || path === 'delete' || path === 'reply') {
-    if (!admin) return fail('권한이 없습니다.', 403);
+  if (path === 'approve' || path === 'delete' || path === 'reply' || path === 'edit') {
     let body;
     try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
     const list = await readIndex(env), i = list.findIndex((p) => p.id === body.id);
     if (i < 0) return fail('없는 글입니다.', 404);
-    if (path === 'approve') { list[i].status = 'approved'; list[i].approvedAt = new Date().toISOString(); }
+    const me = await writer(request, env), mine = !!me && list[i].by === me;
+    // the writer may delete their post, and edit it until it is reviewed; everything else is admin only
+    if (!admin && !(mine && (path === 'delete' || (path === 'edit' && list[i].status === 'pending')))) {
+      return fail(path === 'edit' && mine ? '검토가 끝난 제안은 고칠 수 없습니다.' : '권한이 없습니다.', 403);
+    }
+    if (path === 'edit') {
+      const text = String(body.text || '').trim().slice(0, MAX_TEXT);
+      if (!text && !list[i].img) return fail('내용을 적어 주세요.');
+      list[i].text = text;
+    }
+    else if (path === 'approve') { list[i].status = 'approved'; list[i].approvedAt = new Date().toISOString(); }
     else if (path === 'reply') {
       const text = String(body.text || '').trim().slice(0, MAX_TEXT);
       if (text) list[i].reply = text; else delete list[i].reply;
