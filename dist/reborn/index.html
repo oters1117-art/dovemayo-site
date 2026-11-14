@@ -22,6 +22,14 @@
     --sun-soft: #fff6d6;
     --sun-rule: #efd27c;
     --pin: #e5453a;
+    --sky: #e3f0fb;
+    --sky-rule: #c4dcf1;
+    --mint: #e6f6ee;
+    --mint-rule: #bfe3d0;
+    --rose: #ffece8;
+    --rose-rule: #f6cdc4;
+    --blue-soft: #eaf1ff;
+    --blue-rule: #c9d9fb;
   }
 
   * { box-sizing: border-box; }
@@ -79,7 +87,7 @@
   }
 
   .modeSwitch button.active {
-    background: var(--ink);
+    background: var(--blue);
     color: #fff;
   }
 
@@ -113,6 +121,17 @@
     margin-bottom: 4px;
   }
 
+  /* 통계 카드마다 다른 색 */
+  .stats .card:nth-child(1) { background: var(--blue-soft); border-color: var(--blue-rule); }
+  .stats .card:nth-child(2) { background: var(--sun-soft); border-color: var(--sun-rule); }
+  .stats .card:nth-child(3) { background: var(--rose); border-color: var(--rose-rule); }
+  .stats .card:nth-child(4) { background: var(--mint); border-color: var(--mint-rule); }
+  .stats .card:nth-child(1) .label { color: #3c63c4; }
+  .stats .card:nth-child(2) .label { color: #9a7410; }
+  .stats .card:nth-child(3) .label { color: #c24a38; }
+  .stats .card:nth-child(4) .label { color: #2c8a5f; }
+  .stats .label { font-weight: 600; }
+
   .value {
     font-size: 20px;
     font-weight: 700;
@@ -121,11 +140,11 @@
 
   #mapBox {
     position: relative;
-    background: var(--card);
-    border: 1px solid var(--rule);
+    background: linear-gradient(180deg, #edf6fd, var(--sky));
+    border: 1px solid var(--sky-rule);
     border-radius: 28px;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(60, 40, 30, .08), 0 12px 32px rgba(60, 40, 30, .10);
+    box-shadow: 0 1px 2px rgba(40, 70, 110, .08), 0 12px 32px rgba(40, 70, 110, .12);
   }
 
   #worldMap {
@@ -135,8 +154,8 @@
   }
 
   .country {
-    fill: #ebe6e2;
-    stroke: #fff;
+    fill: #fffdf7;
+    stroke: #b7cfe4;
     stroke-width: .55;
   }
 
@@ -189,6 +208,7 @@
     font-size: 17px;
     font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 6px 16px rgba(48, 105, 230, .28);
   }
 
   #rebirthBtn:hover {
@@ -205,6 +225,9 @@
     gap: 10px;
     margin-top: 12px;
   }
+
+  .bottom .card { background: var(--mint); border-color: var(--mint-rule); }
+  .bottom .label { color: #2c8a5f; font-weight: 600; }
 
   .history {
     margin-top: 6px;
