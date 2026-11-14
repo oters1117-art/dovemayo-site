@@ -142,6 +142,9 @@ button.primary:hover { background: #4d403b; }
 .status { min-height: 1.5em; margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* ---------- 패널 ---------- */
+/* 설정 카드 위의 홈페이지 링크 */
+.side { display: grid; gap: 8px; min-width: 0; }
+.back { justify-self: start; font-size: 13px; color: var(--muted); }
 .panel {
   background: var(--card);
   border: 1px solid var(--rule);

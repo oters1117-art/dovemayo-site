@@ -197,12 +197,12 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border: 0;
+    border: 1px solid #d3c6f3;
     border-radius: 12px;
     padding: 15px;
     margin-top: 12px;
-    background: var(--violet);
-    color: #fff;
+    background: #ece5fb;
+    color: #5a44a4;
     font: inherit;
     font-size: 17px;
     font-weight: 700;
@@ -210,7 +210,8 @@
   }
 
   #rebirthBtn:hover {
-    background: var(--violet-dark);
+    background: #e3d9f9;
+    border-color: #c5b5ee;
   }
 
   #rebirthBtn:active {
@@ -243,52 +244,6 @@
 
   .updatedAt {
     margin-top: 4px;
-  }
-
-  .creatorActions {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 18px;
-  }
-
-  #supportBtn,
-  #creatorWebsiteLink {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    min-width: 190px;
-    height: 40px;
-    padding: 9px 16px;
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-    background: var(--card);
-    color: var(--muted);
-    font: inherit;
-    font-size: 14px;
-    cursor: pointer;
-    text-decoration: none;
-    overflow: visible;
-  }
-
-  #supportBtn:hover,
-  #creatorWebsiteLink:hover {
-    border-color: #c9beb8;
-    color: var(--ink);
-  }
-
-  #supportBtn.celebrating {
-    background: var(--pin);
-    border-color: var(--pin);
-    color: #fff;
-  }
-
-  #supportBtn.celebrating .supportText {
-    display: inline-block;
-    font-size: 56px;
-    line-height: 1;
   }
 
   .pinOuter {
@@ -397,13 +352,6 @@
     <a href="https://population.un.org/wpp/" target="_blank" rel="noopener noreferrer">UN World Population Prospects 2024</a>의
     2026년 중위 추계 인구와 출생아 수를 사용합니다. 195개 국가·지역 합계로, UN 세계 합계의 출생아 약 99.88%와 인구 약 99.77%를 포함합니다.
     <div class="updatedAt">업데이트: 2026년 8월 15일</div>
-  </div>
-
-  <div class="creatorActions">
-    <button id="supportBtn" type="button" aria-live="polite">
-      <span class="supportText">제작자(둘기마요) 응원하기</span>
-    </button>
-    <a id="creatorWebsiteLink" href="https://dovemayo.com" target="_blank" rel="noopener noreferrer">제작자 홈페이지</a>
   </div>
 
 </div>
@@ -675,23 +623,6 @@ document.querySelectorAll(".modeSwitch button")
         setMode(button.dataset.mode);
       }
     });
-  });
-
-let supportTimer;
-
-document.getElementById("supportBtn")
-  .addEventListener("click", event => {
-    const button = event.currentTarget;
-    const text = button.querySelector(".supportText");
-
-    clearTimeout(supportTimer);
-    button.classList.add("celebrating");
-    text.textContent = "🎉";
-
-    supportTimer = setTimeout(() => {
-      button.classList.remove("celebrating");
-      text.textContent = "감사합니다";
-    }, 1000);
   });
 
 </script>
