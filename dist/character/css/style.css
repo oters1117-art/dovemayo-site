@@ -53,7 +53,7 @@ body {
 /* 카드 옆 버튼: 휴대폰에서만 보인다. 아이콘 아래에 작은 글씨 */
 .card-tools { display: none; }
 .ico {
-  width: 46px;
+  width: 42px;
   height: 46px;
   padding: 0;
   display: flex;
@@ -70,9 +70,8 @@ body {
 }
 .ico svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ico:disabled { opacity: .4; }
-/* 랜덤: 색을 넣어 눈에 띄게, 조금 크게 */
-.ico.go { height: 58px; background: var(--on); border-color: var(--on); color: #fff; font-weight: 700; font-size: 11px; box-shadow: 0 3px 8px rgba(201, 87, 63, .35); }
-.ico.go svg { width: 22px; height: 22px; stroke-width: 2.3; }
+/* 랜덤: 화면의 랜덤 버튼과 같은 갈색으로만 구분한다 (그림자 없음) */
+.ico.go { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
 /* 안내 글: 카드 아래쪽에 잠깐 뜬다 */
 .toast {
@@ -232,7 +231,7 @@ button.primary:hover { background: #4d403b; }
 }
 
 /* ---------- 휴대폰 ----------
-   얼굴 카드는 화면 위에 붙어 있고, 버튼은 카드 오른쪽 여백의 아이콘 넷뿐이다 (이전 · 자랑 · 복사, 맨 아래에 색을 넣은 랜덤).
+   얼굴 카드는 화면 위에 붙어 있고, 버튼은 카드 양옆 여백의 아이콘 넷뿐이다 (왼쪽 랜덤, 오른쪽 이전 · 자랑 · 복사).
    항목은 한 줄에 하나: 이름 · 선택 · 랜덤 · 고정 */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 12px 40px; }
@@ -246,13 +245,12 @@ button.primary:hover { background: #4d403b; }
     background: var(--page);
     box-shadow: 0 6px 10px -8px rgba(60, 40, 30, .35);
   }
-  /* 카드와 버튼 기둥(46px)을 나란히 놓는다. 카드는 기둥만큼만 줄어든다 */
-  .preview-row { display: flex; justify-content: center; align-items: stretch; gap: 8px; }
-  .preview-wrap { flex: none; width: min(calc(100% - 54px), 42vh, 400px); width: min(calc(100% - 54px), 42svh, 400px); }
+  /* 버튼 기둥(42px) · 카드 · 버튼 기둥을 나란히 놓는다. 카드는 두 기둥만큼 줄어든다 */
+  .preview-row { display: flex; justify-content: center; align-items: stretch; gap: 6px; }
+  .preview-wrap { flex: none; width: min(calc(100% - 96px), 42vh, 400px); width: min(calc(100% - 96px), 42svh, 400px); }
   .preview { border-radius: 22px; box-shadow: 0 1px 2px rgba(60, 40, 30, .08); }
   .stage .actions, .stage .code, .stage .build-bar { display: none; }
   .card-tools { display: flex; flex-direction: column; gap: 6px; flex: none; }
-  .card-tools .go { margin-top: auto; }
 
   .panel { padding: 14px 12px; border-radius: 16px; }
   .panel-head h1 { font-size: 17px; }
