@@ -81,9 +81,10 @@
     // 좌우 반전: 가운데 축을 두고 좌우를 향한 삼각형 두 개
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 6.5 2.5 12l6 5.5z"/><path d="M15.5 6.5l6 5.5-6 5.5z"/></svg>',
     // 대칭 / 왼쪽만 / 오른쪽만: 그려지는 쪽은 채우고, 안 그려지는 쪽은 흐린 테두리만
-    sideBoth: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" fill="currentColor"/><path d="M14.5 6.5 21 12l-6.5 5.5z" fill="currentColor"/></svg>',
-    sideL: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" fill="currentColor"/><path d="M14.5 6.5 21 12l-6.5 5.5z" opacity=".35" stroke-dasharray="2 2.6"/></svg>',
-    sideR: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" opacity=".35" stroke-dasharray="2 2.6"/><path d="M14.5 6.5 21 12l-6.5 5.5z" fill="currentColor"/></svg>'
+    // 대칭 아이콘의 삼각형은 서로 안쪽(가운데)을 본다
+    sideBoth: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9.5 12 3 17.5z" fill="currentColor"/><path d="M21 6.5 14.5 12 21 17.5z" fill="currentColor"/></svg>',
+    sideL: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9.5 12 3 17.5z" fill="currentColor"/><path d="M21 6.5 14.5 12 21 17.5z" opacity=".35" stroke-dasharray="2 2.6"/></svg>',
+    sideR: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9.5 12 3 17.5z" opacity=".35" stroke-dasharray="2 2.6"/><path d="M21 6.5 14.5 12 21 17.5z" fill="currentColor"/></svg>'
   };
   function iconButton(cls, icon, label, title) {
     var b = el('button', { type: 'button', class: cls + ' tool', 'aria-label': label, title: title || label });
