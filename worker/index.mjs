@@ -96,7 +96,8 @@ async function board(request, env, path) {
     const list = await readIndex(env);
     return json({
       admin,
-      approved: list.filter((p) => p.status === 'approved').map(view),
+      // approved posts: most recently approved first (older ones without approvedAt fall back to the post time)
+      approved: list.filter((p) => p.status === 'approved').sort((a, b) => (b.approvedAt || b.at).localeCompare(a.approvedAt || a.at)).map(view),
       pending: list.filter((p) => p.status === 'pending').map(view)
     });
   }
@@ -116,7 +117,7 @@ async function board(request, env, path) {
     try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
     const list = await readIndex(env), i = list.findIndex((p) => p.id === body.id);
     if (i < 0) return fail('없는 글입니다.', 404);
-    if (path === 'approve') list[i].status = 'approved';
+    if (path === 'approve') { list[i].status = 'approved'; list[i].approvedAt = new Date().toISOString(); }
     else if (path === 'reply') {
       const text = String(body.text || '').trim().slice(0, MAX_TEXT);
       if (text) list[i].reply = text; else delete list[i].reply;

@@ -9,18 +9,18 @@
 <body>
   <main class="app">
     <section class="stage">
-      <div class="preview-wrap">
-        <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
-        <!-- 휴대폰에서만 보이는 카드 위 버튼 (카드 아래 버튼 대신) -->
-        <div class="card-tools left">
-          <button id="ico-random" class="ico" type="button" aria-label="랜덤" title="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg></button>
+      <div class="preview-row">
+        <div class="preview-wrap">
+          <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
+          <p id="status" class="toast" role="status"></p>
         </div>
-        <div class="card-tools right">
-          <button id="ico-prev" class="ico" type="button" aria-label="이전 캐릭터" title="이전"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></svg></button>
-          <button id="ico-show" class="ico" type="button" aria-label="자랑 게시판으로 가서 올리기" title="자랑게시판으로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></button>
-          <button id="ico-copy" class="ico" type="button" aria-label="이미지 복사" title="이미지 복사"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 9V6.5A2.5 2.5 0 0 0 12.5 4h-6A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15H9"/></svg></button>
+        <!-- 휴대폰에서만 보이는 버튼: 카드 오른쪽 여백에 세로로 놓인다 (카드 아래 버튼 대신). 랜덤은 엄지에 가까운 맨 아래 -->
+        <div class="card-tools">
+          <button id="ico-prev" class="ico" type="button" aria-label="이전 캐릭터" title="이전"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></svg><span>이전</span></button>
+          <button id="ico-show" class="ico" type="button" aria-label="자랑 게시판으로 가서 올리기" title="자랑게시판으로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg><span>자랑</span></button>
+          <button id="ico-copy" class="ico" type="button" aria-label="이미지 복사" title="이미지 복사"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 9V6.5A2.5 2.5 0 0 0 12.5 4h-6A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15H9"/></svg><span>복사</span></button>
+          <button id="ico-random" class="ico go" type="button" aria-label="랜덤" title="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg><span>랜덤</span></button>
         </div>
-        <p id="status" class="toast" role="status"></p>
       </div>
 
       <div class="actions">
