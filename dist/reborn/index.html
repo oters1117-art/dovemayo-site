@@ -15,6 +15,13 @@
     --rule: #e4ddd8;
     --accent: #5d4e48;
     --on: #c9573f;
+    /* 원본의 밝은 포인트색: 파란 버튼, 노란 결과, 빨간 핀 */
+    --blue: #3069e6;
+    --blue-dark: #2457c9;
+    --sun: #ffcc4d;
+    --sun-soft: #fff6d6;
+    --sun-rule: #efd27c;
+    --pin: #e5453a;
   }
 
   * { box-sizing: border-box; }
@@ -72,7 +79,7 @@
   }
 
   .modeSwitch button.active {
-    background: var(--accent);
+    background: var(--ink);
     color: #fff;
   }
 
@@ -134,7 +141,7 @@
   }
 
   .country.selected {
-    fill: #efc2ae;
+    fill: var(--sun);
     stroke: var(--ink);
     stroke-width: 1.2;
   }
@@ -150,13 +157,13 @@
     margin-top: 12px;
     padding: 16px 18px;
     border-radius: 18px;
-    background: #fbf2ed;
-    border: 1px solid #ecd3c7;
+    background: var(--sun-soft);
+    border: 1px solid var(--sun-rule);
   }
 
   #result strong {
-    font-size: 24px;
-    color: var(--on);
+    font-size: 25px;
+    color: var(--ink);
   }
 
   #detail {
@@ -172,11 +179,11 @@
   #rebirthBtn {
     display: block;
     width: 100%;
-    border: 1px solid var(--accent);
-    border-radius: 12px;
-    padding: 14px;
+    border: 1px solid var(--blue);
+    border-radius: 14px;
+    padding: 15px;
     margin-top: 12px;
-    background: var(--accent);
+    background: var(--blue);
     color: #fff;
     font: inherit;
     font-size: 17px;
@@ -185,7 +192,7 @@
   }
 
   #rebirthBtn:hover {
-    background: #4d403b;
+    background: var(--blue-dark);
   }
 
   #rebirthBtn:active {
@@ -255,8 +262,8 @@
   }
 
   #supportBtn.celebrating {
-    background: var(--on);
-    border-color: var(--on);
+    background: var(--pin);
+    border-color: var(--pin);
     color: #fff;
   }
 
@@ -267,13 +274,13 @@
   }
 
   .pinOuter {
-    fill: rgba(201, 87, 63, .2);
-    stroke: var(--on);
+    fill: rgba(229, 69, 58, .2);
+    stroke: var(--pin);
     stroke-width: 2;
   }
 
   .pinInner {
-    fill: var(--on);
+    fill: var(--pin);
   }
 
   @media (max-width: 700px) {
@@ -299,7 +306,7 @@
   <a class="back" href="https://dovemayo.com/">← dovemayo.com</a>
 
   <div class="titleRow">
-    <h1>랜덤 다시 태어나기</h1>
+    <h1>🌍 랜덤 다시 태어나기</h1>
 
     <div class="modeSwitch" role="group" aria-label="추첨 기준 선택">
       <button type="button" class="active" data-mode="births" aria-pressed="true">출생아 기준</button>
@@ -354,7 +361,7 @@
   </div>
 
   <button id="rebirthBtn" type="button">
-    랜덤으로 다시 태어나기
+    🎲 랜덤으로 다시 태어나기
   </button>
 
   <div class="bottom">
