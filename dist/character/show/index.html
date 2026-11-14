@@ -126,7 +126,11 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('new').hidden = false;
     $('new-text').focus();
   })();
-  $('new-cancel').onclick = function () { $('new').hidden = true; draft = null; };
+  // 취소: 생성기에서 넘어왔으면 그 캐릭터 그대로 생성기로 돌아간다
+  $('new-cancel').onclick = function () {
+    if (draft) { location.href = '/character/#' + encodeURIComponent(draft); return; }
+    $('new').hidden = true;
+  };
   $('new').onsubmit = function (e) {
     e.preventDefault();
     if (!draft) return;

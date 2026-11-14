@@ -83,31 +83,45 @@
     { key: 'bgColor', code: 'cb', name: '배경 색', palette: 'bg', group: 'bg' }
   ];
 
-  // 묶음 안의 소분류 (눈 묶음만 쓴다)
-  var SUBS = [
-    { key: 'eye', group: 'eyes', name: '눈 모양' },
-    { key: 'lash', group: 'eyes', name: '속눈썹' },
-    { key: 'iris', group: 'eyes', name: '눈동자' }
+  // 화면 순서 (주인 지정 2026-11-15). 묶음 → 소분류(이름 없으면 제목 없이 줄만) → 항목·색 슬롯 key.
+  // CATEGORIES 의 순서는 같은 레이어에 쌓는 순서라서 따로 둔다. 여기 없는 항목은 그 묶음 맨 뒤에 붙는다
+  var LAYOUT = [
+    { group: 'hair', subs: [{ items: ['front', 'side', 'back', 'extra', 'hairColor'] }] },
+    { group: 'eyes', subs: [
+      { items: ['eye', 'fold', 'lowline', 'lash', 'lowlash'] },
+      { name: '눈동자', items: ['iris', 'pupil', 'hl'] },
+      { name: '눈 색', items: ['eyeColor', 'oddColor'] },
+      { name: '눈 위치', items: ['eyeSize', 'eyeGap', 'eyeY'] }
+    ] },
+    { group: 'face', subs: [
+      { items: ['face', 'skinColor'] },
+      { items: ['brow', 'mouth', 'mouthY', 'ear'] },
+      { items: ['skinfx', 'around', 'makeup', 'lip'] }
+    ] },
+    { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }] },
+    { group: 'bg', subs: [{ items: ['bgColor'] }] }
   ];
 
   // 화면 순서: [{ group, sub, items: [항목 또는 색 슬롯] }]
   function panel() {
-    var out = [];
-    GROUPS.forEach(function (g) {
-      var subs = SUBS.filter(function (s) { return s.group === g.key; });
-      (subs.length ? subs : [null]).forEach(function (sub) {
+    var out = [], used = {};
+    function find(key) {
+      var i;
+      for (i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].key === key) return { kind: 'part', def: CATEGORIES[i] };
+      for (i = 0; i < COLOR_SLOTS.length; i++) if (COLOR_SLOTS[i].key === key) return { kind: 'color', def: COLOR_SLOTS[i] };
+      return null;
+    }
+    LAYOUT.forEach(function (L) {
+      var g = GROUPS.filter(function (x) { return x.key === L.group; })[0], blocks = [];
+      L.subs.forEach(function (sb) {
         var items = [];
-        CATEGORIES.forEach(function (c) {
-          if (c.group === g.key && (c.sub || null) === (sub && sub.key)) items.push({ kind: 'part', def: c });
-        });
-        COLOR_SLOTS.forEach(function (c) {
-          if (c.group !== g.key || (c.sub || null) !== (sub && sub.key)) return;
-          var at = -1;
-          if (c.after) items.forEach(function (it, i) { if (it.def.key === c.after) at = i + 1; });
-          if (at < 0) items.push({ kind: 'color', def: c }); else items.splice(at, 0, { kind: 'color', def: c });
-        });
-        out.push({ group: g, sub: sub, items: items });
+        sb.items.forEach(function (k) { var it = find(k); if (it) { items.push(it); used[k] = 1; } });
+        blocks.push({ group: g, sub: sb.name ? { key: sb.name, name: sb.name } : null, items: items });
       });
+      CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) {
+        if (c.group === g.key && !used[c.key]) { blocks[blocks.length - 1].items.push(find(c.key)); used[c.key] = 1; }
+      });
+      out = out.concat(blocks);
     });
     return out;
   }
@@ -845,7 +859,7 @@
     isCustom: isCustom,
     toHsl: toHsl,
     fromHsl: fromHsl,
-    subs: SUBS,
+    layout: LAYOUT,
     panel: panel,
     parts: parts,
     palettes: palettes,

@@ -694,5 +694,6 @@
   }
 
   var initial = decodeURIComponent(window.location.hash.replace(/^#/, ''));
-  commit(initial.indexOf(':') > 0 ? CG.decode(initial) : CG.defaultState());
+  // 주소에 조합 코드가 없으면 처음부터 랜덤 캐릭터로 시작한다
+  commit(initial.indexOf(':') > 0 ? CG.decode(initial) : CG.randomState(CG.defaultState(), locks, null, real));
 })();
