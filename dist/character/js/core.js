@@ -168,6 +168,8 @@
   var SIDE_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'earring'];
   // 한쪽만 버튼으로 대신하게 되어 지운 '한쪽' 파츠. 예전 조합 코드는 원래 파츠 + 왼쪽만으로 읽는다
   var ONE_SIDE = { side: { 'wavelong-one': 'wavelong', tuckone: 'long' } };
+  // 다른 항목으로 옮긴 파츠. 예전 조합 코드(자랑 게시판 글 등)는 새 자리에서 읽는다. 반전도 따라간다
+  var MOVED = [{ from: 'skinfx', id: 'bandage', to: 'facewear' }];
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
   function flipKind(state, key) {
     if (key === 'oddColor') return state.oddColor && state.oddColor !== 'none' ? 'flip' : null;
@@ -191,6 +193,12 @@
       var was = ONE_SIDE[c.key] && ONE_SIDE[c.key][state[c.key]];
       if (was && findIn(parts[c.key], was) && !findIn(parts[c.key], state[c.key])) { s[c.key] = was; s.only[c.key] = 'l'; return; }
       if (findIn(parts[c.key], state[c.key])) s[c.key] = state[c.key];
+    });
+    MOVED.forEach(function (m) {
+      if (state[m.from] !== m.id || findIn(parts[m.from], m.id) || !findIn(parts[m.to], m.id)) return;
+      if (state[m.to] && state[m.to] !== 'none' && findIn(parts[m.to], state[m.to])) return;
+      s[m.to] = m.id;
+      if (state.flip && state.flip[m.from]) s.flip[m.to] = true;
     });
     COLOR_SLOTS.forEach(function (c) {
       if (findIn(palettes[c.palette], state[c.key])) s[c.key] = state[c.key];
