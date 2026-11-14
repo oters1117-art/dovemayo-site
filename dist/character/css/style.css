@@ -203,13 +203,9 @@ button.primary:hover { background: #4d403b; }
 
 /* ---------- 색 ---------- */
 .color-row { display: grid; gap: 6px; padding: 4px 0 6px; }
-.color-head {
-  display: grid;
-  grid-template-columns: 104px 1fr auto auto;
-  gap: 6px;
-  align-items: center;
-}
-.color-head .picked { color: var(--muted); font-size: 13px; }
+.color-head { display: flex; gap: 6px; align-items: center; }
+.color-head .name { width: 104px; flex: none; }
+.color-head .picked { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; }
 
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .swatch {
@@ -260,7 +256,8 @@ button.primary:hover { background: #4d403b; }
   .row .name, .color-head .name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
   .row select { padding: 7px 4px; }
   .row .file { padding: 7px 8px; }
-  .color-head { grid-template-columns: 82px minmax(0, 1fr) auto auto; gap: 5px; }
+  .color-head { gap: 5px; }
+  .color-head .name { width: 82px; }
   .swatch { width: 28px; height: 28px; }
 }
 

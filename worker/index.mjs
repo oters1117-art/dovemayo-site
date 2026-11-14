@@ -3,6 +3,7 @@
 //   GET|POST /api/board/show/list|submit|delete   showcase posts {code, text}
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve|delete  {id}                      admin only
+//   POST /api/board/reply           {id, text}                admin only; the owner's answer under a post (empty text removes it)
 //   GET  /api/board/img/<id>        image of a post
 // Storage: one Durable Object (class Board, SQLite-backed). "index" = array of posts (newest first),
 // "img:<id>" = image bytes. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
@@ -21,7 +22,7 @@ function isAdmin(request, env) {
 }
 const readIndex = async (env) => (await env.BOARD.get('index')) || [];
 const writeIndex = (env, list) => env.BOARD.put('index', list);
-const view = (p) => ({ id: p.id, text: p.text, at: p.at, status: p.status, img: !!p.img });
+const view = (p) => ({ id: p.id, text: p.text, at: p.at, status: p.status, img: !!p.img, reply: p.reply || '' });
 
 async function submit(request, env) {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
@@ -109,13 +110,17 @@ async function board(request, env, path) {
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   if (path === 'submit') return submit(request, env);
-  if (path === 'approve' || path === 'delete') {
+  if (path === 'approve' || path === 'delete' || path === 'reply') {
     if (!admin) return fail('권한이 없습니다.', 403);
     let body;
     try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
     const list = await readIndex(env), i = list.findIndex((p) => p.id === body.id);
     if (i < 0) return fail('없는 글입니다.', 404);
     if (path === 'approve') list[i].status = 'approved';
+    else if (path === 'reply') {
+      const text = String(body.text || '').trim().slice(0, MAX_TEXT);
+      if (text) list[i].reply = text; else delete list[i].reply;
+    }
     else { if (list[i].img) await env.BOARD.delete('img:' + list[i].id); list.splice(i, 1); }
     await writeIndex(env, list);
     return json({ ok: true });

@@ -61,6 +61,12 @@
     { id: 'gray', name: '회색', hex: '#7d858f' }
   ]);
 
+  // 오드아이: 한쪽 눈의 색. '없음'이 기본이고, 고정을 풀고 랜덤을 돌리면 절반쯤은 '없음'이 나온다
+  (function () {
+    var total = 0, list = CG.palettes.eye.map(function (c) { total += c.w == null ? 1 : c.w; return { id: c.id, name: c.name, hex: c.hex, w: c.w }; });
+    CG.addPalette('odd', [{ id: 'none', name: '없음', hex: '', w: total, isDefault: true }].concat(list));
+  })();
+
 
   // 피부: 지금 쓰던 색이 기본이고 비중이 가장 높다. 밝은 계열일수록 자주 나온다.
   // line 은 얼굴·몸 윤곽선 색. blush·lip·lid·nose 를 안 적으면 hex 와 line 에서 계산한다 (core.js 의 skinOf)

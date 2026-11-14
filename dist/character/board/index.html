@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>제안 게시판 · 랜덤 캐릭터 생성기</title>
 <style>
-:root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f}
+:root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f;--reply:#1c8748}
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
 main{max-width:620px;margin:0 auto;padding:28px 16px 64px}
@@ -34,6 +34,10 @@ h2 small{font-weight:400;color:var(--muted)}
 .post .meta{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)}
 .post .meta span{margin-right:auto}
 .post .meta button{padding:4px 10px;font-size:12px}
+.post p.reply{color:var(--reply);margin-top:8px;padding-left:10px;border-left:3px solid #a9dcbd}
+.post .answer{margin-top:8px}
+.post .answer textarea{min-height:64px}
+.post .answer .bar{margin-top:6px;justify-content:flex-end}
 .empty{color:var(--muted);font-size:13px}
 [hidden]{display:none!important}
 .adminlink{position:fixed;right:8px;bottom:6px;font-size:11px;color:var(--muted);opacity:.35;background:none;border:0;padding:4px;cursor:pointer}.adminlink:hover,.adminlink:focus-visible{opacity:.9}
@@ -137,9 +141,25 @@ h2 small{font-weight:400;color:var(--muted)}
       im.src = src; im.alt = '첨부 이미지'; im.loading = 'lazy';
       a.appendChild(im); d.appendChild(a);
     }
+    // 주인의 답글 (초록색). 관리자는 "답글"로 쓰고 고치고, 비워서 저장하면 지워진다
+    if (p.reply) { var rp = document.createElement('p'); rp.className = 'reply'; rp.textContent = p.reply; d.appendChild(rp); }
     var meta = document.createElement('div'); meta.className = 'meta';
     var when = document.createElement('span'); when.textContent = new Date(p.at).toLocaleDateString('ko-KR'); meta.appendChild(when);
     if (admin) {
+      var re = document.createElement('button'); re.textContent = p.reply ? '답글 수정' : '답글';
+      re.onclick = function () {
+        var old = d.querySelector('.answer');
+        if (old) { old.remove(); return; }
+        var box = document.createElement('div'); box.className = 'answer';
+        var ta = document.createElement('textarea'); ta.maxLength = 500; ta.value = p.reply || ''; ta.placeholder = '답글 (비워서 저장하면 지워집니다)';
+        var bar = document.createElement('div'); bar.className = 'bar';
+        var save = document.createElement('button'); save.textContent = '답글 저장'; save.className = 'primary';
+        save.onclick = function () { save.disabled = true; api('reply', { id: p.id, text: ta.value.trim() }).then(load, function (x) { save.disabled = false; alert(x.message); }); };
+        ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.stopPropagation(); save.click(); } });
+        bar.appendChild(save); box.appendChild(ta); box.appendChild(bar);
+        d.appendChild(box); ta.focus();
+      };
+      meta.appendChild(re);
       if (p.status === 'pending') {
         var ok = document.createElement('button'); ok.textContent = '승인';
         ok.onclick = function () { api('approve', { id: p.id }).then(load, function (x) { alert(x.message); }); };

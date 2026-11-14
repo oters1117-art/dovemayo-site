@@ -7,7 +7,8 @@
   var state = CG.defaultState();
   // 얼굴형(둥근형)과 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다)
   // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
-  var locks = { face: true, skinColor: true, acc: true, earring: true, facewear: true };
+  // 오드아이도 '없음'으로 고정한 채 시작한다
+  var locks = { face: true, skinColor: true, acc: true, earring: true, facewear: true, oddColor: true };
   var history = [];
   var cursor = -1;
   // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다
@@ -77,24 +78,46 @@
     random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
     real: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
-    flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 7 3.5 17h5z"/><path d="M15.5 7l5 10h-5z" fill="currentColor"/></svg>'
+    // 좌우 반전: 가운데 축을 두고 좌우를 향한 삼각형 두 개
+    flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 6.5 2.5 12l6 5.5z"/><path d="M15.5 6.5l6 5.5-6 5.5z"/></svg>',
+    // 대칭 / 왼쪽만 / 오른쪽만: 그려지는 쪽은 채우고, 안 그려지는 쪽은 흐린 테두리만
+    sideBoth: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" fill="currentColor"/><path d="M14.5 6.5 21 12l-6.5 5.5z" fill="currentColor"/></svg>',
+    sideL: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" fill="currentColor"/><path d="M14.5 6.5 21 12l-6.5 5.5z" opacity=".35" stroke-dasharray="2 2.6"/></svg>',
+    sideR: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 3 12l6.5 5.5z" opacity=".35" stroke-dasharray="2 2.6"/><path d="M14.5 6.5 21 12l-6.5 5.5z" fill="currentColor"/></svg>'
   };
   function iconButton(cls, icon, label, title) {
     var b = el('button', { type: 'button', class: cls + ' tool', 'aria-label': label, title: title || label });
     b.innerHTML = ICON[icon];
     return b;
   }
-  // 좌우 반전: 좌우가 다른 그림(가르마, 한쪽 머리, 점 등)을 뒤집는다. 좌우가 같은 파츠에서는 꺼져 있다
+  // 반전 버튼 하나가 지금 고른 파츠에 따라 두 가지 일을 한다 (CG.flipKind)
+  //   full 조각이 있는 파츠(가르마, 한쪽 머리, 점 등): 좌우 반전
+  //   half 조각만 있는 파츠(좌우가 같은 그림): 대칭 -> 왼쪽만 -> 오른쪽만 순서로 바뀐다 (화면 기준)
+  var SIDE_TEXT = { both: '대칭 (누르면 왼쪽만)', l: '왼쪽만 (누르면 오른쪽만)', r: '오른쪽만 (누르면 대칭)' };
   function flipButton(cat) {
     var b = iconButton('flip', 'flip', cat.name + ' 좌우 반전', '좌우 반전');
     b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', function () {
-      var next = JSON.parse(JSON.stringify(state));
-      next.flip = next.flip || {};
-      if (next.flip[cat.key]) delete next.flip[cat.key]; else next.flip[cat.key] = true;
+      var next = JSON.parse(JSON.stringify(state)), key = cat.key;
+      next.flip = next.flip || {}; next.only = next.only || {};
+      if (CG.flipKind(state, key) === 'side') {
+        if (!next.only[key]) next.only[key] = 'l'; else if (next.only[key] === 'l') next.only[key] = 'r'; else delete next.only[key];
+      } else if (next.flip[key]) delete next.flip[key]; else next.flip[key] = true;
       commit(next);
     });
     return b;
+  }
+  // 지금 상태에 맞게 아이콘·눌림·설명을 바꾼다
+  function paintFlip(b, cat) {
+    var kind = CG.flipKind(state, cat.key), mode = (state.only && state.only[cat.key]) || 'both';
+    var icon = kind === 'side' ? (mode === 'l' ? 'sideL' : mode === 'r' ? 'sideR' : 'sideBoth') : 'flip';
+    if (b.getAttribute('data-icon') !== icon) { b.innerHTML = ICON[icon]; b.setAttribute('data-icon', icon); }
+    // 반전할 것이 없는 파츠에서는 흐리게만 보이고, 켠 상태는 그대로 남는다
+    b.className = 'flip tool' + (kind ? '' : ' idle');
+    var on = kind === 'side' ? mode !== 'both' : !!(state.flip && state.flip[cat.key]);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var text = kind === 'side' ? SIDE_TEXT[mode] : (cat.key === 'oddColor' ? '반대쪽 눈으로' : '좌우 반전');
+    b.title = text; b.setAttribute('aria-label', cat.name + ' ' + text);
   }
   function lockButton(key) {
     var b = iconButton('lock', 'pin', '고정', '고정: 랜덤에서 이 항목을 바꾸지 않음');
@@ -178,12 +201,7 @@
 
     controls[cat.key] = function () {
       select.value = state[cat.key];
-      if (flip) {
-        var can = CG.canFlip(state, cat.key);
-        // 좌우가 같은 파츠에서는 흐리게만 보이고, 켠 상태는 그대로 남는다
-        flip.className = 'flip tool' + (can ? '' : ' idle');
-        flip.setAttribute('aria-pressed', state.flip && state.flip[cat.key] ? 'true' : 'false');
-      }
+      if (flip) paintFlip(flip, cat);
     };
     return row;
   }
@@ -196,6 +214,9 @@
     var picked = el('span', { class: 'picked' });
     head.appendChild(el('span', { class: 'name' }, slot.name));
     head.appendChild(picked);
+    // 오드아이는 어느 쪽 눈인지 바꾸는 반전 버튼이 붙는다
+    var flip = CG.FLIP_KEYS.indexOf(slot.key) >= 0 ? flipButton(slot) : null;
+    if (flip) head.appendChild(flip);
     head.appendChild(diceButton(slot.key));
     head.appendChild(lockButton(slot.key));
 
@@ -220,6 +241,7 @@
         buttons[i].setAttribute('aria-pressed', on ? 'true' : 'false');
         if (on) picked.textContent = c.name;
       });
+      if (flip) paintFlip(flip, slot);
     };
     return wrap;
   }
@@ -352,7 +374,7 @@
   $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real)); });
   $('ico-prev').addEventListener('click', function () { travel(-1); });
   $('ico-copy').addEventListener('click', copyImage);
-  // 자랑하기: 자랑 게시판으로 가서 한 줄 적고 올린다 (조합 코드를 주소로 넘긴다)
+  // 자랑게시판으로: 자랑 게시판으로 가서 한 줄 적고 올린다 (조합 코드를 주소로 넘긴다)
   function showOff() { location.href = 'https://dovemayo.com/character/show/#new=' + encodeURIComponent(CG.encode(state)); }
   $('btn-show').addEventListener('click', showOff);
   $('ico-show').addEventListener('click', showOff);

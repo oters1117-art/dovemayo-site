@@ -69,13 +69,15 @@
     { key: 'acc', code: 'a', name: '헤어 악세사리', group: 'acc', noneWeight: 0.65 },
     { key: 'glasses', code: 'g', name: '안경', group: 'acc', noneWeight: 0.75 },
     { key: 'earring', code: 'ae', name: '귀걸이', group: 'acc', noneWeight: 0.6 },
-    { key: 'facewear', code: 'af', name: '마스크', group: 'acc', noneWeight: 0.9 }
+    { key: 'facewear', code: 'af', name: '마스크 · 반창고', group: 'acc', noneWeight: 0.9 }
   ];
 
   // after: 그 항목 바로 뒤에 놓는다 (없으면 묶음·소분류의 맨 뒤)
   var COLOR_SLOTS = [
     { key: 'hairColor', code: 'ch', name: '헤어 색', palette: 'hair', group: 'hair' },
     { key: 'eyeColor', code: 'ce', name: '눈 색', palette: 'eye', group: 'eyes', sub: 'iris' },
+    // 오드아이: 한쪽 눈만 다른 색. '없음'이면 두 눈이 같은 색 (기본은 화면 오른쪽 눈, 반전하면 왼쪽 눈)
+    { key: 'oddColor', code: 'co', name: '오드아이', palette: 'odd', group: 'eyes', sub: 'iris' },
     { key: 'skinColor', code: 'cs', name: '피부색', palette: 'skin', group: 'face', after: 'face' },
     { key: 'accColor', code: 'ca', name: '악세사리 색', palette: 'acc', group: 'acc' },
     { key: 'bgColor', code: 'cb', name: '배경 색', palette: 'bg', group: 'bg' }
@@ -161,21 +163,28 @@
   }
 
   // 좌우 반전할 수 있는 항목 (그대로 한 번만 그리는 full 조각이 뒤집힌다). 조합 코드에는 fl:hf.hs 처럼 적힌다
-  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'facewear'];
-  // 지금 고른 파츠가 좌우가 다른 그림인지 (half 만 있으면 뒤집어도 같다)
-  function canFlip(state, key) {
-    if (FLIP_KEYS.indexOf(key) < 0) return false;
+  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'earring', 'facewear', 'oddColor'];
+  // 한쪽만 그릴 수 있는 항목 (half 조각만 있는 파츠를 왼쪽만 / 오른쪽만 그린다). 조합 코드에는 sl:hs / sr:s 처럼 적힌다
+  var SIDE_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'earring'];
+  // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
+  function flipKind(state, key) {
+    if (key === 'oddColor') return state.oddColor && state.oddColor !== 'none' ? 'flip' : null;
     var p = findIn(parts[key] || [], state[key]);
-    if (!p || !p.pieces) return false;
-    for (var l in p.pieces) if (p.pieces[l].full) return true;
-    return false;
+    if (!p || !p.pieces) return null;
+    var half = false, full = false;
+    for (var l in p.pieces) { if (p.pieces[l].full) full = true; if (p.pieces[l].half) half = true; }
+    if (full) return FLIP_KEYS.indexOf(key) >= 0 ? 'flip' : null;
+    return half && SIDE_KEYS.indexOf(key) >= 0 ? 'side' : null;
   }
+  function canFlip(state, key) { return flipKind(state, key) === 'flip'; }
 
   function normalize(state) {
     var s = defaultState();
     s.flip = {};
+    s.only = {};
     if (!state) return s;
     FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
+    SIDE_KEYS.forEach(function (k) { var v = state.only && state.only[k]; if (v === 'l' || v === 'r') s.only[k] = v; });
     CATEGORIES.forEach(function (c) {
       if (findIn(parts[c.key], state[c.key])) s[c.key] = state[c.key];
     });
@@ -224,6 +233,8 @@
     s.flip = {};
     // 좌우 반전은 켜 둔 대로 유지한다 (랜덤이 바꾸지 않는다)
     FLIP_KEYS.forEach(function (k) { if (b.flip[k]) s.flip[k] = true; });
+    s.only = {};
+    SIDE_KEYS.forEach(function (k) { if (b.only[k]) s.only[k] = b.only[k]; });
     COLOR_SLOTS.forEach(function (c) {
       s[c.key] = locks[c.key] ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
     });
@@ -254,8 +265,13 @@
   function encode(state) {
     var s = normalize(state), out = [];
     CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) { out.push(c.code + ':' + s[c.key]); });
-    var fl = CATEGORIES.filter(function (c) { return s.flip[c.key]; }).map(function (c) { return c.code; });
+    var all = CATEGORIES.concat(COLOR_SLOTS);
+    var codes = function (test) { return all.filter(test).map(function (c) { return c.code; }); };
+    var fl = codes(function (c) { return s.flip[c.key]; });
+    var sl = codes(function (c) { return s.only[c.key] === 'l'; }), sr = codes(function (c) { return s.only[c.key] === 'r'; });
     if (fl.length) out.push('fl:' + fl.join('.'));
+    if (sl.length) out.push('sl:' + sl.join('.'));
+    if (sr.length) out.push('sr:' + sr.join('.'));
     return out.join(',');
   }
 
@@ -265,12 +281,11 @@
     String(text || '').split(',').forEach(function (pair) {
       var i = pair.indexOf(':');
       if (i < 1) return;
-      var key = map[pair.slice(0, i).trim()];
+      var head = pair.slice(0, i).trim(), key = map[head];
+      var each = function (fn) { pair.slice(i + 1).trim().split('.').forEach(function (code) { if (map[code]) fn(map[code]); }); };
       if (key) s[key] = pair.slice(i + 1).trim();
-      else if (pair.slice(0, i).trim() === 'fl') {
-        s.flip = {};
-        pair.slice(i + 1).trim().split('.').forEach(function (code) { if (map[code]) s.flip[map[code]] = true; });
-      }
+      else if (head === 'fl') { s.flip = s.flip || {}; each(function (k) { s.flip[k] = true; }); }
+      else if (head === 'sl' || head === 'sr') { s.only = s.only || {}; each(function (k) { s.only[k] = head === 'sl' ? 'l' : 'r'; }); }
     });
     return normalize(s);
   }
@@ -290,9 +305,14 @@
     };
   }
 
+  // 눈 색 하나에서 홍채 테두리·동공 색을 만든다
+  function eyeVars(hex) {
+    return { '--eye': hex, '--eye-ring': mix(hex, '#140c0a', 0.6), '--pupil': mix(hex, '#0c0706', 0.84) };
+  }
+
   function colorVars(s) {
     var hair = findIn(palettes.hair, s.hairColor).hex;
-    var eye = findIn(palettes.eye, s.eyeColor).hex;
+    var eye = eyeVars(findIn(palettes.eye, s.eyeColor).hex);
     var acc = findIn(palettes.acc, s.accColor).hex;
     var SKIN = skinOf(s);
     return {
@@ -308,9 +328,9 @@
       '--nose': SKIN.nose,
       '--aegyo': '#e9a6a0',
       '--dark': '#7d5a6e',
-      '--eye': eye,
-      '--eye-ring': mix(eye, '#140c0a', 0.6),
-      '--pupil': mix(eye, '#0c0706', 0.84),
+      '--eye': eye['--eye'],
+      '--eye-ring': eye['--eye-ring'],
+      '--pupil': eye['--pupil'],
       '--lash': '#2b201d',
       '--glass': '#3a3336',
       '--cloth': '#f9f2f1',
@@ -636,11 +656,16 @@
     var s = normalize(state);
     var uid = ++counter;
     var buf = {}, defs = '';
-    LAYERS.forEach(function (l) { buf[l] = { half: '', full: '' }; });
+    // left 는 그대로, right 는 좌우 반전해서 그린다. half 조각은 보통 양쪽에 다 들어간다
+    LAYERS.forEach(function (l) { buf[l] = { left: '', right: '', full: '' }; });
 
-    function put(layer, piece) {
+    // side: 'l' 이면 half 조각을 왼쪽에만, 'r' 이면 오른쪽에만 그린다 (화면 기준)
+    function put(layer, piece, side) {
       if (!piece || !buf[layer]) return;
-      if (piece.half) buf[layer].half += piece.half;
+      if (piece.half) {
+        if (side !== 'r') buf[layer].left += piece.half;
+        if (side !== 'l') buf[layer].right += piece.half;
+      }
       if (piece.full) buf[layer].full += piece.full;
     }
     function part(key) { return omit[key] ? null : findIn(parts[key], s[key]); }
@@ -655,10 +680,10 @@
     put('hairBase', { half: (hair.fill || '') + (noCap ? '' : hair.cap || '') + (noTuck ? '' : hair.tuck || '') });
     if (noCap && hair.cap) {
       // 칠은 제자리에 두고 윤곽선만, 뒷머리 모양이 겹치는 곳을 지워서 긋는다 (마스크: 뒷머리 = 검정)
-      var bm = '';
+      var bm = '', bs = flipKind(s, 'back') === 'side' ? s.only.back : null;
       for (var bl in backPart.pieces || {}) {
         var bp = backPart.pieces[bl];
-        if (bp.half) bm += bp.half + '<g transform="' + MIRROR + '">' + bp.half + '</g>';
+        if (bp.half) bm += (bs !== 'r' ? bp.half : '') + (bs !== 'l' ? '<g transform="' + MIRROR + '">' + bp.half + '</g>' : '');
         bm += bp.full ? (s.flip.back ? '<g transform="' + MIRROR + '">' + bp.full + '</g>' : bp.full) : '';
       }
       defs += '<filter id="cg-blk@@"><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>' +
@@ -681,21 +706,23 @@
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
       // 동물 귀(earringAt 이 있는 귀 모양)에서는 귀걸이를 그 귀로 옮겨 머리 위 레이어에 그린다. 기준은 사람 귓불 (201, 440)
       var earAt = c.key === 'earring' ? (part('ear') || {}).earringAt : null;
+      // half 조각만 있는 파츠는 왼쪽만 / 오른쪽만 그릴 수 있다
+      var sd = flipKind(s, c.key) === 'side' ? s.only[c.key] : null;
       for (var l in p.pieces) {
         var pc = p.pieces[l];
+        if (s.flip[c.key] && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
         if (earAt) {
           var em = 'translate(' + (earAt[0] - 201) + ' ' + (earAt[1] - 440) + ')';
-          put('hairTop', { half: pc.half ? '<g transform="' + em + '">' + pc.half + '</g>' : '', full: pc.full ? '<g transform="' + em + '">' + pc.full + '</g>' : '' });
+          put('hairTop', { half: pc.half ? '<g transform="' + em + '">' + pc.half + '</g>' : '', full: pc.full ? '<g transform="' + em + '">' + pc.full + '</g>' : '' }, sd);
           continue;
         }
-        if (s.flip[c.key] && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
         if (tf && (tf[0] || tf[1])) {
           pc = {
             half: pc.half ? '<g transform="translate(' + tf[0] + ' ' + tf[1] + ')">' + pc.half + '</g>' : '',
             full: pc.full ? '<g transform="translate(0 ' + tf[1] + ')">' + pc.full + '</g>' : ''
           };
         }
-        put(l, pc);
+        put(l, pc, sd);
       }
       if (p.defs) defs += p.defs;
     });
@@ -718,9 +745,20 @@
       // 눈 간격·높이·크기: 눈 중심을 기준으로 줄이고, 바깥쪽과 위아래로 옮긴다 (반전 그룹 안에서도 같은 변형이라 좌우가 대칭으로 움직인다)
       var ec = eye.iris || IRIS_CENTER;
       var etf = 'translate(' + (ec[0] - adj.gap) + ' ' + (ec[1] + adj.eyeY) + ') scale(' + adj.size + ') translate(' + (-ec[0]) + ' ' + (-ec[1]) + ')';
-      eyeMarkup = '<g transform="' + etf + '">' + eyeSide(eye, iris, pupil, hl, opt, 'cg-eye@@', false) + '</g>' +
-        '<g transform="' + MIRROR + '"><g transform="' + etf + '">' +
-        eyeSide(right, iris, pupil, hl, opt, right !== eye ? 'cg-eye2@@' : 'cg-eye@@', true) + '</g></g>';
+      var eyeL = eyeSide(eye, iris, pupil, hl, opt, 'cg-eye@@', false);
+      var eyeR = eyeSide(right, iris, pupil, hl, opt, right !== eye ? 'cg-eye2@@' : 'cg-eye@@', true);
+      // 오드아이: 한쪽 눈만 다른 색으로 칠한다 (기본은 화면 오른쪽 눈, 반전하면 왼쪽 눈)
+      var odd = findIn(palettes.odd || [], s.oddColor);
+      if (odd && odd.hex) {
+        var ov = eyeVars(odd.hex);
+        var tint = function (m) {
+          if (opts.literal) return m.replace(/var\((--eye|--eye-ring|--pupil)\)/g, function (x, n) { return ov[n]; });
+          return '<g style="--eye:' + ov['--eye'] + ';--eye-ring:' + ov['--eye-ring'] + ';--pupil:' + ov['--pupil'] + '">' + m + '</g>';
+        };
+        if (s.flip.oddColor) eyeL = tint(eyeL); else eyeR = tint(eyeR);
+      }
+      eyeMarkup = '<g transform="' + etf + '">' + eyeL + '</g>' +
+        '<g transform="' + MIRROR + '"><g transform="' + etf + '">' + eyeR + '</g></g>';
     }
 
     var vars = colorVars(s), styleAttr = '';
@@ -739,9 +777,10 @@
       if (i < range[0] || i >= range[1]) return;
       if (l === 'eye') { if (eyeMarkup) out += '<g data-layer="eye">' + eyeMarkup + '</g>'; return; }
       var b = buf[l];
-      if (!b.half && !b.full) return;
+      if (!b.left && !b.right && !b.full) return;
       out += '<g data-layer="' + l + '">';
-      if (b.half) out += '<g>' + b.half + '</g><g transform="' + MIRROR + '">' + b.half + '</g>';
+      if (b.left) out += '<g>' + b.left + '</g>';
+      if (b.right) out += '<g transform="' + MIRROR + '">' + b.right + '</g>';
       out += b.full + '</g>';
     });
 
@@ -770,6 +809,8 @@
     randomOne: randomOne,
     encode: encode,
     FLIP_KEYS: FLIP_KEYS,
+    SIDE_KEYS: SIDE_KEYS,
+    flipKind: flipKind,
     canFlip: canFlip,
     decode: decode,
     compose: compose,
