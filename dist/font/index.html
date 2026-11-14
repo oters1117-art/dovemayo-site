@@ -16,27 +16,23 @@ body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 "Pretendard
 main{max-width:760px;margin:0 auto;padding:28px 16px 72px}
 .back{font-size:13px;color:var(--muted)}
 h1{font:30px/1.3 "Dovemayo Gothic Full",sans-serif;margin:6px 0 0}
-h1 i{font-style:normal;color:var(--coral)}h1 i:nth-of-type(2){color:var(--blue)}h1 i:nth-of-type(3){color:#e0a100}
 .lead{color:var(--muted);margin:6px 0 18px}
 .box{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:14px 16px}
 .try label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 textarea{width:100%;min-height:76px;resize:vertical;font-family:inherit;font-size:16px;line-height:1.5;color:var(--ink);background:var(--page);border:1px solid var(--rule);border-radius:12px;padding:10px 12px}
 .size{display:grid;grid-template-columns:auto 1fr 3.2em;gap:10px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
 .size output{text-align:right;font-variant-numeric:tabular-nums}
-input[type=range]{width:100%;accent-color:var(--coral);margin:0}
+input[type=range]{width:100%;accent-color:var(--blue);margin:0}
 textarea:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--on);outline-offset:2px}
 .fonts{display:grid;gap:14px;margin-top:16px}
-.font{--tone:var(--coral);--tone-dark:#d24f3c;--tone-ink:#fff;--tint:#fff0ec;--tint-rule:#f6cdc4;--name:#c24a38;background:var(--card);border:1px solid var(--rule);border-radius:20px;padding:16px 18px 18px;box-shadow:0 1px 2px rgba(60,40,30,.05)}
-.font.gothic{--tone:var(--blue);--tone-dark:#2457c9;--tint:#eaf1ff;--tint-rule:#c9d9fb;--name:#3c63c4}
-.font.wild{--tone:var(--sun);--tone-dark:#f5bd2c;--tone-ink:#2b2523;--tint:#fff6d6;--tint-rule:#efd27c;--name:#9a7410}
+.font{--tone:var(--blue);--tone-dark:#2457c9;--tone-ink:#fff;background:var(--card);border:1px solid var(--rule);border-radius:20px;padding:16px 18px 18px;box-shadow:0 1px 2px rgba(60,40,30,.05)}
 .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.head h2{font-size:16px;margin:0;color:var(--name)}
-.head h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--tone);margin-right:7px}
+.head h2{font-size:16px;margin:0}
 .head small{color:var(--muted);font-size:12px}
 .weights{display:inline-flex;padding:3px;border-radius:999px;background:var(--page);border:1px solid var(--rule);margin-left:auto}
 .weights button{font:inherit;font-size:12px;border:0;border-radius:999px;background:transparent;color:var(--muted);padding:3px 11px;cursor:pointer}
-.weights button[aria-pressed=true]{background:var(--tone);color:var(--tone-ink);font-weight:600}
-.sample{margin:12px 0 14px;padding:14px 16px;border-radius:14px;background:var(--tint);border:1px solid var(--tint-rule);min-height:1.4em;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35;cursor:text}
+.weights button[aria-pressed=true]{background:var(--ink);color:#fff;font-weight:600}
+.sample{margin:12px 0 14px;padding:14px 16px;border-radius:14px;background:#faf8f6;border:1px solid var(--rule);min-height:1.4em;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35;cursor:text}
 .downloads{display:flex;gap:8px;flex-wrap:wrap}
 .dl{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:10px;padding:8px 14px;font-size:14px}
 .dl:hover{border-color:#c9beb8}
@@ -52,7 +48,7 @@ footer a{color:var(--muted)}
 <body>
 <main>
   <a class="back" href="https://dovemayo.com/">← dovemayo.com</a>
-  <h1><i>둘</i><i>기</i><i>마</i>요 폰트</h1>
+  <h1>둘기마요 폰트</h1>
   <p class="lead">세 가지 둘기마요 폰트를 직접 써 보고 내려받으세요.</p>
 
   <section class="box try">
@@ -74,7 +70,7 @@ footer a{color:var(--muted)}
       </div>
     </article>
 
-    <article class="font gothic">
+    <article class="font">
       <div class="head"><h2>둘기마요 고딕</h2></div>
       <p class="sample" style="font-family:'Dovemayo Gothic Full'" data-sample></p>
       <div class="downloads">
@@ -82,7 +78,7 @@ footer a{color:var(--muted)}
       </div>
     </article>
 
-    <article class="font wild">
+    <article class="font">
       <div class="head"><h2>둘기마요 거친</h2></div>
       <p class="sample" style="font-family:'Dovemayo Wild'" data-sample></p>
       <div class="downloads">
