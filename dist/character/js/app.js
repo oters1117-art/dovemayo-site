@@ -78,8 +78,8 @@
     random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
     real: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
-    // 좌우 반전: 가운데 축을 두고 좌우를 향한 삼각형 두 개
-    flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M8.5 6.5 2.5 12l6 5.5z"/><path d="M15.5 6.5l6 5.5-6 5.5z"/></svg>',
+    // 좌우 반전: 가운데 축(점선)을 향한 삼각형 두 개
+    flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M3 6.5 9 12l-6 5.5z"/><path d="M21 6.5 15 12l6 5.5z"/></svg>',
     // 대칭 / 왼쪽만 / 오른쪽만: 그려지는 쪽은 채우고, 안 그려지는 쪽은 흐린 테두리만
     // 대칭 아이콘의 삼각형은 서로 안쪽(가운데)을 본다
     sideBoth: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 9.5 12 3 17.5z" fill="currentColor"/><path d="M21 6.5 14.5 12 21 17.5z" fill="currentColor"/></svg>',
