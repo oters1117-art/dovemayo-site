@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>둘기마요 폰트</title>
+<meta name="description" content="둘기마요체, 둘기마요 고딕, 둘기마요 거친 폰트를 직접 써 보고 내려받으세요.">
+<style>
+@font-face{font-family:"Dovemayo";src:url("web/dovemayo-medium.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Dovemayo";src:url("web/dovemayo-bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Dovemayo Gothic Full";src:url("web/dovemayo-gothic.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"Dovemayo Wild";src:url("web/dovemayo-wild.woff2") format("woff2");font-display:swap}
+:root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 16px 72px}
+.back{font-size:13px;color:var(--muted)}
+h1{font:28px/1.3 "Dovemayo",sans-serif;margin:6px 0 0}
+.lead{color:var(--muted);margin:6px 0 18px}
+.box{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:14px 16px}
+.try label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+textarea{width:100%;min-height:76px;resize:vertical;font-family:inherit;font-size:16px;line-height:1.5;color:var(--ink);background:var(--page);border:1px solid var(--rule);border-radius:12px;padding:10px 12px}
+.size{display:grid;grid-template-columns:auto 1fr 3.2em;gap:10px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.size output{text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+textarea:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+.fonts{display:grid;gap:14px;margin-top:16px}
+.font{background:var(--card);border:1px solid var(--rule);border-radius:20px;padding:16px 18px 18px;box-shadow:0 1px 2px rgba(60,40,30,.05)}
+.head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.head h2{font-size:16px;margin:0}
+.head small{color:var(--muted);font-size:12px}
+.weights{display:inline-flex;padding:3px;border-radius:999px;background:var(--page);border:1px solid var(--rule);margin-left:auto}
+.weights button{font:inherit;font-size:12px;border:0;border-radius:999px;background:transparent;color:var(--muted);padding:3px 11px;cursor:pointer}
+.weights button[aria-pressed=true]{background:var(--accent);color:#fff;font-weight:600}
+.sample{margin:12px 0 14px;min-height:1.4em;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35;cursor:text}
+.downloads{display:flex;gap:8px;flex-wrap:wrap}
+.dl{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:10px;padding:8px 14px;font-size:14px}
+.dl:hover{border-color:#c9beb8}
+.dl.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.dl.primary:hover{background:#4d403b}
+.dl svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dl span{opacity:.7;font-size:12px}
+footer{margin-top:22px;font-size:12px;color:var(--muted);line-height:1.7}
+footer a{color:var(--muted)}
+@media(max-width:520px){h1{font-size:24px}.font{padding:14px}.weights{margin-left:0}}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="https://dovemayo.com/">← dovemayo.com</a>
+  <h1>둘기마요 폰트</h1>
+  <p class="lead">세 가지 둘기마요 폰트를 직접 써 보고 내려받으세요.</p>
+
+  <section class="box try">
+    <label for="text">직접 써 보기</label>
+    <textarea id="text" spellcheck="false">다람쥐 헌 쳇바퀴에 타고파
+둘기마요 Dovemayo 0123!?</textarea>
+    <div class="size"><label for="size">크기</label><input id="size" type="range" min="16" max="96" value="36"><output id="sizeOut" for="size">36px</output></div>
+  </section>
+
+  <div class="fonts">
+    <article class="font">
+      <div class="head"><h2>둘기마요체</h2><small>보통 · 굵게</small>
+        <div class="weights" role="group" aria-label="굵기"><button type="button" data-weight="400" aria-pressed="true">보통</button><button type="button" data-weight="700" aria-pressed="false">굵게</button></div>
+      </div>
+      <p class="sample" style="font-family:'Dovemayo';font-weight:400" data-sample></p>
+      <div class="downloads">
+        <a class="dl primary" href="files/Dovemayo-Medium.otf" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 19h14"/></svg>보통 <span>OTF</span></a>
+        <a class="dl primary" href="files/Dovemayo-Bold.otf" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 19h14"/></svg>굵게 <span>OTF</span></a>
+      </div>
+    </article>
+
+    <article class="font">
+      <div class="head"><h2>둘기마요 고딕</h2></div>
+      <p class="sample" style="font-family:'Dovemayo Gothic Full'" data-sample></p>
+      <div class="downloads">
+        <a class="dl primary" href="files/Dovemayo-Gothic.ttf" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 19h14"/></svg>내려받기 <span>TTF</span></a>
+      </div>
+    </article>
+
+    <article class="font">
+      <div class="head"><h2>둘기마요 거친</h2></div>
+      <p class="sample" style="font-family:'Dovemayo Wild'" data-sample></p>
+      <div class="downloads">
+        <a class="dl primary" href="files/Dovemayo-Wild.ttf" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 19h14"/></svg>내려받기 <span>TTF</span></a>
+      </div>
+    </article>
+  </div>
+
+  <footer>
+    한글 11,172자와 영문·숫자·기호를 지원합니다. 내려받은 파일을 더블클릭해 설치하세요.<br>
+    <a href="https://noonnu.cc/search/%EB%91%98%EA%B8%B0%EB%A7%88%EC%9A%94" target="_blank" rel="noopener noreferrer">눈누에서 보기</a>
+  </footer>
+</main>
+<script>
+const text=document.getElementById('text'),size=document.getElementById('size'),out=document.getElementById('sizeOut'),samples=[...document.querySelectorAll('[data-sample]')];
+const placeholder='여기에 써 보세요';
+function render(){const value=text.value.trim()?text.value:placeholder;for(const s of samples){s.textContent=value;s.style.fontSize=size.value+'px';}out.value=size.value+'px';}
+text.addEventListener('focus',()=>text.select(),{once:true});
+text.addEventListener('input',render);size.addEventListener('input',render);
+for(const s of samples)s.addEventListener('click',()=>text.focus());
+for(const group of document.querySelectorAll('.weights')){const sample=group.closest('.font').querySelector('[data-sample]');
+  group.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;for(const o of group.children)o.setAttribute('aria-pressed',String(o===b));sample.style.fontWeight=b.dataset.weight;});}
+if(innerWidth<520){size.value=28;}
+render();
+</script>
+</body>
+</html>

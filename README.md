@@ -2,6 +2,13 @@
 
 둘기마요의 링크 홈페이지와 이모지 스네이크 게임. https://dovemayo.com/
 
+## 하위 페이지
+
+- `/character/` 랜덤 캐릭터 생성기: `X:\AI\캐릭터생성기` → `node scripts/sync-character.mjs`
+- `/name/` 랜덤 이름 생성기: `X:\AI\이름생성기` → `node scripts/sync-names.mjs`
+- `/reborn/` 랜덤 다시 태어나기: `X:\AI\rand_rein`(GitHub Pages 원본) → `node scripts/sync-reborn.mjs`. 캐릭터 생성기와 같은 색·모서리·버튼을 쓴다.
+- `/font/` 둘기마요 폰트: 둘기마요체(보통·굵게 OTF), 둘기마요 고딕, 둘기마요 거친(TTF) 내려받기와 직접 써 보기. 원본은 `dist/font/files/`, 미리보기용 woff2는 `dist/font/web/`.
+
 ## 로컬 실행
 
 `python -m http.server 4173 --directory dist`
