@@ -709,25 +709,12 @@
       };
       if (kind === 'lower' || ll.lower) out += lowerLine();
       if (kind === 'tail' && up.length) {
-        // 윗 라인 바깥 끝에서 흰자 아래 윤곽을 따라 살짝 내려오는 꼬리
-        if (wl) out += line([up[0]].concat(headOf(wl, ll.frac || 0.22)));
+        // 끝 라인: 윗 라인 바깥 끝에서 흰자 테두리를 따라 내려오는 한 줄
+        if (wl) out += line([up[0]].concat(headOf(wl, ll.frac || 0.25)));
       }
-      if (kind === 'wing' && up.length) {
-        // 끝 라인: 윗 라인 바깥 끝에서 바깥 위로 뻗는다
-        var e0 = along(up, 0), L = ll.len || 19, dx = e0.out[0] < 0 ? -1 : 1, dy = -(ll.lift || 1.0), dl = Math.hypot(dx, dy);
-        var tip = [up[0][0] + dx / dl * L, up[0][1] + dy / dl * L];
-        var ctl = [up[0][0] + dx / dl * L * 0.5, up[0][1] + dy / dl * L * 0.5 + L * 0.12];
-        out += line(quadPts(up[0], ctl, tip, 8));
-      }
-      if ((kind === 'inner' || kind === 'innerlow') && up.length) {
-        // 안쪽 라인(몽고주름): 윗 라인 안쪽 끝에서 코 쪽으로 조금 나가며 아래로 꺾인다
-        var e1 = along(up, 1), q1 = up[up.length - 1], ix = -e1.out[0], iy = -e1.out[1];
-        var Li = ll.len || 13;
-        var tip2 = [q1[0] + ix * Li * 0.35, q1[1] + Li];
-        var ctl2 = [q1[0] + ix * Li * 0.6, q1[1] + iy * Li * 0.6 + Li * 0.25];
-        if (kind === 'inner') out += line(quadPts(q1, ctl2, tip2, 8));
-        // 안쪽 + 아래: 안쪽 끝에서 흰자 아래 윤곽으로 이어져 눈꼬리 쪽으로 75% 까지
-        else if (wl) out += line([q1].concat(headOf(wl.slice().reverse(), ll.frac || 0.75)));
+      if (kind === 'inner' && up.length && wl) {
+        // 안쪽 라인: 윗 라인 안쪽 끝에서 자연스럽게 이어져 흰자 테두리를 따라 내려온다 (frac: 눈머리부터 테두리 길이의 몇 %, 기본 25%)
+        out += line([up[up.length - 1]].concat(headOf(wl.slice().reverse(), ll.frac || 0.25)));
       }
       if (kind === 'full' && up.length && wl) {
         // 풀 라인: 윗 라인 바깥 끝 → 흰자 아래 윤곽 전체 → 윗 라인 안쪽 끝. 눈이 선으로 닫힌다

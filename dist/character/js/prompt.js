@@ -197,10 +197,10 @@
     NAI.brow[id + '-bold'] = /thick/.test(NAI.brow[id] || '') || id === 'thin' ? NAI.brow[id] : (NAI.brow[id] ? NAI.brow[id] + ', ' : '') + 'thick eyebrows';
   });
 
-  var LOWLINE_EN = { on: 'lower eyeliner', tail: 'eyeliner that dips down from the outer corner', wing: 'a short eyeliner line extending out from the outer corner',
-    inner: 'a short eyeliner line at the inner corner', winglow: 'outer-corner eyeliner plus a separate lower eyeliner', innerlow: 'inner-corner eyeliner joined to a lower eyeliner',
+  var LOWLINE_EN = { on: 'lower eyeliner', tail: 'eyeliner continuing down from the outer corner along the lower lid',
+    inner: 'eyeliner continuing down from the inner corner along the lower lid', winglow: 'outer-corner eyeliner plus a separate lower eyeliner', innerlow: 'inner-corner eyeliner joined to a lower eyeliner',
     full: 'eyes fully outlined with eyeliner' };
-  EN.lash = EN.lash || {}; EN.lash.down1 = '1 upper lash at the outer corner pointing down';
+  EN.lash = EN.lash || {}; EN.lash.down1 = '1 lash at the outer corner pointing down'; EN.lash.down3 = '3 lashes from two-thirds along the lid to the outer corner, pointing down'; EN.lash.down5 = '5 lashes from two-thirds along the lid to the outer corner, pointing down';
 
   // 'brown, red' + ' hair' → 'brown hair, red hair'
   function suffix(tags, word) { return tags ? tags.split(', ').map(function (t) { return t + ' ' + word; }).join(', ') : ''; }
