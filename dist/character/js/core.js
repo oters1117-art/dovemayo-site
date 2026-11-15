@@ -708,17 +708,51 @@
         return eye.lowerShape ? '<g fill="var(--lash)">' + eye.lowerShape.replace(/fill="[^"]*"/g, '').replace(/fill:[^;"]*;?/g, '') + '</g>' : stroke(eye.lower, 'cg-lash', ' style="stroke-width:5"');
       };
       if (kind === 'lower' || ll.lower) out += lowerLine();
-      if (kind === 'tail' && up.length) {
-        // 끝 라인: 흰자 테두리의 바깥 끝(윗 라인 끝 밑)에서 테두리를 따라 내려오는 한 줄. 윗 라인 끝과 잇지 않아서 옆으로 튀어나오지 않는다
-        if (wl) out += line(headOf(wl, ll.frac || 0.15));
+      // 윗 라인과 잇기: 윗 라인 끝(뾰족한 끝)에서 몇 점 안쪽, 선이 아직 두꺼운 곳에서 시작해 흰자 테두리로 부드럽게 들어간다.
+      // 끝에서 바로 시작하면 이 선의 둥근 끝이 윗 라인의 가는 끝 밖으로 삐져나온다
+      // 윗 라인 끝에서 2~6점 안쪽 가운데 테두리 첫 점에 가장 가까운 점에서 시작한다 (맨 끝은 가늘어서 이 선의 둥근 끝이 삐져나온다)
+      var startNear = function (end, a) {
+        var best = null, bd = 1e9;
+        for (var k = 2; k <= 6; k++) {
+          var q = up[end ? up.length - 1 - k : k];
+          if (!q) continue;
+          var dd = Math.hypot(q[0] - a[0], q[1] - a[1]);
+          if (dd < bd) { bd = dd; best = q; }
+        }
+        return best;
+      };
+      var join = function (end, chain) {
+        // 윗 라인 끝이 이미 테두리 끝에 붙어 있으면(7 이내) 잇지 않는다. 떨어진 눈(타레메·지토메 등)만 잇는다
+        var tip = up[end ? up.length - 1 : 0];
+        if (Math.hypot(tip[0] - chain[0][0], tip[1] - chain[0][1]) < (ll.joinGap || 7)) return chain;
+        var from = startNear(end, chain[0]);
+        // 들어갈 곳: 테두리 앞쪽 1/3 안에서 시작점에 가장 가까운 점
+        var j = 0, best = 1e9, k;
+        for (k = 0; k < Math.max(1, Math.floor(chain.length / 3)); k++) {
+          var dd = Math.hypot(chain[k][0] - from[0], chain[k][1] - from[1]);
+          if (dd < best) { best = dd; j = k; }
+        }
+        chain = chain.slice(j);
+        if (chain.length < 2) return [from].concat(chain);
+        var a = chain[0], b = chain[Math.min(2, chain.length - 1)], tx = b[0] - a[0], ty = b[1] - a[1], tl = Math.hypot(tx, ty) || 1;
+        var d = Math.hypot(a[0] - from[0], a[1] - from[1]);
+        if (d < 1) return chain;
+        // 테두리 방향과 들어오는 방향이 어긋날수록 덜 휘게 (옆으로 불룩 튀어나오지 않게)
+        var cos = Math.max(0, ((from[0] - a[0]) * -tx + (from[1] - a[1]) * -ty) / (d * tl));
+        var ctl = [a[0] - tx / tl * d * 0.55 * cos, a[1] - ty / tl * d * 0.55 * cos];
+        return quadPts(from, ctl, a, 6).concat(chain.slice(1));
+      };
+      if (kind === 'tail' && up.length && wl) {
+        // 끝 라인: 윗 라인 바깥 끝에서 흰자 테두리를 따라 내려오는 한 줄
+        out += line(join(false, headOf(wl, ll.frac || 0.15)));
       }
       if (kind === 'inner' && up.length && wl) {
-        // 안쪽 라인: 흰자 테두리의 안쪽 끝에서 테두리를 따라 내려온다 (frac: 눈머리부터 테두리 길이의 몇 %, 기본 20%)
-        out += line(headOf(wl.slice().reverse(), ll.frac || 0.2));
+        // 안쪽 라인: 윗 라인 안쪽 끝에서 이어져 흰자 테두리를 따라 내려온다 (frac: 눈머리부터 테두리 길이의 몇 %, 기본 10%)
+        out += line(join(true, headOf(wl.slice().reverse(), ll.frac || 0.1)));
       }
       if (kind === 'full' && up.length && wl) {
         // 풀 라인: 윗 라인 바깥 끝 → 흰자 아래 윤곽 전체 → 윗 라인 안쪽 끝. 눈이 선으로 닫힌다
-        out += line(wl);
+        out += line(join(false, join(true, wl.slice().reverse()).reverse()));
       }
     }
     if (on(opt.lowlash)) {
