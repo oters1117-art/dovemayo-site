@@ -223,6 +223,14 @@ h2 small{font-weight:400;color:var(--muted)}
   };
   load();
 })();
+  // 생성기로 돌아가는 링크: 생성기가 마지막으로 그린 캐릭터(localStorage cg-last)로 돌아간다
+  (function () {
+    var last = null;
+    try { last = localStorage.getItem('cg-last'); } catch (e) { /* 무시 */ }
+    if (!last || last.indexOf(':') < 0) return;
+    var a = document.querySelectorAll('a.back[href="../"]');
+    for (var i = 0; i < a.length; i++) a[i].href = '../#' + last;
+  })();
 </script>
 </body>
 </html>

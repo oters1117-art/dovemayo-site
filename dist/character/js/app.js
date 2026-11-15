@@ -8,7 +8,7 @@
   // 얼굴형(둥근형)과 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다)
   // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
   // 오드아이도 '없음'으로 고정한 채 시작한다
-  var locks = { face: true, skinColor: true, acc: true, earring: true, facewear: true, oddColor: true };
+  var locks = { face: true, skinColor: true, earring: true, facewear: true, oddColor: true };
   var history = [];
   var cursor = -1;
   // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다
@@ -47,6 +47,8 @@
     $('btn-prev').disabled = $('ico-prev').disabled = cursor <= 0;
     $('btn-next').disabled = cursor >= history.length - 1;
     try { window.history.replaceState(null, '', '#' + $code.value); } catch (e) { /* file:// 에서 막히면 무시 */ }
+    // 자랑·제안 게시판의 "생성기로" 링크가 이 캐릭터로 돌아오게 남겨 둔다
+    try { localStorage.setItem('cg-last', $code.value); } catch (e) { /* 무시 */ }
   }
 
   function commit(next) {
@@ -162,35 +164,75 @@
     return b;
   }
 
+  // ---------- 썸네일로 고르기 ----------
+  // 크기·간격·높이·각도 같은 수치 항목은 드롭다운 그대로 (위 = 크게/멀게/위로, 가운데 = 기본, 아래 = 작게/가깝게/아래로)
+  var PLAIN = { iris: 1, eyeGap: 1, eyeY: 1, eyeSize: 1, mouthY: 1, eyeTilt: 1, browGap: 1, browY: 1, browTilt: 1 };
+  // 썸네일 밑그림: 이 캐릭터를 반투명하게 깔고, 고르는 항목만 진하게 겹친다
+  var THUMB_BASE = 'hf:allback,hx:none,hs:none,hb:none,e:almond,d:none,u:none,xg:normal,xy:normal,xs:normal,l:none,w:none,i:normal,p:basic,h:none,f:round,er:normal,s:none,k:none,ey:none,kl:none,b:flat,m:line,xm:normal,a:none,g:none,ae:none,af:none,ch:milkbrown,ce:hazel,co:none,cs:base,ca:gold,cb:cream';
+  var THUMB_BOX = { hair: '40 20 622 622', eye: '196 236 310 310', face: '130 160 442 442' };
+  var THUMB_OF = { front: 'hair', extra: 'hair', side: 'hair', back: 'hair', acc: 'hair',
+    eye: 'eye', fold: 'eye', lowline: 'eye', lash: 'eye', lowlash: 'eye', pupil: 'eye', hl: 'eye', around: 'eye', brow: 'eye', glasses: 'eye' };
+  function thumbSvg(key, id) {
+    var s = CG.decode(THUMB_BASE);
+    s[key] = id;
+    var vb = 'viewBox="' + THUMB_BOX[THUMB_OF[key] || 'face'] + '"';
+    var fix = function (m) { return m.replace(/viewBox="[^"]*"/, vb); };
+    return '<span class="th-img">' + fix(CG.compose(s, { focus: key })) + '</span>';
+  }
+  var openPick = null;   // 한 번에 하나만 연다
+  function closePick() { if (openPick) { openPick(); openPick = null; } }
+
   function buildPartRow(cat) {
     var list = CG.parts[cat.key];
+    var item = el('div', { class: 'part-item' });
     var row = el('div', { class: 'row' });
-    var select = el('select', { 'aria-label': cat.name });
-    // _parts.json 의 group 이 있으면 그 이름으로 묶어 보여 준다 (순서는 목록 그대로)
-    var box = select, boxName = null;
-    list.forEach(function (p) {
-      if ((p.group || null) !== boxName) {
-        boxName = p.group || null;
-        box = boxName ? select.appendChild(el('optgroup', { label: boxName })) : select;
-      }
-      box.appendChild(el('option', { value: p.id }, p.name));
-    });
-    select.addEventListener('change', function () { set(cat.key, select.value); });
-
-    function step(d) {
-      var i = 0;
-      for (var n = 0; n < list.length; n++) if (list[n].id === state[cat.key]) i = n;
-      set(cat.key, list[(i + d + list.length) % list.length].id);
+    var select = null, pick = null, label = null, card = null, thumbs = [];
+    if (PLAIN[cat.key]) {
+      select = el('select', { 'aria-label': cat.name });
+      list.forEach(function (p) { select.appendChild(el('option', { value: p.id }, p.name)); });
+      select.addEventListener('change', function () { set(cat.key, select.value); });
+    } else {
+      // 드롭다운 모양 버튼. 누르면 아래에 썸네일 카드가 열린다 (묶음 이름별로, 고른 것은 테두리)
+      pick = el('button', { type: 'button', class: 'pick', 'aria-expanded': 'false', 'aria-label': cat.name + ' 고르기' });
+      label = el('span', { class: 'pick-name' });
+      pick.appendChild(label);
+      pick.appendChild(el('span', { class: 'pick-arrow', 'aria-hidden': 'true' }, '▾'));
+      card = el('div', { class: 'thumb-card', hidden: '' });
+      var close = function () { card.hidden = true; pick.setAttribute('aria-expanded', 'false'); };
+      pick.addEventListener('click', function () {
+        if (!card.hidden) { closePick(); return; }
+        closePick();
+        if (!card.children.length) fillCard();
+        card.hidden = false;
+        pick.setAttribute('aria-expanded', 'true');
+        openPick = close;
+        paintThumbs();
+        var on = card.querySelector('[aria-pressed="true"]');
+        if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
+      });
     }
-    var prev = el('button', { type: 'button', class: 'step', 'aria-label': cat.name + ' 이전' }, '‹');
-    var next = el('button', { type: 'button', class: 'step', 'aria-label': cat.name + ' 다음' }, '›');
-    prev.addEventListener('click', function () { step(-1); });
-    next.addEventListener('click', function () { step(1); });
+    function fillCard() {
+      var boxName, grid = null;
+      list.forEach(function (p, i) {
+        if (!grid || (p.group || null) !== boxName) {
+          boxName = p.group || null;
+          if (boxName) card.appendChild(el('div', { class: 'thumb-group' }, boxName));
+          grid = card.appendChild(el('div', { class: 'thumb-grid' }));
+        }
+        var b = el('button', { type: 'button', class: 'thumb', title: p.name, 'aria-label': p.name, 'aria-pressed': 'false' });
+        b.innerHTML = thumbSvg(cat.key, p.id) + '<span class="th-name"></span>';
+        b.lastChild.textContent = p.name;
+        b.addEventListener('click', function () { set(cat.key, p.id); });
+        grid.appendChild(b);
+        thumbs[i] = b;
+      });
+    }
+    function paintThumbs() {
+      list.forEach(function (p, i) { if (thumbs[i]) thumbs[i].setAttribute('aria-pressed', p.id === state[cat.key] ? 'true' : 'false'); });
+    }
 
     row.appendChild(el('span', { class: 'name' }, cat.name));
-    row.appendChild(prev);
-    row.appendChild(select);
-    row.appendChild(next);
+    row.appendChild(select || pick);
     var tools = el('span', { class: 'tools' });
     var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
     var hasFantasy = list.some(function (p) { return p.fantasy; });
@@ -200,11 +242,19 @@
     if (SERVER) tools.appendChild(fileButton(cat));
     row.appendChild(tools);
 
+    item.appendChild(row);
+    if (card) item.appendChild(card);
     controls[cat.key] = function () {
-      select.value = state[cat.key];
+      if (select) select.value = state[cat.key];
+      else {
+        var cur = null;
+        list.forEach(function (p) { if (p.id === state[cat.key]) cur = p; });
+        label.textContent = cur ? cur.name : '';
+        if (!card.hidden) paintThumbs();
+      }
       if (flip) paintFlip(flip, cat);
     };
-    return row;
+    return item;
   }
 
   // ---------- 색 줄 ----------
@@ -473,6 +523,7 @@
   $code.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyCode(); });
 
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && openPick) { closePick(); return; }
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
     if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks, null, real)); }

@@ -66,6 +66,11 @@
     { key: 'brow', code: 'b', name: '눈썹', group: 'face' },
     { key: 'mouth', code: 'm', name: '입', group: 'face' },
     { key: 'mouthY', code: 'xm', name: '입 높이', group: 'face', type: 'eye' },
+    // 눈 각도(바깥 눈꼬리가 올라감/처짐), 눈썹 간격·높이·각도 (그림 없이 수치만)
+    { key: 'eyeTilt', code: 'xt', name: '눈 각도', group: 'eyes', type: 'eye' },
+    { key: 'browGap', code: 'bx', name: '눈썹 간격', group: 'face', type: 'eye' },
+    { key: 'browY', code: 'by', name: '눈썹 높이', group: 'face', type: 'eye' },
+    { key: 'browTilt', code: 'bt', name: '눈썹 각도', group: 'face', type: 'eye' },
     { key: 'acc', code: 'a', name: '헤어 악세사리', group: 'acc', noneWeight: 0.65 },
     { key: 'glasses', code: 'g', name: '안경', group: 'acc', noneWeight: 0.75 },
     { key: 'earring', code: 'ae', name: '귀걸이', group: 'acc', noneWeight: 0.6 },
@@ -91,12 +96,12 @@
       { items: ['eye', 'fold', 'lowline', 'lash', 'lowlash'] },
       { name: '눈동자', items: ['iris', 'pupil', 'hl'] },
       { name: '눈 색', items: ['eyeColor', 'oddColor'] },
-      { name: '눈 위치', items: ['eyeSize', 'eyeGap', 'eyeY'] }
+      { name: '눈 위치', items: ['eyeSize', 'eyeTilt', 'eyeGap', 'eyeY', 'around'] }
     ] },
     { group: 'face', subs: [
-      { items: ['face', 'skinColor'] },
-      { items: ['brow', 'mouth', 'mouthY', 'ear'] },
-      { items: ['skinfx', 'around', 'makeup', 'lip'] }
+      { items: ['face', 'skinColor', 'skinfx', 'makeup'] },
+      { items: ['brow', 'browGap', 'browY', 'browTilt'] },
+      { items: ['mouth', 'mouthY', 'lip', 'ear'] }
     ] },
     { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }] },
     { group: 'bg', subs: [{ items: ['bgColor'] }] }
@@ -708,6 +713,8 @@
    * opts.omit   : { 항목키: true } 그 항목을 그리지 않는다 (편집용 가이드 그림을 만들 때)
    * opts.literal: 색 변수를 실제 색으로 바꿔 넣는다 (CSS 변수를 못 읽는 편집기용)
    * opts.layers : [시작, 끝) 레이어 번호. 그 구간의 레이어만 그린다 (편집용 가이드를 위아래로 나눌 때)
+   * opts.focus  : 항목키. 캐릭터를 다 그린 뒤, 그 항목이 실제로 보이는 곳만 빼고 흐리게 덮는다 (썸네일).
+   *               눈 항목이면 눈 전체가 진하게 남는다. opts.veil 로 덮는 색·진하기를 바꾼다 (기본 '#fbf7f2', 0.68)
    */
   function compose(state, opts) {
     opts = opts || {};
@@ -719,13 +726,20 @@
     LAYERS.forEach(function (l) { buf[l] = { left: '', right: '', full: '' }; });
 
     // side: 'l' 이면 half 조각을 왼쪽에만, 'r' 이면 오른쪽에만 그린다 (화면 기준)
+    // focus: 그 항목 조각(fbuf)과 나머지(nbuf)를 따로도 모아서, 마지막에 "보이는 곳" 마스크를 만든다
+    var cur = null, fbuf = {}, nbuf = {};
+    if (opts.focus) LAYERS.forEach(function (l) { fbuf[l] = { left: '', right: '', full: '' }; nbuf[l] = { left: '', right: '', full: '' }; });
+    function add(b, piece, side) {
+      if (piece.half) {
+        if (side !== 'r') b.left += piece.half;
+        if (side !== 'l') b.right += piece.half;
+      }
+      if (piece.full) b.full += piece.full;
+    }
     function put(layer, piece, side) {
       if (!piece || !buf[layer]) return;
-      if (piece.half) {
-        if (side !== 'r') buf[layer].left += piece.half;
-        if (side !== 'l') buf[layer].right += piece.half;
-      }
-      if (piece.full) buf[layer].full += piece.full;
+      add(buf[layer], piece, side);
+      if (opts.focus) add((cur === opts.focus ? fbuf : nbuf)[layer], piece, side);
     }
     function part(key) { return omit[key] ? null : findIn(parts[key], s[key]); }
 
@@ -755,10 +769,12 @@
     put('mouth', base.nose);
 
     var num = function (key, field) { var o = findIn(parts[key] || [], s[key]); return (o && o[field]) || 0; };
-    var adj = { gap: num('eyeGap', 'dx'), eyeY: num('eyeY', 'dy'), mouthY: num('mouthY', 'dy'), size: num('eyeSize', 'scale') || 1 };
+    var adj = { gap: num('eyeGap', 'dx'), eyeY: num('eyeY', 'dy'), mouthY: num('mouthY', 'dy'), size: num('eyeSize', 'scale') || 1,
+      tilt: num('eyeTilt', 'angle'), browGap: num('browGap', 'dx'), browY: num('browY', 'dy'), browTilt: num('browTilt', 'angle') };
 
     CATEGORIES.forEach(function (c) {
       if (c.type === 'eye') return;
+      cur = c.key;
       var p = part(c.key);
       if (!p || p.none || !p.pieces) return;
       // 눈 높이·간격은 눈썹과 안경에도, 입 높이는 입과 립에도 같이 적용한다
@@ -775,7 +791,15 @@
           put('hairTop', { half: pc.half ? '<g transform="' + em + '">' + pc.half + '</g>' : '', full: pc.full ? '<g transform="' + em + '">' + pc.full + '</g>' : '' }, sd);
           continue;
         }
-        if (tf && (tf[0] || tf[1])) {
+        if (c.key === 'brow') {
+          // 눈썹: 눈 간격·높이 + 눈썹 간격·높이로 옮기고, 눈썹 가운데(약 283, 298)를 축으로 돌린다. +각도 = 바깥 끝이 올라감
+          var bx = tf[0] - adj.browGap, by = tf[1] + adj.browY;
+          var btf = 'translate(' + bx + ' ' + by + ')' + (adj.browTilt ? ' rotate(' + adj.browTilt + ' 283 298)' : '');
+          pc = {
+            half: pc.half ? '<g transform="' + btf + '">' + pc.half + '</g>' : '',
+            full: pc.full ? '<g transform="translate(0 ' + by + ')">' + pc.full + '</g>' : ''
+          };
+        } else if (tf && (tf[0] || tf[1])) {
           pc = {
             half: pc.half ? '<g transform="translate(' + tf[0] + ' ' + tf[1] + ')">' + pc.half + '</g>' : '',
             full: pc.full ? '<g transform="translate(0 ' + tf[1] + ')">' + pc.full + '</g>' : ''
@@ -785,7 +809,9 @@
       }
       if (p.defs) defs += p.defs;
     });
+    cur = null;
 
+    var focusEye = opts.focus === 'around' || CATEGORIES.some(function (c) { return c.key === opts.focus && c.type === 'eye'; });
     var eye = part('eye'), eyeMarkup = '';
     if (eye) {
       var iris = findIn(parts.iris, s.iris), pupil = findIn(parts.pupil, s.pupil);
@@ -803,7 +829,9 @@
       if (on(opt.dark)) defs += '<filter id="cg-dark@@" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>';
       // 눈 간격·높이·크기: 눈 중심을 기준으로 줄이고, 바깥쪽과 위아래로 옮긴다 (반전 그룹 안에서도 같은 변형이라 좌우가 대칭으로 움직인다)
       var ec = eye.iris || IRIS_CENTER;
-      var etf = 'translate(' + (ec[0] - adj.gap) + ' ' + (ec[1] + adj.eyeY) + ') scale(' + adj.size + ') translate(' + (-ec[0]) + ' ' + (-ec[1]) + ')';
+      // 눈 각도: 눈 중심을 축으로 돌린다. +각도 = 바깥 눈꼬리가 올라감 (오른쪽 눈은 반전 그룹 안이라 대칭)
+      var etf = 'translate(' + (ec[0] - adj.gap) + ' ' + (ec[1] + adj.eyeY) + ')' + (adj.tilt ? ' rotate(' + adj.tilt + ')' : '') +
+        ' scale(' + adj.size + ') translate(' + (-ec[0]) + ' ' + (-ec[1]) + ')';
       var eyeL = eyeSide(eye, iris, pupil, hl, opt, 'cg-eye@@', false);
       var eyeR = eyeSide(right, iris, pupil, hl, opt, right !== eye ? 'cg-eye2@@' : 'cg-eye@@', true);
       // 오드아이: 한쪽 눈만 다른 색으로 칠한다 (기본은 화면 오른쪽 눈, 반전하면 왼쪽 눈)
@@ -832,16 +860,32 @@
     var range = opts.layers || [0, LAYERS.length];
     if (bg && range[0] === 0) out += '<rect width="' + SIZE + '" height="' + SIZE + '" fill="' + bg + '"/>';
 
+    function layerOf(b) {
+      if (!b.left && !b.right && !b.full) return '';
+      return (b.left ? '<g>' + b.left + '</g>' : '') + (b.right ? '<g transform="' + MIRROR + '">' + b.right + '</g>' : '') + b.full;
+    }
     LAYERS.forEach(function (l, i) {
       if (i < range[0] || i >= range[1]) return;
       if (l === 'eye') { if (eyeMarkup) out += '<g data-layer="eye">' + eyeMarkup + '</g>'; return; }
-      var b = buf[l];
-      if (!b.left && !b.right && !b.full) return;
-      out += '<g data-layer="' + l + '">';
-      if (b.left) out += '<g>' + b.left + '</g>';
-      if (b.right) out += '<g transform="' + MIRROR + '">' + b.right + '</g>';
-      out += b.full + '</g>';
+      var m = layerOf(buf[l]);
+      if (m) out += '<g data-layer="' + l + '">' + m + '</g>';
     });
+
+    if (opts.focus) {
+      // 마스크: 흰 바탕에 아래 레이어부터 나머지 = 흰색, 그 항목 = 검정. 위 레이어가 덮은 곳은 다시 흰색이 된다
+      var mk = '<rect width="' + SIZE + '" height="' + SIZE + '" fill="#fff"/>';
+      LAYERS.forEach(function (l) {
+        if (l === 'eye') { if (eyeMarkup) mk += '<g filter="url(#cg-f' + (focusEye ? 'b' : 'w') + '@@)">' + eyeMarkup + '</g>'; return; }
+        var n = layerOf(nbuf[l]), f = layerOf(fbuf[l]);
+        if (n) mk += '<g filter="url(#cg-fw@@)">' + n + '</g>';
+        if (f) mk += '<g filter="url(#cg-fb@@)">' + f + '</g>';
+      });
+      var veil = opts.veil || ['#fbf7f2', 0.68];
+      out += '<defs><filter id="cg-fb@@"><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>' +
+        '<filter id="cg-fw@@"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0"/></filter>' +
+        '<mask id="cg-fm@@" maskUnits="userSpaceOnUse" x="0" y="0" width="' + SIZE + '" height="' + SIZE + '">' + mk + '</mask></defs>' +
+        '<rect width="' + SIZE + '" height="' + SIZE + '" fill="' + veil[0] + '" opacity="' + veil[1] + '" mask="url(#cg-fm@@)"/>';
+    }
 
     if (opts.guide && base.guide && range[1] === LAYERS.length) out += '<g data-layer="guide">' + (base.guide.full || '') + '</g>';
 
