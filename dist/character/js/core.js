@@ -600,7 +600,7 @@
 
   // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
   function lowLashes(p, o, c) {
-    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.5;
+    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.3;
     bx /= bl; by /= bl;
     // shift: 가닥 전체를 바깥으로 미는 칸 수. 윤곽 끝을 넘어가면 끝의 방향대로 이어서 놓는다
     var at = spread(p, o, 13, 0.28), stepF = at.length > 1 ? at[1] - at[0] : 0, len = 0;
@@ -709,16 +709,16 @@
       };
       if (kind === 'lower' || ll.lower) out += lowerLine();
       if (kind === 'tail' && up.length) {
-        // 끝 라인: 윗 라인 바깥 끝에서 흰자 테두리를 따라 내려오는 한 줄
-        if (wl) out += line([up[0]].concat(headOf(wl, ll.frac || 0.25)));
+        // 끝 라인: 흰자 테두리의 바깥 끝(윗 라인 끝 밑)에서 테두리를 따라 내려오는 한 줄. 윗 라인 끝과 잇지 않아서 옆으로 튀어나오지 않는다
+        if (wl) out += line(headOf(wl, ll.frac || 0.15));
       }
       if (kind === 'inner' && up.length && wl) {
-        // 안쪽 라인: 윗 라인 안쪽 끝에서 자연스럽게 이어져 흰자 테두리를 따라 내려온다 (frac: 눈머리부터 테두리 길이의 몇 %, 기본 25%)
-        out += line([up[up.length - 1]].concat(headOf(wl.slice().reverse(), ll.frac || 0.25)));
+        // 안쪽 라인: 흰자 테두리의 안쪽 끝에서 테두리를 따라 내려온다 (frac: 눈머리부터 테두리 길이의 몇 %, 기본 20%)
+        out += line(headOf(wl.slice().reverse(), ll.frac || 0.2));
       }
       if (kind === 'full' && up.length && wl) {
         // 풀 라인: 윗 라인 바깥 끝 → 흰자 아래 윤곽 전체 → 윗 라인 안쪽 끝. 눈이 선으로 닫힌다
-        out += line([up[0]].concat(wl, [up[up.length - 1]]));
+        out += line(wl);
       }
     }
     if (on(opt.lowlash)) {
