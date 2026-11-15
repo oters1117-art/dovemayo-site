@@ -46,7 +46,7 @@
     { key: 'back', code: 'hb', name: '뒷머리', group: 'hair' },
     { key: 'eye', code: 'e', name: '눈 모양', group: 'eyes', sub: 'eye', type: 'eye' },
     { key: 'fold', code: 'd', name: '쌍꺼풀', group: 'eyes', sub: 'eye', type: 'eye' },
-    { key: 'lowline', code: 'u', name: '아래 아이라인', group: 'eyes', sub: 'eye', type: 'eye' },
+    { key: 'lowline', code: 'u', name: '아이라인', group: 'eyes', sub: 'eye', type: 'eye' },
     // 위치·크기 조절 (그림 없이 수치만)
     { key: 'eyeGap', code: 'xg', name: '눈 간격', group: 'eyes', sub: 'eye', type: 'eye' },
     { key: 'eyeY', code: 'xy', name: '눈 높이', group: 'eyes', sub: 'eye', type: 'eye' },
@@ -548,6 +548,8 @@
       if (nx * (q[0] - c[0]) + ny * (q[1] - c[1]) < 0) { nx = -nx; ny = -ny; }
       var dx, dy, bx, by;
       if (dir === 'down') { dx = ox + nx * 0.25; dy = oy + ny * 0.25 + 1.0; bx = 0; by = -1; }
+      // side: 눈꼬리에서 옆(바깥)으로 뻗고 끝이 살짝 위로 휜다
+      else if (dir === 'side') { dx = (ox < 0 ? -1 : 1); dy = -0.6; bx = 0; by = -0.5; }
       else { dx = nx * 0.6 + ox * 1.6; dy = ny * 0.6 + oy * 1.6 - 1; bx = -ox; by = -oy; }
       var dl = Math.hypot(dx, dy) || 1;
       dx /= dl; dy /= dl;
@@ -559,6 +561,35 @@
         ' Q' + r1(q[0] + dx * L * 0.6) + ' ' + r1(q[1] + dy * L * 0.6) +
         ' ' + r1(q[0] + dx * L + bx * L * 0.3) + ' ' + r1(q[1] + dy * L + by * L * 0.3);
     }).join(' ');
+  }
+
+  // 점들을 따라 가는 뾰족한 획 (폭 w0 에서 w1 로 줄어든다). 아이라인 날개·꼬리에 쓴다
+  function taper(pts, w0, w1) {
+    var a = [], b = [], n = pts.length;
+    for (var i = 0; i < n; i++) {
+      var p0 = pts[Math.max(0, i - 1)], p1 = pts[Math.min(n - 1, i + 1)];
+      var tx = p1[0] - p0[0], ty = p1[1] - p0[1], l = Math.hypot(tx, ty) || 1;
+      var w = (w0 + (w1 - w0) * i / ((n - 1) || 1)) / 2;
+      a.push([pts[i][0] - ty / l * w, pts[i][1] + tx / l * w]);
+      b.push([pts[i][0] + ty / l * w, pts[i][1] - tx / l * w]);
+    }
+    return polyD(a.concat(b.reverse())) + ' Z';
+  }
+  function quadPts(a, c, b, n) {
+    var out = [];
+    for (var i = 0; i <= n; i++) {
+      var t = i / n, u = 1 - t;
+      out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]);
+    }
+    return out;
+  }
+  // 선 길이를 따라 앞에서 frac 만큼만 자른다
+  function headOf(p, frac) {
+    var total = 0, k, out = [p[0]];
+    for (k = 1; k < p.length; k++) total += Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]);
+    var want = total * frac, acc = 0;
+    for (k = 1; k < p.length && acc < want; k++) { acc += Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]); out.push(p[k]); }
+    return out;
   }
 
   // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
@@ -581,7 +612,8 @@
   }
 
   // 흰자 모양의 아래쪽 윤곽 (가장 왼쪽 점과 가장 오른쪽 점 사이의 아랫줄). 아래 속눈썹이 붙는 선으로 쓴다.
-  function whiteBottom(eye) {
+  // whole: 양 끝 말려 올라가는 부분까지 다 (바깥 눈꼬리 = 가장 왼쪽 점부터)
+  function whiteBottom(eye, whole) {
     var m = / d="([^"]+)"/.exec(eye.white || '');
     if (!m) return null;
     var p = flatten(m[1]);
@@ -592,6 +624,7 @@
     function chain(step) { var out = [p[lo]], k = lo; while (k !== hi) { k = (k + step + p.length) % p.length; out.push(p[k]); } return out; }
     function meanY(a) { var s = 0; a.forEach(function (q) { s += q[1]; }); return s / a.length; }
     var a = chain(1), b = chain(-1), low = meanY(a) > meanY(b) ? a : b;
+    if (whole) return low;
     // 양 끝에서 위로 말려 올라가는 부분은 빼고 바닥 쪽만 남긴다
     var ys = low.map(function (q) { return q[1]; }), top = Math.min.apply(null, ys), bot = Math.max.apply(null, ys);
     var cut = top + (bot - top) * 0.5, flat = low.filter(function (q) { return q[1] >= cut; });
@@ -655,9 +688,36 @@
       if ((m = custom(eye, 'lash', opt.lash))) out += m;
       else if (up.length) out += stroke(lashes(up, c, opt.lash, opt.lash.dir || 'up'), 'cg-lash', W(opt.lash, 5));
     }
-    if (on(opt.lowline) && eye.lower) {
-      // 아래 라인을 면으로 그렸으면 그 모양을 아래 아이라인 색으로 칠한다
-      out += eye.lowerShape ? '<g fill="var(--lash)">' + eye.lowerShape.replace(/fill="[^"]*"/g, '').replace(/fill:[^;"]*;?/g, '') + '</g>' : stroke(eye.lower, 'cg-lash', ' style="stroke-width:5"');
+    var ll = opt.lowline;
+    if (on(ll) && (m = custom(eye, 'lowline', ll))) out += m;
+    else if (on(ll)) {
+      var kind = ll.kind || 'lower', ink = function (d) { return '<path d="' + d + '" fill="var(--lash)"/>'; };
+      var lowerLine = function () {
+        // 아래 라인을 면으로 그렸으면 그 모양을 아래 아이라인 색으로 칠한다
+        if (!eye.lower) return '';
+        return eye.lowerShape ? '<g fill="var(--lash)">' + eye.lowerShape.replace(/fill="[^"]*"/g, '').replace(/fill:[^;"]*;?/g, '') + '</g>' : stroke(eye.lower, 'cg-lash', ' style="stroke-width:5"');
+      };
+      if (kind === 'lower' || ll.lower) out += lowerLine();
+      if (kind === 'tail' && up.length) {
+        // 윗 라인 바깥 끝에서 흰자 아래 윤곽을 따라 살짝 내려오는 꼬리 (점점 가늘게)
+        var wl = whiteBottom(eye, true);
+        if (wl && wl.length > 3) out += ink(taper([up[0]].concat(headOf(resample(polyD(wl), 40), ll.frac || 0.22)), ll.width || 5.5, 1));
+      }
+      if (kind === 'wing' && up.length) {
+        // 끝 날개: 윗 라인 바깥 끝에서 바깥 위로 뻗는 뾰족한 획
+        var e0 = along(up, 0), L = ll.len || 19, dx = e0.out[0] < 0 ? -1 : 1, dy = -(ll.lift || 1.0), dl = Math.hypot(dx, dy);
+        var tip = [up[0][0] + dx / dl * L, up[0][1] + dy / dl * L];
+        var ctl = [up[0][0] + dx / dl * L * 0.5, up[0][1] + dy / dl * L * 0.5 + L * 0.12];
+        out += ink(taper([up[3], up[2], up[1]].concat(quadPts(up[0], ctl, tip, 8)), 7, 0.8));
+      }
+      if (kind === 'inner' && up.length) {
+        // 눈머리 라인(몽고주름): 윗 라인 안쪽 끝에서 코 쪽으로 조금 나가며 아래로 꺾인다
+        var e1 = along(up, 1), q1 = up[up.length - 1], ix = -e1.out[0], iy = -e1.out[1];
+        var Li = ll.len || 13;
+        var tip2 = [q1[0] + ix * Li * 0.35, q1[1] + Li];
+        var ctl2 = [q1[0] + ix * Li * 0.6, q1[1] + iy * Li * 0.6 + Li * 0.25];
+        out += ink(taper([up[up.length - 3], up[up.length - 2]].concat(quadPts(q1, ctl2, tip2, 8)), 5.5, 0.8));
+      }
     }
     if (on(opt.lowlash)) {
       if ((m = custom(eye, 'lowlash', opt.lowlash))) out += m;

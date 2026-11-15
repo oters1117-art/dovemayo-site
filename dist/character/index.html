@@ -33,7 +33,7 @@
 
       <div class="actions four">
         <button id="btn-png" type="button">PNG 저장</button>
-        <button id="btn-svg" type="button">SVG 저장</button>
+        <button id="btn-prompt" type="button" title="지금 캐릭터의 특징을 이미지 AI에 넣을 글로 바꿉니다">프롬프트</button>
         <button id="btn-copy-image" type="button" title="왼쪽 위에 dovemayo.com 이 작게 들어간 이미지를 복사합니다">이미지 복사</button>
         <button id="btn-show" type="button" title="이 캐릭터를 들고 자랑 게시판으로 갑니다">자랑게시판으로</button>
       </div>
@@ -42,7 +42,6 @@
         <button id="btn-build" type="button">빌드</button>
         <button id="btn-items" type="button">항목 편집</button>
         <button id="btn-sheet" type="button">4×4 샘플</button>
-        <button id="btn-prompt" type="button" title="지금 캐릭터를 이미지 AI용 글로 바꿉니다 (로컬 테스트)">프롬프트</button>
         <span id="build-status" class="status">parts 폴더를 저장하면 자동으로 빌드됩니다.</span>
       </div>
 
@@ -104,7 +103,7 @@
 
   <dialog id="prompt-dialog" class="sheet-dialog prompt-dialog">
     <form method="dialog" class="items-head">
-      <h2>프롬프트 <small>(로컬 테스트)</small></h2>
+      <h2>프롬프트</h2>
       <button value="close" aria-label="닫기">닫기</button>
     </form>
     <p class="items-help">지금 캐릭터의 특징만 이미지 생성 AI에 넣을 글로 바꿉니다(그림체·옷·배경은 빼고). 다른 조합 코드는 아래 칸에 붙여 넣으면 바로 바뀝니다.</p>
@@ -113,7 +112,7 @@
       <div class="prompt-head"><b>English</b><button id="prompt-copy-en" type="button">복사</button></div>
       <textarea id="prompt-en" readonly rows="5"></textarea>
     </div>
-    <div class="prompt-col">
+    <div class="prompt-col" id="prompt-nai-col" hidden>
       <div class="prompt-head"><b>NovelAI 태그</b><button id="prompt-copy-nai" type="button">복사</button></div>
       <textarea id="prompt-nai" readonly rows="4"></textarea>
     </div>

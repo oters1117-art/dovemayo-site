@@ -175,12 +175,17 @@
   function thumbSvg(key, id) {
     var s = CG.decode(THUMB_BASE);
     s[key] = id;
-    var vb = 'viewBox="' + THUMB_BOX[THUMB_OF[key] || 'face'] + '"';
+    var box = THUMB_BOX[THUMB_OF[key] || 'face'];
+    if (key === 'pupil' || key === 'hl') {
+      var e = CG.parts.eye.filter(function (p) { return p.id === s.eye; })[0], c = (e && e.iris) || [294, 362];
+      box = (c[0] - 33) + ' ' + (c[1] - 33) + ' 66 66';
+    }
+    var vb = 'viewBox="' + box + '"';
     var fix = function (m) { return m.replace(/viewBox="[^"]*"/, vb); };
     return '<span class="th-img">' + fix(CG.compose(s, { focus: key })) + '</span>';
   }
-  var openPick = null;   // 한 번에 하나만 연다
-  function closePick() { if (openPick) { openPick(); openPick = null; } }
+  var openPick = null;   // 열린 썸네일 카드 { close, step }. 한 번에 하나만 연다
+  function closePick() { if (openPick) { openPick.close(); openPick = null; } }
 
   function buildPartRow(cat) {
     var list = CG.parts[cat.key];
@@ -205,7 +210,7 @@
         if (!card.children.length) fillCard();
         card.hidden = false;
         pick.setAttribute('aria-expanded', 'true');
-        openPick = close;
+        openPick = { close: close, step: step, cols: cols };
         paintThumbs();
         var on = card.querySelector('[aria-pressed="true"]');
         if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
@@ -226,6 +231,19 @@
         grid.appendChild(b);
         thumbs[i] = b;
       });
+    }
+    // 키보드: ←→ 이전·다음, ↑↓ 한 줄 위·아래
+    function step(d) {
+      var i = 0;
+      for (var n = 0; n < list.length; n++) if (list[n].id === state[cat.key]) i = n;
+      i = Math.max(0, Math.min(list.length - 1, i + d));
+      set(cat.key, list[i].id);
+      if (thumbs[i] && thumbs[i].scrollIntoView) thumbs[i].scrollIntoView({ block: 'nearest' });
+    }
+    function cols() {
+      var t = thumbs.filter(Boolean), k = 1;
+      while (k < t.length && t[k].offsetTop === t[0].offsetTop) k++;
+      return k;
     }
     function paintThumbs() {
       list.forEach(function (p, i) { if (thumbs[i]) thumbs[i].setAttribute('aria-pressed', p.id === state[cat.key] ? 'true' : 'false'); });
@@ -398,12 +416,6 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
   }
 
-  function saveSvg() {
-    var svg = CG.compose(state, { size: CG.SIZE });
-    download('character-' + stamp() + '.svg', new Blob([svg], { type: 'image/svg+xml' }));
-    say('SVG로 저장했습니다.');
-  }
-
   // 지금 캐릭터를 PNG 로 만든다. mark 가 참이면 왼쪽 위에 dovemayo.com 을 작고 흐리게 적는다
   function renderPng(size, mark) {
     return new Promise(function (resolve, reject) {
@@ -517,13 +529,45 @@
   $('btn-show').addEventListener('click', showOff);
   $('ico-show').addEventListener('click', showOff);
   $('btn-png').addEventListener('click', savePng);
-  $('btn-svg').addEventListener('click', saveSvg);
+  // 프롬프트: 조합 코드를 이미지 AI용 글로 바꾼다 (js/prompt.js 는 처음 누를 때 불러온다). NovelAI 태그 칸은 로컬에서만 보인다
+  var $pdlg = $('prompt-dialog'), $pstat = $('prompt-status');
+  var showPrompt = function (st) {
+    var r = CG.prompt(st);
+    $('prompt-en').value = r.en; $('prompt-ko').value = r.ko; $('prompt-nai').value = SERVER ? r.nai : ''; $pstat.textContent = '';
+  };
+  var withPrompt = function (fn) {
+    if (CG.prompt) { fn(); return; }
+    var sc = document.createElement('script'); sc.src = 'js/prompt.js?' + Date.now(); sc.onload = fn;
+    sc.onerror = function () { alert('js/prompt.js 를 불러오지 못했습니다.'); };
+    document.head.appendChild(sc);
+  };
+  $('btn-prompt').onclick = function () {
+    withPrompt(function () { $('prompt-code').value = CG.encode(state); showPrompt(state); $pdlg.showModal(); });
+  };
+  $('prompt-code').addEventListener('input', function () {
+    var v = $('prompt-code').value.trim().replace(/^#/, '');
+    if (v.indexOf(':') < 0) { $pstat.textContent = '조합 코드가 아닙니다.'; return; }
+    showPrompt(CG.decode(v));
+  });
+  if (SERVER) $('prompt-nai-col').hidden = false;
+  ['en', 'nai', 'ko'].forEach(function (lang) {
+    $('prompt-copy-' + lang).onclick = function () {
+      var t = $('prompt-' + lang).value;
+      var done = function () { $pstat.textContent = ({ en: '영어', nai: 'NovelAI', ko: '한국어' })[lang] + ' 프롬프트를 복사했습니다.'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { $('prompt-' + lang).select(); document.execCommand('copy'); done(); });
+      else { $('prompt-' + lang).select(); document.execCommand('copy'); done(); }
+    };
+  });
   $('btn-copy').addEventListener('click', copyCode);
   $('btn-apply').addEventListener('click', applyCode);
   $code.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyCode(); });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && openPick) { closePick(); return; }
+    if (openPick) {
+      var mv = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: openPick.cols(), ArrowUp: -openPick.cols() }[e.key];
+      if (mv) { e.preventDefault(); openPick.step(mv); return; }
+      if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); closePick(); return; }
+    }
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
     if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks, null, real)); }
@@ -690,34 +734,6 @@
       });
     };
     $('btn-sheet').onclick = function () { drawSheet(); $sdlg.showModal(); };
-    // 프롬프트 (로컬 테스트): 조합 코드를 이미지 AI용 글로 바꾼다. js/prompt.js 는 여기서만 불러오므로 공개판에는 없다
-    var $pdlg = $('prompt-dialog'), $pstat = $('prompt-status');
-    var showPrompt = function (st) {
-      var r = CG.prompt(st);
-      $('prompt-en').value = r.en; $('prompt-ko').value = r.ko; $('prompt-nai').value = r.nai; $pstat.textContent = '';
-    };
-    var withPrompt = function (fn) {
-      if (CG.prompt) { fn(); return; }
-      var sc = document.createElement('script'); sc.src = 'js/prompt.js?' + Date.now(); sc.onload = fn;
-      sc.onerror = function () { alert('js/prompt.js 를 불러오지 못했습니다.'); };
-      document.head.appendChild(sc);
-    };
-    $('btn-prompt').onclick = function () {
-      withPrompt(function () { $('prompt-code').value = CG.encode(state); showPrompt(state); $pdlg.showModal(); });
-    };
-    $('prompt-code').addEventListener('input', function () {
-      var v = $('prompt-code').value.trim().replace(/^#/, '');
-      if (v.indexOf(':') < 0) { $pstat.textContent = '조합 코드가 아닙니다.'; return; }
-      showPrompt(CG.decode(v));
-    });
-    ['en', 'nai', 'ko'].forEach(function (lang) {
-      $('prompt-copy-' + lang).onclick = function () {
-        var t = $('prompt-' + lang).value;
-        var done = function () { $pstat.textContent = ({ en: '영어', nai: 'NovelAI', ko: '한국어' })[lang] + ' 프롬프트를 복사했습니다.'; };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { $('prompt-' + lang).select(); document.execCommand('copy'); done(); });
-        else { $('prompt-' + lang).select(); document.execCommand('copy'); done(); }
-      };
-    });
     $('sheet-again').onclick = drawSheet;
     $('sheet-save').onclick = function () {
       $sstat.textContent = '저장 중…';
