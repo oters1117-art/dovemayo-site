@@ -59,7 +59,7 @@
       smile: 'smiling crescent eyes', closed: 'closed eyes', fox: 'fox-like narrow eyes'
     },
     fold: { inner: 'inner double eyelids', outer: 'double eyelids' },
-    lash: { up1: '1 upper lash', up3: '3 upper lashes', up5: '5 upper lashes', down1: '1 downward upper lash', down3: '3 downward upper lashes', down5: '5 downward upper lashes' },
+    lash: { up1: '1 upper lash', up3: '3 upper lashes', up5: '5 upper lashes', down1: '1 downward upper lash', down1c: '1 downward upper lash', down3: '3 downward upper lashes', down5: '5 downward upper lashes' },
     lowlash: { n3: '3 lower lashes', n5: '5 lower lashes', n7: '7 lower lashes' },
     iris: { big: 'large irises', small: 'small irises (sanpaku)' },
     pupil: {
@@ -142,7 +142,7 @@
     eye: { round: 'round eyes', tsuri: 'tsurime', tare: 'tareme', jito: 'jitome', almond: '', cat: 'tsurime, slit pupils', sharp: 'sharp eyes, tsurime', deformed: 'large eyes',
       sleepy: 'half-closed eyes', slit: 'narrowed eyes', smile: '^ ^', closed: 'closed eyes', fox: 'narrowed eyes, tsurime' },
     fold: { inner: '', outer: '' },
-    lash: { up1: '', up3: 'eyelashes', up5: 'long eyelashes', down1: '', down3: 'eyelashes', down5: 'long eyelashes' },
+    lash: { up1: '', up3: 'eyelashes', up5: 'long eyelashes', down1: '', down1c: '', down3: 'eyelashes', down5: 'long eyelashes' },
     lowlash: { n3: 'lower eyelashes', n5: 'lower eyelashes', n7: 'lower eyelashes' },
     iris: { big: '', small: 'sanpaku, small pupils' },
     pupil: { big: '', small: 'small pupils', slit: 'slit pupils', ring: 'ringed eyes', rinnegan: 'ringed eyes', swirl: 'spiral eyes', heart: 'heart-shaped pupils', star: 'star-shaped pupils',
@@ -200,7 +200,7 @@
   var LOWLINE_EN = { on: 'lower eyeliner', tail: 'eyeliner continuing down from the outer corner along the lower lid',
     inner: 'eyeliner continuing down from the inner corner along the lower lid', winglow: 'outer-corner eyeliner plus a separate lower eyeliner', innerlow: 'inner-corner eyeliner joined to a lower eyeliner',
     full: 'eyes fully outlined with eyeliner' };
-  EN.lash = EN.lash || {}; EN.lash.down1 = '1 lash at the outer corner pointing down'; EN.lash.down3 = '3 lashes from two-thirds along the lid to the outer corner, pointing down'; EN.lash.down5 = '5 lashes from two-thirds along the lid to the outer corner, pointing down';
+  EN.lash = EN.lash || {}; EN.lash.down1 = '1 lash at the outer corner pointing down'; EN.lash.down1c = '1 lash on the outer half of the lid pointing down'; EN.lash.down3 = '3 lashes from two-thirds along the lid to the outer corner, pointing down'; EN.lash.down5 = '5 lashes from two-thirds along the lid to the outer corner, pointing down';
 
   // 'brown, red' + ' hair' → 'brown hair, red hair'
   function suffix(tags, word) { return tags ? tags.split(', ').map(function (t) { return t + ' ' + word; }).join(', ') : ''; }

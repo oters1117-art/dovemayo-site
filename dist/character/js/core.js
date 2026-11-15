@@ -600,7 +600,7 @@
 
   // 아래 속눈썹: 전부 같은 방향(아래 + 살짝 바깥)으로 그어서 끝이 모이거나 벌어지지 않게 한다
   function lowLashes(p, o, c) {
-    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.3;
+    var L = o.len || 4, end = along(p, 0), bx = end.out[0] * 0.45, by = 1, bl = Math.hypot(bx, by), R = o.radial != null ? o.radial : 0.7;
     bx /= bl; by /= bl;
     // shift: 가닥 전체를 바깥으로 미는 칸 수. 윤곽 끝을 넘어가면 끝의 방향대로 이어서 놓는다
     var at = spread(p, o, 13, 0.28), stepF = at.length > 1 ? at[1] - at[0] : 0, len = 0;
@@ -698,14 +698,14 @@
     if (on(ll) && (m = custom(eye, 'lowline', ll))) out += m;
     else if (on(ll)) {
       // 새 아이라인은 모두 아래 아이라인과 같은 굵기의 선 (면이 아니라)
-      var kind = ll.kind || 'lower', LW = ll.width || 5;
+      var kind = ll.kind || 'lower', LW = ll.width || 4;
       var line = function (pts) { return stroke(polyD(pts), 'cg-lash', ' style="stroke-width:' + LW + '"'); };
       var wl = whiteBottom(eye, true);
       wl = wl && wl.length > 3 ? resample(polyD(wl), 40) : null;   // 흰자 아래 윤곽, 바깥 눈꼬리 → 눈머리
       var lowerLine = function () {
         // 아래 라인을 면으로 그렸으면 그 모양을 아래 아이라인 색으로 칠한다
         if (!eye.lower) return '';
-        return eye.lowerShape ? '<g fill="var(--lash)">' + eye.lowerShape.replace(/fill="[^"]*"/g, '').replace(/fill:[^;"]*;?/g, '') + '</g>' : stroke(eye.lower, 'cg-lash', ' style="stroke-width:5"');
+        return eye.lowerShape ? '<g fill="var(--lash)">' + eye.lowerShape.replace(/fill="[^"]*"/g, '').replace(/fill:[^;"]*;?/g, '') + '</g>' : stroke(eye.lower, 'cg-lash', ' style="stroke-width:' + LW + '"');
       };
       if (kind === 'lower' || ll.lower) out += lowerLine();
       // 윗 라인과 잇기: 윗 라인 끝(뾰족한 끝)에서 몇 점 안쪽, 선이 아직 두꺼운 곳에서 시작해 흰자 테두리로 부드럽게 들어간다.

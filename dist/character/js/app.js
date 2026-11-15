@@ -186,6 +186,16 @@
   }
   var openPick = null;   // 열린 썸네일 카드 { close, step }. 한 번에 하나만 연다
   function closePick() { if (openPick) { openPick.close(); openPick = null; } }
+  // 위에 열린 카드가 접히면 아래 내용이 올라간다. 누른 버튼이 화면에서 같은 자리에 있도록 스크롤을 그만큼 옮긴다
+  function keepInPlace(node, before) {
+    var dy = node.getBoundingClientRect().top - before;
+    if (Math.abs(dy) < 1) return;
+    for (var p = node.parentElement; p && p !== document.body; p = p.parentElement) {
+      var oy = getComputedStyle(p).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) { p.scrollTop += dy; return; }
+    }
+    window.scrollBy(0, dy);
+  }
 
   function buildPartRow(cat) {
     var list = CG.parts[cat.key];
@@ -206,7 +216,9 @@
       var close = function () { card.hidden = true; pick.setAttribute('aria-expanded', 'false'); };
       pick.addEventListener('click', function () {
         if (!card.hidden) { closePick(); return; }
+        var before = pick.getBoundingClientRect().top;
         closePick();
+        keepInPlace(pick, before);
         if (!card.children.length) fillCard();
         card.hidden = false;
         pick.setAttribute('aria-expanded', 'true');
@@ -688,13 +700,14 @@
         $bstat.textContent = '서버에 연결하지 못했습니다. start.bat 창이 켜져 있는지 확인하세요.';
       });
     });
-    // 4×4 샘플: 고정한 항목은 그대로 두고 16명을 뽑아 한 장으로 보여 준다. 저장하면 samples 폴더에 PNG 로 남는다
+    // 3×3 샘플: 고정한 항목은 그대로 두고 9명을 뽑아 한 장으로 보여 준다. 저장하면 samples 폴더에 PNG 로 남는다
+    var SHEET_N = 3;
     var sheetStates = [], $sdlg = $('sheet-dialog'), $sgrid = $('sheet-grid'), $sstat = $('sheet-status');
     var drawSheet = function () {
       sheetStates = [];
       $sgrid.textContent = '';
       $sstat.textContent = '';
-      for (var i = 0; i < 16; i++) sheetCell(i);
+      for (var i = 0; i < SHEET_N * SHEET_N; i++) sheetCell(i);
     };
     // 한 칸: 얼굴을 누르면 불러오고, 왼쪽 위 버튼은 그 칸만 다시 뽑는다
     var sheetCell = function (i) {
@@ -709,15 +722,15 @@
       $sgrid.appendChild(cell);
     };
     var sheetPng = function () {
-      // 둥근 카드 16장: 칸 480, 사이 20, 바깥 여백 38, 모서리 35 (전체 2056px)
-      var cell = 480, gap = 20, pad = 38, rad = 35, full = cell * 4 + gap * 3 + pad * 2;
+      // 둥근 카드 9장: 칸 640, 사이 20, 바깥 여백 38, 모서리 40 (전체 2036px)
+      var N = SHEET_N, cell = 640, gap = 20, pad = 38, rad = 40, full = cell * N + gap * (N - 1) + pad * 2;
       var canvas = el('canvas', { width: full, height: full }), ctx = canvas.getContext('2d');
       ctx.fillStyle = '#f5f1ee'; ctx.fillRect(0, 0, full, full);
       return Promise.all(sheetStates.map(function (st, i) {
         return new Promise(function (resolve, reject) {
           var url = URL.createObjectURL(new Blob([CG.compose(st, { size: cell })], { type: 'image/svg+xml' })), img = new Image();
           img.onload = function () {
-            var x = pad + (i % 4) * (cell + gap), y = pad + Math.floor(i / 4) * (cell + gap);
+            var x = pad + (i % N) * (cell + gap), y = pad + Math.floor(i / N) * (cell + gap);
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(x + rad, y); ctx.arcTo(x + cell, y, x + cell, y + cell, rad); ctx.arcTo(x + cell, y + cell, x, y + cell, rad);
@@ -738,7 +751,7 @@
     $('sheet-save').onclick = function () {
       $sstat.textContent = '저장 중…';
       sheetPng().then(function (blob) {
-        return fetch('/api/sample?name=random-4x4-' + stamp() + '.png', { method: 'POST', body: blob }).then(function (r) { return r.json(); });
+        return fetch('/api/sample?name=random-3x3-' + stamp() + '.png', { method: 'POST', body: blob }).then(function (r) { return r.json(); });
       }).then(function (j) { $sstat.textContent = j.error ? j.error : j.saved + ' 에 저장했습니다.'; },
         function () { $sstat.textContent = '저장하지 못했습니다.'; });
     };
