@@ -1,6 +1,7 @@
 // dovemayo.com worker. Everything is static (dist/) except the suggestion board API:
 //   GET  /api/board/list            new (pending) and approved posts, all public
 //   GET|POST /api/board/show/list|submit|edit|delete   showcase posts {code, text}; edit/delete by the writer (same IP) or admin
+//   POST /api/board/show/like       {id}  toggles this visitor's 추천 (one per salted IP hash); list sends likes + liked
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve         {id}                      admin only
 //   POST /api/board/delete          {id}                      admin, or the writer (same IP)
@@ -69,7 +70,8 @@ const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300;
 async function show(request, env, path, admin) {
   const list = (await env.BOARD.get('show')) || [], me = await writer(request, env);
   if (path === 'list' && request.method === 'GET') {
-    return json({ admin, posts: list.slice(0, 600).map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me })) });
+    return json({ admin, posts: list.slice(0, 600).map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me,
+      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me) })) });
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   let body;
@@ -89,6 +91,17 @@ async function show(request, env, path, admin) {
     await env.BOARD.put('show', list);
     await env.BOARD.put(rateKey, { hour, n: used + 1 });
     return json({ ok: true, id });
+  }
+  if (path === 'like') {
+    // 추천: 같은 IP(소금 친 해시)당 한 번. 다시 누르면 취소된다
+    if (!me) return fail('추천할 수 없습니다.', 403);
+    const p = list.find((x) => x.id === body.id);
+    if (!p) return fail('없는 글입니다.', 404);
+    const likes = p.likes || [], i = likes.indexOf(me);
+    if (i < 0) likes.push(me); else likes.splice(i, 1);
+    p.likes = likes;
+    await env.BOARD.put('show', list);
+    return json({ ok: true, likes: likes.length, liked: i < 0 });
   }
   if (path === 'delete' || path === 'edit') {
     const i = list.findIndex((p) => p.id === body.id);

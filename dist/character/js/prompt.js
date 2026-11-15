@@ -177,6 +177,8 @@
   };
   // 2026-11-15 추가 파츠
   function add(dict, key, o) { dict[key] = dict[key] || {}; for (var k in o) dict[key][k] = o[k]; }
+  add(EN, 'front', { 'center-blunt-s': 'short narrow blunt bangs only in the center', 'center-blunt': 'narrow blunt bangs only in the center', 'center-blunt-l': 'long narrow blunt bangs only in the center' });
+  add(NAI, 'front', { 'center-blunt-s': 'blunt bangs, short bangs', 'center-blunt': 'blunt bangs', 'center-blunt-l': 'blunt bangs, long bangs' });
   add(EN, 'side', { 'curl-in-one': 'a single inward-curled side lock' });
   add(EN, 'extra', { stray: 'stray flyaway strands by the face', 'stray-line': 'stray flyaway strands on top of the head', 'sidetails-mini': 'tiny twin tails' });
   add(EN, 'back', { 'frontdrape-loose': 'hair loosely tied and draped over one shoulder', 'braid-loose-side': 'a loose side braid over one shoulder',
@@ -194,6 +196,11 @@
     EN.brow[id + '-bold'] = (EN.brow[id] || id + ' eyebrows') + ' (drawn bold)';
     NAI.brow[id + '-bold'] = /thick/.test(NAI.brow[id] || '') || id === 'thin' ? NAI.brow[id] : (NAI.brow[id] ? NAI.brow[id] + ', ' : '') + 'thick eyebrows';
   });
+
+  var LOWLINE_EN = { on: 'lower eyeliner', tail: 'eyeliner that dips down from the outer corner', wing: 'a short eyeliner line extending out from the outer corner',
+    inner: 'a short eyeliner line at the inner corner', winglow: 'outer-corner eyeliner plus a separate lower eyeliner', innerlow: 'inner-corner eyeliner joined to a lower eyeliner',
+    full: 'eyes fully outlined with eyeliner' };
+  EN.lash = EN.lash || {}; EN.lash.down1 = '1 upper lash at the outer corner pointing down';
 
   // 'brown, red' + ' hair' → 'brown hair, red hair'
   function suffix(tags, word) { return tags ? tags.split(', ').map(function (t) { return t + ' ' + word; }).join(', ') : ''; }
@@ -252,7 +259,7 @@
     en.push('Hair: ' + c(hair) + '. ' + join(hairKeys.map(function (k) { return piece(k, state, 'en'); })) + '.');
     var eyes = [piece('eye', state, 'en'), eye ? c(eye) + ' irises' : '', has('fold', state) && piece('fold', state, 'en'), has('iris', state) && piece('iris', state, 'en'),
       state.pupil !== 'basic' && piece('pupil', state, 'en'), has('hl', state) && piece('hl', state, 'en'), has('lash', state) && piece('lash', state, 'en'), has('lowlash', state) && piece('lowlash', state, 'en'),
-      state.lowline === 'on' && 'lower eyeliner'];
+      LOWLINE_EN[state.lowline]];
     ['eyeGap', 'eyeY', 'eyeSize', 'eyeTilt'].forEach(function (k) { if (tweak[k][state[k]]) eyes.push(tweak[k][state[k]]); });
     en.push('Eyes: ' + join(eyes) + '.' + (odd ? ' Heterochromia: the eye on the viewer\'s ' + (oddSide ? 'left' : 'right') + ' is ' + c(odd) + '.' : ''));
     var face = [piece('face', state, 'en'), skin ? c(skin) + ' skin' : '', has('ear', state) && piece('ear', state, 'en'), piece('brow', state, 'en'), piece('mouth', state, 'en'),
@@ -267,7 +274,7 @@
     ko.push('머리: ' + ck(hair) + '. ' + join(hairKeys.map(function (k) { return catName(k) + ' ' + piece(k, state, 'ko'); })) + '.');
     var eyesKo = [piece('eye', state, 'ko'), eye ? '눈동자 ' + ck(eye) : '', has('fold', state) && piece('fold', state, 'ko'), has('iris', state) && piece('iris', state, 'ko'),
       state.pupil !== 'basic' && '동공 ' + piece('pupil', state, 'ko'), has('hl', state) && '하이라이트 ' + piece('hl', state, 'ko'), has('lash', state) && '속눈썹 ' + piece('lash', state, 'ko'),
-      has('lowlash', state) && '아래 속눈썹 ' + piece('lowlash', state, 'ko'), state.lowline === 'on' && '아래 아이라인'];
+      has('lowlash', state) && '아래 속눈썹 ' + piece('lowlash', state, 'ko'), has('lowline', state) && '아이라인 ' + piece('lowline', state, 'ko')];
     ['eyeGap', 'eyeY', 'eyeSize', 'eyeTilt'].forEach(function (k) { if (tweakKo[k][state[k]]) eyesKo.push(tweakKo[k][state[k]]); });
     ko.push('눈: ' + join(eyesKo) + '.' + (odd ? ' 오드아이: 화면 ' + (oddSide ? '왼쪽' : '오른쪽') + ' 눈은 ' + ck(odd) + '.' : ''));
     var faceKo = [piece('face', state, 'ko'), skin ? '피부 ' + ck(skin) : '', has('ear', state) && piece('ear', state, 'ko'), '눈썹 ' + piece('brow', state, 'ko'), '입 ' + piece('mouth', state, 'ko'),
@@ -286,7 +293,7 @@
     if (odd && odd.id !== state.eyeColor) tags.push('heterochromia', suffix(nc('eye', eye), 'eyes'), suffix(nc('eye', odd), 'eyes'));
     else tags.push(suffix(nc('eye', eye), 'eyes'));
     ['eye', 'iris', 'pupil', 'hl', 'lash', 'lowlash', 'fold'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
-    if (state.lowline === 'on') tags.push('eyeliner');
+    if (has('lowline', state)) tags.push(state.lowline === 'full' || state.lowline === 'innerlow' ? 'eyeliner, thick eyeliner' : 'eyeliner');
     if (state.eyeSize === 'big') tags.push('large eyes');
     ['face', 'ear'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
     tags.push(nc('skin', skin));

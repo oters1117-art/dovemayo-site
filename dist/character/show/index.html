@@ -28,6 +28,9 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .item{padding:0;border:0;background:none;text-align:center;border-radius:16px;cursor:pointer;display:block;width:100%}
 .item .face{border-radius:16px;overflow:hidden;aspect-ratio:1;box-shadow:0 1px 2px rgba(60,40,30,.08),0 6px 16px rgba(60,40,30,.08)}
 .face svg{display:block;width:100%;height:100%}
+.item{position:relative}
+.item .likes{position:absolute;left:7px;top:7px;font-size:11.5px;line-height:1;padding:4px 7px 4px 6px;border-radius:999px;background:rgba(255,255,255,.88);color:var(--ink);box-shadow:0 1px 2px rgba(60,40,30,.15);pointer-events:none}
+.pop .acts .like[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 .item .cap{margin:6px 2px 0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.5em}
 .empty{color:var(--muted);font-size:13px}
 .dim{position:fixed;inset:0;background:rgba(30,24,22,.62);display:grid;place-items:center;padding:16px;z-index:10}
@@ -82,6 +85,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       <button type="button" id="pop-copy-code">코드 복사</button>
     </div>
     <div class="acts">
+      <button type="button" id="pop-like" class="like" aria-pressed="false">👍 추천</button>
       <button type="button" id="pop-copy-img">이미지 복사</button>
       <a id="pop-open" href="../">생성기에서 열기</a>
       <button type="button" id="pop-fix" hidden>수정</button>
@@ -152,6 +156,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
         var c = document.createElement('div'); c.className = 'cap'; c.textContent = p.text || '';
         b.setAttribute('aria-label', (p.text || '캐릭터') + ' 크게 보기');
         b.appendChild(f); b.appendChild(c);
+        // 추천 받은 글은 왼쪽 위에 작게 따봉과 숫자
+        if (p.likes) { var lk = document.createElement('span'); lk.className = 'likes'; lk.textContent = '👍 ' + p.likes; b.appendChild(lk); }
         b.onclick = function () { open(p); };
         g.appendChild(b);
       });
@@ -168,6 +174,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('pop-code').value = p.code;
     $('pop-open').href = '../#' + encodeURI(p.code);
     // 같은 IP로 올린 글은 올린 사람이 고치고 지울 수 있다 (관리자는 지우기만)
+    paintLike(p);
     $('pop-del').hidden = !(admin || p.mine);
     $('pop-fix').hidden = !p.mine;
     $('pop-edit').hidden = true;
@@ -176,6 +183,20 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('pop-close').focus();
   }
   function close() { $('dim').hidden = true; current = null; }
+  function paintLike(p) {
+    $('pop-like').setAttribute('aria-pressed', p.liked ? 'true' : 'false');
+    $('pop-like').textContent = '👍 추천' + (p.likes ? ' ' + p.likes : '');
+  }
+  // 추천: 한 사람(같은 IP)당 한 번, 다시 누르면 취소
+  $('pop-like').onclick = function () {
+    var p = current; if (!p) return;
+    $('pop-like').disabled = true;
+    api('like', { id: p.id }).then(function (r) {
+      p.likes = r.likes; p.liked = r.liked; paintLike(p);
+      note(r.liked ? '추천했습니다.' : '추천을 취소했습니다.');
+      load();
+    }, function (x) { note(x.message); }).then(function () { $('pop-like').disabled = false; });
+  };
   $('pop-close').onclick = close;
   $('dim').addEventListener('click', function (e) { if (e.target === $('dim')) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dim').hidden) close(); });

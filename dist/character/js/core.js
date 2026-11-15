@@ -542,7 +542,13 @@
 
   function lashes(p, c, o, dir) {
     var L = o.len || 16;
-    return spread(p, o, 14, 0.33).map(function (f) {
+    // span: [시작, 끝] 사이에 고르게 놓는다 (아래로 뻗는 속눈썹: 눈 2/3 지점부터 눈꼬리까지)
+    var at = o.span ? (function () {
+      var n = o.count || 3, a = [];
+      for (var k = 0; k < n; k++) a.push(n > 1 ? o.span[0] + (o.span[1] - o.span[0]) * k / (n - 1) : o.span[0]);
+      return a;
+    })() : spread(p, o, 14, 0.33);
+    return at.map(function (f) {
       var s = along(p, f), q = s.q, ox = s.out[0], oy = s.out[1];
       var nx = -oy, ny = ox;
       if (nx * (q[0] - c[0]) + ny * (q[1] - c[1]) < 0) { nx = -nx; ny = -ny; }
@@ -691,7 +697,11 @@
     var ll = opt.lowline;
     if (on(ll) && (m = custom(eye, 'lowline', ll))) out += m;
     else if (on(ll)) {
-      var kind = ll.kind || 'lower', ink = function (d) { return '<path d="' + d + '" fill="var(--lash)"/>'; };
+      // 새 아이라인은 모두 아래 아이라인과 같은 굵기의 선 (면이 아니라)
+      var kind = ll.kind || 'lower', LW = ll.width || 5;
+      var line = function (pts) { return stroke(polyD(pts), 'cg-lash', ' style="stroke-width:' + LW + '"'); };
+      var wl = whiteBottom(eye, true);
+      wl = wl && wl.length > 3 ? resample(polyD(wl), 40) : null;   // 흰자 아래 윤곽, 바깥 눈꼬리 → 눈머리
       var lowerLine = function () {
         // 아래 라인을 면으로 그렸으면 그 모양을 아래 아이라인 색으로 칠한다
         if (!eye.lower) return '';
@@ -699,24 +709,29 @@
       };
       if (kind === 'lower' || ll.lower) out += lowerLine();
       if (kind === 'tail' && up.length) {
-        // 윗 라인 바깥 끝에서 흰자 아래 윤곽을 따라 살짝 내려오는 꼬리 (점점 가늘게)
-        var wl = whiteBottom(eye, true);
-        if (wl && wl.length > 3) out += ink(taper([up[0]].concat(headOf(resample(polyD(wl), 40), ll.frac || 0.22)), ll.width || 5.5, 1));
+        // 윗 라인 바깥 끝에서 흰자 아래 윤곽을 따라 살짝 내려오는 꼬리
+        if (wl) out += line([up[0]].concat(headOf(wl, ll.frac || 0.22)));
       }
       if (kind === 'wing' && up.length) {
-        // 끝 날개: 윗 라인 바깥 끝에서 바깥 위로 뻗는 뾰족한 획
+        // 끝 라인: 윗 라인 바깥 끝에서 바깥 위로 뻗는다
         var e0 = along(up, 0), L = ll.len || 19, dx = e0.out[0] < 0 ? -1 : 1, dy = -(ll.lift || 1.0), dl = Math.hypot(dx, dy);
         var tip = [up[0][0] + dx / dl * L, up[0][1] + dy / dl * L];
         var ctl = [up[0][0] + dx / dl * L * 0.5, up[0][1] + dy / dl * L * 0.5 + L * 0.12];
-        out += ink(taper([up[3], up[2], up[1]].concat(quadPts(up[0], ctl, tip, 8)), 7, 0.8));
+        out += line(quadPts(up[0], ctl, tip, 8));
       }
-      if (kind === 'inner' && up.length) {
-        // 눈머리 라인(몽고주름): 윗 라인 안쪽 끝에서 코 쪽으로 조금 나가며 아래로 꺾인다
+      if ((kind === 'inner' || kind === 'innerlow') && up.length) {
+        // 안쪽 라인(몽고주름): 윗 라인 안쪽 끝에서 코 쪽으로 조금 나가며 아래로 꺾인다
         var e1 = along(up, 1), q1 = up[up.length - 1], ix = -e1.out[0], iy = -e1.out[1];
         var Li = ll.len || 13;
         var tip2 = [q1[0] + ix * Li * 0.35, q1[1] + Li];
         var ctl2 = [q1[0] + ix * Li * 0.6, q1[1] + iy * Li * 0.6 + Li * 0.25];
-        out += ink(taper([up[up.length - 3], up[up.length - 2]].concat(quadPts(q1, ctl2, tip2, 8)), 5.5, 0.8));
+        if (kind === 'inner') out += line(quadPts(q1, ctl2, tip2, 8));
+        // 안쪽 + 아래: 안쪽 끝에서 흰자 아래 윤곽으로 이어져 눈꼬리 쪽으로 75% 까지
+        else if (wl) out += line([q1].concat(headOf(wl.slice().reverse(), ll.frac || 0.75)));
+      }
+      if (kind === 'full' && up.length && wl) {
+        // 풀 라인: 윗 라인 바깥 끝 → 흰자 아래 윤곽 전체 → 윗 라인 안쪽 끝. 눈이 선으로 닫힌다
+        out += line([up[0]].concat(wl, [up[up.length - 1]]));
       }
     }
     if (on(opt.lowlash)) {
