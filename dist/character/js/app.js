@@ -12,17 +12,22 @@
   var history = [];
   var cursor = -1;
   // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다
+  // 현실 모드(판타지 빼기) 버튼은 주인 지시로 없앴다(2026-11-16). 랜덤은 판타지 선택지도 비중대로 뽑는다
   var real = {};
-  try { real = JSON.parse(localStorage.getItem('cg-real') || '{}') || {}; } catch (e) { real = {}; }
   var controls = {}; // key -> 화면 갱신 함수
 
   var $ = function (id) { return document.getElementById(id); };
   // start.bat 로 띄운 로컬 서버에서 열었는지 (파일 열기·빌드·항목 편집은 서버가 있어야 된다).
   // 홈페이지에 올린 것도 http 로 열리므로 주소가 이 컴퓨터일 때만 켠다
   var SERVER = location.protocol.indexOf('http') === 0 && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-  // 랜덤 성별 비율 (로컬 전용 시험): 0 = 여자(여캐 비중 그대로), 1 = 남자(_parts.json 의 wm). 랜덤에만 쓴다.
-  // 열 때마다 여자 끝에서 시작한다. 공개 화면에서는 슬라이더가 없고 늘 0
+  // 랜덤 성별 비율 (2026-11-16 공개): 0 = 여자(여캐 비중 그대로), 1 = 남자(_parts.json 의 wm). 랜덤에만 쓴다.
+  // 열 때마다 여자 끝에서 시작한다. PC(랜덤 줄 아래)와 휴대폰(랜덤 버튼 아래 세로) 슬라이더는 같은 값
   var masc = 0;
+  [['masc', 'masc-m'], ['masc-m', 'masc']].forEach(function (pair) {
+    var inp = document.getElementById(pair[0]), other = document.getElementById(pair[1]);
+    if (!inp) return;
+    inp.addEventListener('input', function () { masc = parseFloat(inp.value) || 0; if (other) other.value = inp.value; });
+  });
   var $preview = $('preview'), $code = $('code'), $status = $('status');
   var statusTimer = null;
 
@@ -81,8 +86,7 @@
   // ---------- 파츠 줄 ----------
   var ICON = {
     random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
-    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
-    real: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
     // 좌우 반전: 가운데 축(점선)을 향한 삼각형 두 개
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M3 6.5 9 12l-6 5.5z"/><path d="M21 6.5 15 12l6 5.5z"/></svg>',
     // 대칭 / 왼쪽만 / 오른쪽만: 그려지는 쪽은 채우고, 안 그려지는 쪽은 흐린 테두리만
@@ -144,17 +148,6 @@
   }
 
   // 현실 모드 버튼 (건물): 켜면 이 항목의 랜덤에서 판타지 선택지가 빠진다. 직접 고르는 것은 막지 않는다
-  function realButton(cat) {
-    var b = iconButton('real', 'real', cat.name + ' 현실 모드', '현실 모드: 랜덤에서 판타지 요소를 뺌');
-    b.setAttribute('aria-pressed', real[cat.key] ? 'true' : 'false');
-    b.addEventListener('click', function () {
-      if (real[cat.key]) delete real[cat.key]; else real[cat.key] = true;
-      b.setAttribute('aria-pressed', real[cat.key] ? 'true' : 'false');
-      try { localStorage.setItem('cg-real', JSON.stringify(real)); } catch (e) {}
-    });
-    return b;
-  }
-
   // 지금 고른 파츠의 SVG 를 연결된 편집기로 연다. 수치만 있는 항목은 그 폴더의 _parts.json 을 연다
   function fileButton(cat) {
     var b = el('button', { type: 'button', class: 'file', title: '지금 고른 파츠 파일을 편집기로 열기' }, '파일');
@@ -272,8 +265,7 @@
     row.appendChild(select || pick);
     var tools = el('span', { class: 'tools' });
     var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
-    var hasFantasy = list.some(function (p) { return p.fantasy; });
-    tools.appendChild(flip || (hasFantasy ? realButton(cat) : el('span', { class: 'tool-gap' })));
+    tools.appendChild(flip || el('span', { class: 'tool-gap' }));
     tools.appendChild(diceButton(cat.key));
     tools.appendChild(lockButton(cat.key));
     if (SERVER) tools.appendChild(fileButton(cat));
@@ -705,16 +697,6 @@
   if (SERVER) {
     var $bstat = $('build-status');
     $('build-bar').hidden = false;
-    // PC(랜덤 줄 아래)와 휴대폰(랜덤 버튼 아래 세로) 슬라이더는 같은 값을 쓴다
-    document.querySelector('.masc-row').hidden = false;
-    document.querySelector('.masc-v').hidden = false;
-    var mascInputs = [$('masc'), $('masc-m')];
-    mascInputs.forEach(function (inp) {
-      inp.addEventListener('input', function () {
-        masc = parseFloat(inp.value) || 0;
-        mascInputs.forEach(function (o) { if (o !== inp) o.value = inp.value; });
-      });
-    });
     var showBuild = function (r) {
       var warn = /확인할 것 (\d+)건/.exec(r.output || '');
       $bstat.textContent = (r.ok ? '빌드 완료' : '빌드 실패') + (warn ? ' · 확인할 것 ' + warn[1] + '건' : '') + (r.at ? ' (' + r.at + ')' : '');

@@ -230,7 +230,8 @@ button.primary:hover { background: #4d403b; }
 .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tool:disabled { opacity: .28; cursor: default; }
 .flip.idle { opacity: .4; }
-.flip[aria-pressed="true"], .real[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* 반전 켜짐: 덜 진한 갈색 (2026-11-16, 예전 --accent 는 너무 진함) */
+.flip[aria-pressed="true"] { background: #b39484; border-color: #b39484; color: #fff; }
 
 .lock[aria-pressed="true"] {
   background: var(--on);
