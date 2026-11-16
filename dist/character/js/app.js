@@ -502,11 +502,12 @@
     } else fallback();
   }
 
-  function applyCode() {
-    var text = $code.value.trim().replace(/^#/, '');
-    if (text.indexOf(':') < 0) { say('조합 코드 형식이 아닙니다.'); return; }
+  function applyCode(text) {
+    text = (typeof text === 'string' ? text : $code.value).trim().replace(/^.*#/, '');
+    if (text.indexOf(':') < 0) { say('조합 코드 형식이 아닙니다.'); return false; }
     commit(CG.decode(text));
     say('조합 코드를 적용했습니다.');
+    return true;
   }
 
   // ---------- 시작 ----------
@@ -571,8 +572,16 @@
     };
   });
   $('btn-copy').addEventListener('click', copyCode);
-  $('btn-apply').addEventListener('click', applyCode);
   $code.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyCode(); });
+  // 붙여 넣으면 바로 적용한다. 조합 코드 칸 말고 화면 아무 데서나 붙여 넣어도 (다른 입력칸이 아니면) 조합 코드면 적용
+  document.addEventListener('paste', function (e) {
+    var t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    if (typing && t !== $code) return;
+    var text = ((e.clipboardData || window.clipboardData) || { getData: function () { return ''; } }).getData('text') || '';
+    if (text.indexOf(':') < 0) return;
+    e.preventDefault();
+    if (applyCode(text)) $code.blur();
+  });
 
   document.addEventListener('keydown', function (e) {
     if (openPick) {
