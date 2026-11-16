@@ -893,7 +893,7 @@
     // 뒷머리가 덮지 않은 곳(곱슬 숏의 정수리 등)은 윤곽선이 그대로 보인다.
     var noCap = backPart && backPart.noCap, noTuck = noCap || (backPart && backPart.down);
     put('body', base.body);
-    // 목(base/neck.svg)을 옷 위에 한 번 더: 티의 뒷깃, 앞치마 끈처럼 목 뒤로 가는 부분이 가려진다. 셔츠 깃·터틀넥·재킷(clothUp)은 목 앞
+    // 목(base/body.svg 의 top-half)을 옷 위에 한 번 더: 티의 뒷깃, 앞치마 끈처럼 목 뒤로 가는 부분이 가려진다. 셔츠 깃·터틀넥·재킷(clothUp)은 목 앞
     if (base.neck) put('skinNeck', base.neck);
     put('hairBase', { half: (hair.fill || '') + (noCap ? '' : hair.cap || '') + (noTuck ? '' : hair.tuck || '') });
     if (noCap && hair.cap) {
