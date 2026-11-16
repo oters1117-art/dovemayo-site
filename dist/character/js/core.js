@@ -25,7 +25,7 @@
   var IRIS_CENTER = [294, 362];    // 눈 파일에 iris 표시가 없을 때 쓰는 중심
 
   // 아래 -> 위 순서
-  var LAYERS = ['hairBack', 'body', 'cloth', 'clothUp', 'hairMid', 'hairBase', 'ear', 'face', 'skin', 'makeup', 'skinTop', 'mouth', 'eye',
+  var LAYERS = ['hairBack', 'body', 'cloth', 'skinNeck', 'clothUp', 'hairMid', 'hairBase', 'ear', 'face', 'skin', 'makeup', 'skinTop', 'mouth', 'eye',
     'hairLine', 'brow', 'glasses', 'hairFront', 'hairSide', 'hairTop', 'acc'];
 
   // 화면의 묶음. 위에서부터 이 순서로 놓인다
@@ -893,6 +893,8 @@
     // 뒷머리가 덮지 않은 곳(곱슬 숏의 정수리 등)은 윤곽선이 그대로 보인다.
     var noCap = backPart && backPart.noCap, noTuck = noCap || (backPart && backPart.down);
     put('body', base.body);
+    // 목(base/neck.svg)을 옷 위에 한 번 더: 티의 뒷깃, 앞치마 끈처럼 목 뒤로 가는 부분이 가려진다. 셔츠 깃·터틀넥·재킷(clothUp)은 목 앞
+    if (base.neck) put('skinNeck', base.neck);
     put('hairBase', { half: (hair.fill || '') + (noCap ? '' : hair.cap || '') + (noTuck ? '' : hair.tuck || '') });
     if (noCap && hair.cap) {
       // 칠은 제자리에 두고 윤곽선만, 뒷머리 모양이 겹치는 곳을 지워서 긋는다 (마스크: 뒷머리 = 검정)
