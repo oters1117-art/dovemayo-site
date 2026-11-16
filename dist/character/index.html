@@ -13,6 +13,8 @@
         <!-- 휴대폰에서만 보이는 버튼: 카드 양옆 여백에 놓인다 (카드 아래 버튼 대신). 왼쪽은 랜덤, 오른쪽은 이전·자랑·복사 -->
         <div class="card-tools">
           <button id="ico-random" class="ico go" type="button" aria-label="랜덤" title="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg><span>랜덤</span></button>
+          <!-- 휴대폰: 랜덤 아래 빈 세로칸에 여자 ─ 남자 슬라이더 (위 = 여자) -->
+          <div class="masc-v" hidden><span>여자</span><input id="masc-m" class="masc-input" type="range" min="0" max="1" step="0.1" value="0" aria-label="랜덤 성별 비율: 여자에서 남자 쪽으로"><span>남자</span></div>
         </div>
         <div class="preview-wrap">
           <div id="preview" class="preview" aria-label="캐릭터 미리보기"></div>
@@ -30,6 +32,9 @@
         <button id="btn-prev" type="button" title="이전 캐릭터 (←)">이전</button>
         <button id="btn-next" type="button" title="다음 캐릭터 (→)">다음</button>
       </div>
+
+      <!-- 랜덤 성별 비율: 왼쪽 끝 = 여자만, 오른쪽 끝 = 남자 쪽 파츠 비중 -->
+      <div class="masc-row" hidden><span>여자</span><input id="masc" class="masc-input" type="range" min="0" max="1" step="0.1" value="0" aria-label="랜덤 성별 비율: 여자에서 남자 쪽으로"><span>남자</span></div>
 
       <div class="actions four">
         <button id="btn-png" type="button">PNG 저장</button>
@@ -105,7 +110,7 @@
       <h2>프롬프트</h2>
       <button value="close" aria-label="닫기">닫기</button>
     </form>
-    <p class="items-help">지금 캐릭터의 특징만 이미지 생성 AI에 넣을 글로 바꿉니다(그림체·옷·배경은 빼고). 다른 조합 코드는 아래 칸에 붙여 넣으면 바로 바뀝니다.</p>
+    <p class="items-help">지금 캐릭터의 특징만 이미지 생성 AI에 넣을 글로 바꿉니다(그림체·배경은 빼고). 다른 조합 코드는 아래 칸에 붙여 넣으면 바로 바뀝니다.</p>
     <input id="prompt-code" type="text" spellcheck="false" aria-label="조합 코드">
     <div class="prompt-col">
       <div class="prompt-head"><b>English</b><button id="prompt-copy-en" type="button">복사</button></div>

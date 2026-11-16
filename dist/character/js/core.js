@@ -25,7 +25,7 @@
   var IRIS_CENTER = [294, 362];    // 눈 파일에 iris 표시가 없을 때 쓰는 중심
 
   // 아래 -> 위 순서
-  var LAYERS = ['hairBack', 'body', 'hairMid', 'hairBase', 'ear', 'face', 'skin', 'makeup', 'skinTop', 'mouth', 'eye',
+  var LAYERS = ['hairBack', 'body', 'cloth', 'clothUp', 'hairMid', 'hairBase', 'ear', 'face', 'skin', 'makeup', 'skinTop', 'mouth', 'eye',
     'hairLine', 'brow', 'glasses', 'hairFront', 'hairSide', 'hairTop', 'acc'];
 
   // 화면의 묶음. 위에서부터 이 순서로 놓인다
@@ -34,6 +34,7 @@
     { key: 'eyes', name: '눈' },
     { key: 'face', name: '얼굴' },
     { key: 'acc', name: '악세사리' },
+    { key: 'cloth', name: '옷' },
     { key: 'bg', name: '배경' }
   ];
 
@@ -41,7 +42,7 @@
   // 같은 레이어에 그리는 항목(front/extra, makeup/lip)은 이 순서대로 쌓인다
   var CATEGORIES = [
     { key: 'front', code: 'hf', name: '앞머리', group: 'hair' },
-    { key: 'extra', code: 'hx', name: '추가머리', group: 'hair', noneWeight: 0.7 },
+    { key: 'extra', code: 'hx', name: '추가머리', group: 'hair', noneWeight: 0.7, noneM: 0.85 },
     { key: 'side', code: 'hs', name: '옆머리', group: 'hair' },
     { key: 'back', code: 'hb', name: '뒷머리', group: 'hair' },
     { key: 'eye', code: 'e', name: '눈 모양', group: 'eyes', sub: 'eye', type: 'eye' },
@@ -59,10 +60,10 @@
     { key: 'face', code: 'f', name: '얼굴형', group: 'face' },
     { key: 'ear', code: 'er', name: '귀 모양', group: 'face' },
     { key: 'skinfx', code: 's', name: '피부특징', group: 'face', noneWeight: 0.6 },
-    { key: 'makeup', code: 'k', name: '볼터치', group: 'face', noneWeight: 0.25 },
+    { key: 'makeup', code: 'k', name: '볼터치', group: 'face', noneWeight: 0.25, noneM: 0.97 },
     // 눈가: 눈 밑 섀도(그림) / 애교살 / 다크서클(엔진이 아래 라인을 따라 그림) 중 하나만
     { key: 'around', code: 'ey', name: '눈가', group: 'face' },
-    { key: 'lip', code: 'kl', name: '립', group: 'face', noneWeight: 0.5 },
+    { key: 'lip', code: 'kl', name: '립', group: 'face', noneWeight: 0.5, noneM: 1 },
     { key: 'brow', code: 'b', name: '눈썹', group: 'face' },
     { key: 'mouth', code: 'm', name: '입', group: 'face' },
     { key: 'mouthY', code: 'xm', name: '입 높이', group: 'face', type: 'eye' },
@@ -71,10 +72,15 @@
     { key: 'browGap', code: 'bx', name: '눈썹 간격', group: 'face', type: 'eye' },
     { key: 'browY', code: 'by', name: '눈썹 높이', group: 'face', type: 'eye' },
     { key: 'browTilt', code: 'bt', name: '눈썹 각도', group: 'face', type: 'eye' },
-    { key: 'acc', code: 'a', name: '헤어 악세사리', group: 'acc', noneWeight: 0.65 },
+    { key: 'acc', code: 'a', name: '헤어 악세사리', group: 'acc', noneWeight: 0.65, noneM: 0.95 },
     { key: 'glasses', code: 'g', name: '안경', group: 'acc', noneWeight: 0.75 },
-    { key: 'earring', code: 'ae', name: '귀걸이', group: 'acc', noneWeight: 0.6 },
-    { key: 'facewear', code: 'af', name: '마스크 · 반창고', group: 'acc', noneWeight: 0.9 }
+    { key: 'earring', code: 'ae', name: '귀걸이', group: 'acc', noneWeight: 0.6, noneM: 0.75 },
+    { key: 'facewear', code: 'af', name: '마스크 · 반창고', group: 'acc', noneWeight: 0.9 },
+    // 옷 (2026-11-16): 기본은 없음 = 피부. 목 장식은 옷에 neckAt 이 있을 때만 그 높이에 그린다
+    { key: 'cloth', code: 'c', name: '상의', group: 'cloth' },
+    { key: 'neck', code: 'n', name: '목 장식', group: 'cloth' },
+    // 외투: 상의 위. 앞이 열려 상의가 보인다. 셔츠 깃(clothUp)보다 아래(조끼·가디건·앞치마) 또는 위(재킷·코트·점퍼)
+    { key: 'outer', code: 'o', name: '외투', group: 'cloth', noneWeight: 0.55, noneM: 0.45 }
   ];
 
   // after: 그 항목 바로 뒤에 놓는다 (없으면 묶음·소분류의 맨 뒤)
@@ -85,6 +91,9 @@
     { key: 'oddColor', code: 'co', name: '오드아이', palette: 'odd', group: 'eyes', sub: 'iris' },
     { key: 'skinColor', code: 'cs', name: '피부색', palette: 'skin', group: 'face', after: 'face' },
     { key: 'accColor', code: 'ca', name: '악세사리 색', palette: 'acc', group: 'acc' },
+    { key: 'clothColor', code: 'cc', name: '상의 색', palette: 'cloth', group: 'cloth' },
+    { key: 'outerColor', code: 'cw', name: '외투 색', palette: 'outer', group: 'cloth' },
+    { key: 'clothColor2', code: 'cp', name: '포인트 색', palette: 'cloth2', group: 'cloth' },
     { key: 'bgColor', code: 'cb', name: '배경 색', palette: 'bg', group: 'bg' }
   ];
 
@@ -104,8 +113,21 @@
       { items: ['mouth', 'mouthY', 'lip', 'ear'] }
     ] },
     { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }] },
+    { group: 'cloth', subs: [{ items: ['cloth', 'clothColor'] }, { items: ['outer', 'outerColor'] }, { items: ['neck', 'clothColor2'] }] },
     { group: 'bg', subs: [{ items: ['bgColor'] }] }
   ];
+
+  // 옷은 아직 로컬에서만 (주인 2026-11-16 "아직 옷은 사이트에 올리지 마").
+  // 공개 사이트(dovemayo.com)에서는 옷 묶음을 숨기고 예전처럼 흰 라운드넥 티만 입힌다. 로컬에서 공개 화면을 보려면 주소에 ?public
+  var HIDE_CLOTHES = typeof location !== 'undefined' &&
+    (/(^|\.)dovemayo\.com$|workers\.dev$/.test(location.hostname || '') || /[?&]public\b/.test(location.search || ''));
+  function publicClothes(s) {
+    if (!HIDE_CLOTHES) return s;
+    var d = defaultState();
+    s.cloth = 'tee'; s.neck = 'none'; s.outer = 'none';
+    s.clothColor = d.clothColor; s.outerColor = d.outerColor; s.clothColor2 = d.clothColor2;
+    return s;
+  }
 
   // 화면 순서: [{ group, sub, items: [항목 또는 색 슬롯] }]
   function panel() {
@@ -117,6 +139,7 @@
       return null;
     }
     LAYOUT.forEach(function (L) {
+      if (HIDE_CLOTHES && L.group === 'cloth') return;
       var g = GROUPS.filter(function (x) { return x.key === L.group; })[0], blocks = [];
       L.subs.forEach(function (sb) {
         var items = [];
@@ -124,7 +147,7 @@
         blocks.push({ group: g, sub: sb.name ? { key: sb.name, name: sb.name } : null, items: items });
       });
       CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) {
-        if (c.group === g.key && !used[c.key]) { blocks[blocks.length - 1].items.push(find(c.key)); used[c.key] = 1; }
+        if (c.group === g.key && !used[c.key] && blocks.length) { blocks[blocks.length - 1].items.push(find(c.key)); used[c.key] = 1; }
       });
       out = out.concat(blocks);
     });
@@ -238,7 +261,7 @@
     var s = defaultState();
     s.flip = {};
     s.only = {};
-    if (!state) return s;
+    if (!state) return publicClothes(s);
     FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
     SIDE_KEYS.forEach(function (k) { var v = state.only && state.only[k]; if (v === 'l' || v === 'r') s.only[k] = v; });
     CATEGORIES.forEach(function (c) {
@@ -255,22 +278,30 @@
     COLOR_SLOTS.forEach(function (c) {
       if (colorIn(c.palette, state[c.key])) s[c.key] = state[c.key];
     });
-    return s;
+    return publicClothes(s);
   }
 
-  function pickWeighted(list, rnd) {
+  // 남캐 비율 masc (0~1): 0 이면 w 그대로, 1 이면 wm(남캐 비중, 없으면 w). 그 사이는 섞는다
+  function weightOf(p, masc) {
+    var w = p.w == null ? 1 : p.w;
+    if (!masc) return w;
+    var m = p.wm == null ? w : p.wm;
+    return w * (1 - masc) + m * masc;
+  }
+  function pickWeighted(list, rnd, masc) {
     var total = 0, i;
-    for (i = 0; i < list.length; i++) total += (list[i].w == null ? 1 : list[i].w);
+    for (i = 0; i < list.length; i++) total += weightOf(list[i], masc);
+    if (!(total > 0)) return list[0];
     var r = rnd() * total;
     for (i = 0; i < list.length; i++) {
-      r -= (list[i].w == null ? 1 : list[i].w);
+      r -= weightOf(list[i], masc);
       if (r < 0) return list[i];
     }
     return list[list.length - 1];
   }
 
   // real: { key: true } 인 항목은 fantasy 표시가 붙은 선택지를 뽑지 않는다 (현실 모드)
-  function randomPart(cat, rnd, real) {
+  function randomPart(cat, rnd, real, masc) {
     var list = parts[cat.key];
     if (!list.length) return null;
     if (real && real[cat.key]) {
@@ -279,21 +310,30 @@
     }
     if (cat.noneWeight != null) {
       var none = findIn(list, 'none');
-      var rest = list.filter(function (p) { return !p.none; });
-      if (none && (rnd() < cat.noneWeight || !rest.length)) return none.id;
-      return pickWeighted(rest, rnd).id;
+      var rest = list.filter(function (p) { return !p.none && weightOf(p, masc) > 0; });
+      // 남캐 쪽으로 갈수록 '없음' 확률은 noneM(없으면 noneWeight) 쪽으로
+      var pn = masc && cat.noneM != null ? cat.noneWeight * (1 - masc) + cat.noneM * masc : cat.noneWeight;
+      if (none && (rnd() < pn || !rest.length)) return none.id;
+      return pickWeighted(rest, rnd, masc).id;
     }
-    return pickWeighted(list, rnd).id;
+    return pickWeighted(list, rnd, masc).id;
   }
 
   // locks: { key: true } 인 항목은 prev 값을 유지한다
-  function randomState(prev, locks, rnd, real) {
+  function randomState(prev, locks, rnd, real, masc) {
     rnd = rnd || Math.random;
     locks = locks || {};
     var b = normalize(prev), s = {};
     CATEGORIES.forEach(function (c) {
-      s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd, real);
+      s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd, real, masc);
     });
+    // 목 장식은 넥타이·리본을 달 곳(neckAt)이 있는 옷에만
+    if (!locks.neck && !(findIn(parts.cloth || [], s.cloth) || {}).neckAt) s.neck = 'none';
+    // 외투를 안 입는 상의(오프숄더)
+    if (!locks.outer && (findIn(parts.cloth || [], s.cloth) || {}).noOuter) s.outer = 'none';
+    // onlyOver 가 있는 외투(니트 조끼)는 그 상의 위에만
+    var ov = (findIn(parts.outer || [], s.outer) || {}).onlyOver;
+    if (!locks.outer && ov && ov.indexOf(s.cloth) < 0) s.outer = 'none';
     s.flip = {};
     // 좌우 반전은 켜 둔 대로 유지한다 (랜덤이 바꾸지 않는다)
     FLIP_KEYS.forEach(function (k) { if (b.flip[k]) s.flip[k] = true; });
@@ -302,10 +342,10 @@
     COLOR_SLOTS.forEach(function (c) {
       s[c.key] = locks[c.key] ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
     });
-    return s;
+    return publicClothes(s);
   }
 
-  function randomOne(prev, key, rnd, real) {
+  function randomOne(prev, key, rnd, real, masc) {
     rnd = rnd || Math.random;
     var s = normalize(prev), i, cur = s[key], tries = 0;
     for (i = 0; i < CATEGORIES.length; i++) {
@@ -313,7 +353,7 @@
       var pool = parts[key];
       if (real && real[key]) { var plain = pool.filter(function (p) { return !p.fantasy; }); if (plain.length) pool = plain; }
       if (pool.length < 2) return s;
-      do { s[key] = pickWeighted(pool, rnd).id; } while (s[key] === cur && ++tries < 20);
+      do { s[key] = pickWeighted(pool, rnd, masc).id; } while (s[key] === cur && ++tries < 20);
       return s;
     }
     for (i = 0; i < COLOR_SLOTS.length; i++) {
@@ -378,6 +418,8 @@
     var hair = colorIn('hair', s.hairColor).hex;
     var eye = eyeVars(colorIn('eye', s.eyeColor).hex);
     var acc = colorIn('acc', s.accColor).hex;
+    var cloth = (colorIn('cloth', s.clothColor) || { hex: '#f9f2f1' }).hex, cloth2 = (colorIn('cloth2', s.clothColor2) || { hex: '#3f5a8a' }).hex;
+    var outer = (colorIn('outer', s.outerColor) || { hex: '#b88a5a' }).hex;
     var SKIN = skinOf(s);
     return {
       '--hair': hair,
@@ -397,9 +439,14 @@
       '--pupil': eye['--pupil'],
       '--lash': '#2b201d',
       '--glass': '#3a3336',
-      '--cloth': '#f9f2f1',
       '--acc': acc,
-      '--acc-line': mix(acc, '#1c1412', 0.55)
+      '--acc-line': mix(acc, '#1c1412', 0.55),
+      '--cloth': cloth,
+      '--cloth-line': mix(cloth, '#1c1412', 0.5),
+      '--cloth2': cloth2,
+      '--cloth2-line': mix(cloth2, '#1c1412', 0.5),
+      '--outer': outer,
+      '--outer-line': mix(outer, '#1c1412', 0.5)
     };
   }
 
@@ -877,6 +924,14 @@
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
       // 동물 귀(earringAt 이 있는 귀 모양)에서는 귀걸이를 그 귀로 옮겨 머리 위 레이어에 그린다. 기준은 사람 귓불 (201, 440)
       var earAt = c.key === 'earring' ? (part('ear') || {}).earringAt : null;
+      // 목 장식: 옷의 neckAt 높이로 옮긴다 (그림은 y=632 기준). neckAt 이 없는 옷(티·피부)에는 안 그린다
+      if (c.key === 'neck') {
+        var na = (part('cloth') || {}).neckAt;
+        if (!na) return;
+        tf = [0, na - 632];
+      }
+      // 목 장식을 깃 위(clothUp)에: neckUp 인 상의(세일러) 또는 up 인 목 장식(리본 타이). 넥타이는 깃 아래
+      var upNeck = c.key === 'neck' && ((part('cloth') || {}).neckUp || p.up);
       // half 조각만 있는 파츠는 왼쪽만 / 오른쪽만 그릴 수 있다
       var sd = flipKind(s, c.key) === 'side' ? s.only[c.key] : null;
       for (var l in p.pieces) {
@@ -901,7 +956,7 @@
             full: pc.full ? '<g transform="translate(0 ' + tf[1] + ')">' + pc.full + '</g>' : ''
           };
         }
-        put(l, pc, sd);
+        put(upNeck && l === 'cloth' ? 'clothUp' : l, pc, sd);
       }
       if (p.defs) defs += p.defs;
     });
@@ -1001,6 +1056,7 @@
     fromHsl: fromHsl,
     layout: LAYOUT,
     panel: panel,
+    clothesHidden: HIDE_CLOTHES,
     parts: parts,
     palettes: palettes,
     load: load,

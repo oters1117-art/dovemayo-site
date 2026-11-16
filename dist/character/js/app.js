@@ -20,6 +20,9 @@
   // start.bat 로 띄운 로컬 서버에서 열었는지 (파일 열기·빌드·항목 편집은 서버가 있어야 된다).
   // 홈페이지에 올린 것도 http 로 열리므로 주소가 이 컴퓨터일 때만 켠다
   var SERVER = location.protocol.indexOf('http') === 0 && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  // 랜덤 성별 비율 (로컬 전용 시험): 0 = 여자(여캐 비중 그대로), 1 = 남자(_parts.json 의 wm). 랜덤에만 쓴다.
+  // 열 때마다 여자 끝에서 시작한다. 공개 화면에서는 슬라이더가 없고 늘 0
+  var masc = 0;
   var $preview = $('preview'), $code = $('code'), $status = $('status');
   var statusTimer = null;
 
@@ -136,7 +139,7 @@
   function diceButton(key) {
     var b = iconButton('dice', 'random', '랜덤', '이 항목만 랜덤');
     b.setAttribute('data-key', key);
-    b.addEventListener('click', function () { commit(CG.randomOne(state, key, null, real)); });
+    b.addEventListener('click', function () { commit(CG.randomOne(state, key, null, real, masc)); });
     return b;
   }
 
@@ -169,12 +172,16 @@
   var PLAIN = { iris: 1, eyeGap: 1, eyeY: 1, eyeSize: 1, mouthY: 1, eyeTilt: 1, browGap: 1, browY: 1, browTilt: 1 };
   // 썸네일 밑그림: 이 캐릭터를 반투명하게 깔고, 고르는 항목만 진하게 겹친다
   var THUMB_BASE = 'hf:allback,hx:none,hs:none,hb:none,e:almond,d:none,u:none,xg:normal,xy:normal,xs:normal,l:none,w:none,i:normal,p:basic,h:none,f:round,er:normal,s:none,k:none,ey:none,kl:none,b:flat,m:line,xm:normal,a:none,g:none,ae:none,af:none,ch:milkbrown,ce:hazel,co:none,cs:base,ca:gold,cb:cream';
-  var THUMB_BOX = { hair: '40 20 622 622', eye: '196 236 310 310', face: '130 160 442 442' };
+  var THUMB_BOX = { hair: '40 20 622 622', eye: '196 236 310 310', face: '130 160 442 442', cloth: '176 352 350 350' };
   var THUMB_OF = { front: 'hair', extra: 'hair', side: 'hair', back: 'hair', acc: 'hair',
-    eye: 'eye', fold: 'eye', lowline: 'eye', lash: 'eye', lowlash: 'eye', pupil: 'eye', hl: 'eye', around: 'eye', brow: 'eye', glasses: 'eye' };
+    eye: 'eye', fold: 'eye', lowline: 'eye', lash: 'eye', lowlash: 'eye', pupil: 'eye', hl: 'eye', around: 'eye', brow: 'eye', glasses: 'eye', cloth: 'cloth', neck: 'cloth', outer: 'cloth' };
   function thumbSvg(key, id) {
     var s = CG.decode(THUMB_BASE);
     s[key] = id;
+    if (key === 'neck') s.cloth = 'shirt';   // 목 장식은 셔츠 위에서 보여 준다
+    if (key === 'outer') s.cloth = 'tee';    // 외투는 흰 티 위에서 보여 준다
+    if (key === 'cloth' || key === 'neck') { s.clothColor = 'sky'; s.clothColor2 = 'navy'; }   // 흰 옷은 썸네일에서 안 보여서
+    if (key === 'outer') { s.outerColor = 'camel'; s.clothColor2 = 'navy'; }
     var box = THUMB_BOX[THUMB_OF[key] || 'face'];
     if (key === 'pupil' || key === 'hl') {
       var e = CG.parts.eye.filter(function (p) { return p.id === s.eye; })[0], c = (e && e.iris) || [294, 362];
@@ -521,7 +528,7 @@
     });
     if (!rows.children.length) return;
     if (block.group !== lastGroup) {
-      sec = el('section', { class: 'group' });
+      sec = el('section', { class: 'group', 'data-group': block.group.key });
       sec.appendChild(el('h2', null, block.group.name));
       $groups.appendChild(sec);
       lastGroup = block.group;
@@ -530,11 +537,11 @@
     sec.appendChild(rows);
   });
 
-  $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real)); });
+  $('btn-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real, masc)); });
   $('btn-prev').addEventListener('click', function () { travel(-1); });
   $('btn-next').addEventListener('click', function () { travel(1); });
   $('btn-copy-image').addEventListener('click', copyImage);
-  $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real)); });
+  $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real, masc)); });
   $('ico-prev').addEventListener('click', function () { travel(-1); });
   $('ico-copy').addEventListener('click', copyImage);
   // 자랑게시판으로: 자랑 게시판으로 가서 한 줄 적고 올린다 (조합 코드를 주소로 넘긴다)
@@ -591,7 +598,7 @@
     }
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
-    if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks, null, real)); }
+    if (e.key === ' ' && tag !== 'button') { e.preventDefault(); commit(CG.randomState(state, locks, null, real, masc)); }
     else if (e.key === 'ArrowLeft') travel(-1);
     else if (e.key === 'ArrowRight') travel(1);
   });
@@ -698,6 +705,16 @@
   if (SERVER) {
     var $bstat = $('build-status');
     $('build-bar').hidden = false;
+    // PC(랜덤 줄 아래)와 휴대폰(랜덤 버튼 아래 세로) 슬라이더는 같은 값을 쓴다
+    document.querySelector('.masc-row').hidden = false;
+    document.querySelector('.masc-v').hidden = false;
+    var mascInputs = [$('masc'), $('masc-m')];
+    mascInputs.forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        masc = parseFloat(inp.value) || 0;
+        mascInputs.forEach(function (o) { if (o !== inp) o.value = inp.value; });
+      });
+    });
     var showBuild = function (r) {
       var warn = /확인할 것 (\d+)건/.exec(r.output || '');
       $bstat.textContent = (r.ok ? '빌드 완료' : '빌드 실패') + (warn ? ' · 확인할 것 ' + warn[1] + '건' : '') + (r.at ? ' (' + r.at + ')' : '');
@@ -723,7 +740,7 @@
       var cell = el('div', { class: 'sheet-cell' });
       var face = el('button', { type: 'button', class: 'sheet-face', 'aria-label': '샘플 ' + (i + 1) + ' 불러오기' });
       var again = iconButton('sheet-re', 'random', '샘플 ' + (i + 1) + ' 다시 뽑기', '이 칸만 다시 뽑기');
-      var roll = function () { sheetStates[i] = CG.randomState(state, locks, null, real); face.innerHTML = CG.compose(sheetStates[i]); };
+      var roll = function () { sheetStates[i] = CG.randomState(state, locks, null, real, masc); face.innerHTML = CG.compose(sheetStates[i]); };
       roll();
       face.onclick = function () { commit(sheetStates[i]); $sdlg.close(); };
       again.onclick = roll;
@@ -784,5 +801,5 @@
 
   var initial = decodeURIComponent(window.location.hash.replace(/^#/, ''));
   // 주소에 조합 코드가 없으면 처음부터 랜덤 캐릭터로 시작한다
-  commit(initial.indexOf(':') > 0 ? CG.decode(initial) : CG.randomState(CG.defaultState(), locks, null, real));
+  commit(initial.indexOf(':') > 0 ? CG.decode(initial) : CG.randomState(CG.defaultState(), locks, null, real, masc));
 })();

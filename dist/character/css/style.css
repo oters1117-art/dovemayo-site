@@ -156,12 +156,20 @@ button.primary:hover { background: #4d403b; }
 .panel-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .panel h2 {
   margin: 22px 0 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--rule);
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--group-bg, #f1ebe7);
   font-size: 15px;
   font-weight: 700;
   color: var(--ink);
 }
+/* 묶음마다 옅은 배경색 (헤어 · 눈 · 얼굴 · 악세사리 · 옷 · 배경) */
+.group[data-group="hair"] { --group-bg: #f2e5da; }
+.group[data-group="eyes"] { --group-bg: #e2eaf3; }
+.group[data-group="face"] { --group-bg: #f6e2e0; }
+.group[data-group="acc"] { --group-bg: #f3ecd4; }
+.group[data-group="cloth"] { --group-bg: #e3eee0; }
+.group[data-group="bg"] { --group-bg: #ebe8e6; }
 
 .panel h3 {
   margin: 14px 0 8px;
@@ -283,12 +291,16 @@ button.primary:hover { background: #4d403b; }
   .preview-row { display: flex; justify-content: center; align-items: stretch; gap: 6px; }
   .preview-wrap { flex: none; width: min(calc(100% - 96px), 42vh, 400px); width: min(calc(100% - 96px), 42svh, 400px); }
   .preview { border-radius: 22px; box-shadow: 0 1px 2px rgba(60, 40, 30, .08); }
-  .stage .actions, .stage .code, .stage .build-bar { display: none; }
+  .stage .actions, .stage .code, .stage .build-bar, .stage .masc-row { display: none; }
   .card-tools { display: flex; flex-direction: column; gap: 6px; flex: none; }
+  /* 랜덤 버튼 아래 세로 슬라이더: 위 = 여자, 아래 = 남자 */
+  .card-tools .masc-v { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-height: 0; padding: 4px 0 2px; font-size: 10px; color: var(--muted); }
+  .card-tools .masc-v[hidden] { display: none; }
+  .masc-v input { writing-mode: vertical-lr; direction: ltr; flex: 1; min-height: 60px; width: 22px; margin: 0; accent-color: var(--accent); }
 
   .panel { padding: 14px 12px; border-radius: 16px; }
   .panel-head h1 { font-size: 17px; }
-  .panel h2 { margin: 16px 0 8px; padding-top: 12px; }
+  .panel h2 { margin: 16px 0 8px; padding: 7px 12px; border-radius: 10px; }
   .panel h3 { margin: 10px 0 6px; }
   .rows { gap: 6px; }
   .row { grid-template-columns: 82px minmax(0, 1fr) auto; gap: 5px; }
@@ -313,6 +325,11 @@ button.primary:hover { background: #4d403b; }
   background: var(--card);
   color: var(--ink);
 }
+/* 랜덤 성별 비율 슬라이더 (여자 ─ 남자) */
+.masc-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); padding: 0 4px; }
+.masc-row input { flex: 1; accent-color: var(--accent); }
+.masc-row[hidden], .masc-v[hidden] { display: none; }
+.masc-v { display: none; }
 .sheet-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--rule); border-radius: 18px; padding: 16px; color: var(--ink); background: var(--card); }
 .sheet-dialog::backdrop { background: rgba(40, 30, 25, .35); }
 .sheet-dialog[open] { display: flex; flex-direction: column; gap: 10px; }

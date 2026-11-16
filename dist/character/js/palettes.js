@@ -130,6 +130,32 @@
   ]);
 
   // hex 가 null 이면 배경 없이 투명
+  // 옷 색 세 칸: 상의 색(기본 흰색), 외투 색(기본 카멜), 포인트 색(셔츠 단추·후드 끈·세일러 깃·넥타이·리본·외투 단추, 기본 네이비)
+  var CLOTH = [
+    { id: 'white', name: '흰색', hex: '#f9f2f1', group: '무채색', w: 3 },
+    { id: 'ivory', name: '아이보리', hex: '#f1e8d6', group: '무채색', w: 2 },
+    { id: 'gray', name: '회색', hex: '#b9b6b8', group: '무채색', w: 1.5 },
+    { id: 'charcoal', name: '차콜', hex: '#4a4648', group: '무채색', w: 1.5 },
+    { id: 'black', name: '검정', hex: '#2c2829', group: '무채색', w: 2 },
+    { id: 'navy', name: '네이비', hex: '#2f3b5c', group: '진한 색', w: 2 },
+    { id: 'brown', name: '브라운', hex: '#7a5a44', group: '진한 색', w: 1 },
+    { id: 'khaki', name: '카키', hex: '#7d7d55', group: '진한 색', w: 1 },
+    { id: 'olive', name: '올리브', hex: '#6b6b44', group: '진한 색', w: 0.8 },
+    { id: 'denim', name: '데님', hex: '#5b7aa6', group: '진한 색', w: 0.8 },
+    { id: 'camel', name: '카멜', hex: '#b88a5a', group: '진한 색', w: 1 },
+    { id: 'burgundy', name: '버건디', hex: '#7e2c38', group: '진한 색', w: 1 },
+    { id: 'red', name: '빨강', hex: '#c9473f', group: '진한 색', w: 0.8 },
+    { id: 'beige', name: '베이지', hex: '#dcc8aa', group: '연한 색', w: 1.5 },
+    { id: 'sky', name: '하늘', hex: '#a9c6e3', group: '연한 색', w: 1 },
+    { id: 'mint', name: '민트', hex: '#a8d5c2', group: '연한 색', w: 1 },
+    { id: 'yellow', name: '버터', hex: '#f3dc9a', group: '연한 색', w: 1 },
+    { id: 'pink', name: '분홍', hex: '#f2bcc8', group: '연한 색', w: 1 },
+    { id: 'lavender', name: '라벤더', hex: '#c7b9e2', group: '연한 색', w: 1 }
+  ];
+  CG.addPalette('cloth', CLOTH.map(function (c) { var o = Object.assign({}, c); if (c.id === 'white') o.isDefault = true; return o; }));
+  CG.addPalette('cloth2', CLOTH.map(function (c) { var o = Object.assign({}, c); if (c.id === 'navy') o.isDefault = true; return o; }));
+  CG.addPalette('outer', CLOTH.map(function (c) { var o = Object.assign({}, c); if (c.id === 'camel') o.isDefault = true; return o; }));
+
   CG.addPalette('bg', [
     { id: 'greige', name: '그레이지', hex: '#ada19f', isDefault: true },
     { id: 'cream', name: '크림', hex: '#efe6d8' },
