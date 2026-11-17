@@ -55,7 +55,7 @@
     },
     eye: {
       round: 'round eyes', tsuri: 'upturned (tsurime) eyes', tare: 'droopy (tareme) eyes', jito: 'half-lidded unimpressed (jitome) eyes', almond: 'almond-shaped eyes',
-      cat: 'cat-like eyes', sharp: 'long sharp eyes', deformed: 'big round chibi eyes', sleepy: 'sleepy eyes', calm: 'calm gentle eyes', slit: 'narrow slit eyes',
+      cat: 'cat-like eyes', sharp: 'long sharp eyes', deformed: 'big round chibi eyes', sleepy: 'sleepy eyes', smooth: 'soft gentle eyes', calm: 'calm composed eyes', slit: 'narrow slit eyes',
       smile: 'smiling crescent eyes', closed: 'closed eyes', fox: 'fox-like narrow eyes'
     },
     fold: { inner: 'inner double eyelids', outer: 'double eyelids' },
@@ -148,7 +148,7 @@
       'bun-top-m': 'single hair bun', 'bun-top-l': 'single hair bun, big hair bun', 'bun-two': 'double bun', 'bun-twin': 'double bun, twintails', 'bun-low': 'low side bun', 'bun-low-two': 'double bun, low bun', 'updo-claw': 'hair up, hair clip'
     },
     eye: { round: 'round eyes', tsuri: 'tsurime', tare: 'tareme', jito: 'jitome', almond: '', cat: 'tsurime, slit pupils', sharp: 'sharp eyes, tsurime', deformed: 'large eyes',
-      sleepy: 'half-closed eyes', calm: '', slit: 'narrowed eyes', smile: '^ ^', closed: 'closed eyes', fox: 'narrowed eyes, tsurime' },
+      sleepy: 'half-closed eyes', smooth: '', calm: '', slit: 'narrowed eyes', smile: '^ ^', closed: 'closed eyes', fox: 'narrowed eyes, tsurime' },
     fold: { inner: '', outer: '' },
     lash: { up1: '', up3: 'eyelashes', up5: 'long eyelashes', down1: '', down1c: '', down3: 'eyelashes', down5: 'long eyelashes' },
     lowlash: { n3: 'lower eyelashes', n5: 'lower eyelashes', n7: 'lower eyelashes' },

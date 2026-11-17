@@ -33,7 +33,10 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .ic{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .pop .acts .like{display:inline-flex;align-items:center;gap:5px}
 .pop .acts .like[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
-.item .cap{margin:6px 2px 0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.5em}
+.item .cap{margin:6px 2px 0;font-size:13px;min-height:1.5em;display:flex;justify-content:center;gap:3px}
+.item .cap .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* 이름 옆 파란 댓글 수 [3] */
+.cc{color:#2f6bd8;font-weight:600;flex:none}
 .empty{color:var(--muted);font-size:13px}
 .dim{position:fixed;inset:0;background:rgba(30,24,22,.62);display:flex;align-items:center;justify-content:center;gap:14px;padding:16px;z-index:10}
 /* 이전·다음: 카드 밖 양옆 (휴대폰은 화면 아래 양끝) */
@@ -41,8 +44,28 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .side svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .side:disabled{opacity:.25}
 @media(max-width:560px){.side{position:fixed;bottom:18px;z-index:11}.side.prev{left:18px}.side.next{right:18px}.dim{padding-bottom:80px}}
-.pop{background:var(--card);border-radius:20px;padding:16px;width:min(100%,460px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
+.pop{background:var(--card);border-radius:20px;padding:16px;width:min(100%,520px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .pop .face{border-radius:16px;overflow:hidden;aspect-ratio:1}
+.pop .info{display:flex;flex-direction:column;min-width:0}
+/* PC: 왼쪽에 큰 그림(화면 높이에 맞춤), 오른쪽에 글·버튼·댓글 */
+@media(min-width:900px){
+  .pop{width:auto;max-width:calc(100vw - 150px);display:grid;grid-template-columns:min(600px,calc(100vh - 64px),calc(100dvh - 64px),calc(100vw - 520px)) 320px;gap:18px;align-items:stretch;overflow:hidden}
+  .pop .face{align-self:start}
+  .pop .info{max-height:min(600px,calc(100vh - 64px),calc(100dvh - 64px));overflow:auto}
+  .pop .text{text-align:left}.pop .when{text-align:left}.pop .msg{text-align:left}
+}
+.comments{margin-top:14px;border-top:1px solid var(--rule);padding-top:10px;flex:1}
+.comments h2{font-size:13px;margin:0 0 6px;color:var(--muted);font-weight:600}
+.comments ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.comments li{display:flex;gap:6px;align-items:flex-start;font-size:14px;background:#f7f4f2;border-radius:10px;padding:6px 8px}
+.comments li .body{flex:1;min-width:0;overflow-wrap:anywhere}
+.comments li .meta{display:block;font-size:11px;color:var(--muted)}
+.comments li .tag{font-size:11px;color:#2f6bd8;font-weight:600;margin-right:4px}
+.comments li .x{flex:none;border:0;background:none;padding:0 2px;color:var(--muted);font-size:16px;line-height:1.2}
+.comments li .x:hover{color:var(--on)}
+.comments .none{font-size:13px;color:var(--muted)}
+.cform{display:flex;gap:6px;margin-top:8px}
+.cform input{flex:1}
 .pop .text{margin:12px 2px 0;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
 .pop .edit{display:flex;gap:8px;margin-top:12px}
 .pop .edit input{flex:1}
@@ -83,6 +106,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   <button type="button" id="pop-prev" class="side prev" aria-label="이전 캐릭터" title="이전 (←)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
   <div class="pop" role="dialog" aria-modal="true" aria-label="자랑 글">
     <div id="pop-face" class="face"></div>
+    <div class="info">
     <p id="pop-text" class="text"></p>
     <div id="pop-edit" class="edit" hidden>
       <input id="pop-edit-text" type="text" maxlength="300" aria-label="한 줄 고치기">
@@ -95,10 +119,19 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       <button type="button" id="pop-copy-img">이미지 복사</button>
       <a id="pop-open" href="../">생성기에서 열기</a>
     </div>
+    <section class="comments" aria-label="댓글">
+      <h2>댓글 <span id="pop-ccount"></span></h2>
+      <ul id="pop-comments"></ul>
+      <form id="pop-cform" class="cform">
+        <input id="pop-ctext" type="text" maxlength="200" placeholder="댓글 달기" aria-label="댓글 달기">
+        <button type="submit" id="pop-csend">등록</button>
+      </form>
+    </section>
     <div class="acts own">
       <button type="button" id="pop-fix" hidden>수정</button>
       <button type="button" id="pop-del" class="danger" hidden>삭제</button>
       <button type="button" id="pop-close" class="close">닫기</button>
+    </div>
     </div>
   </div>
   <button type="button" id="pop-next" class="side next" aria-label="다음 캐릭터" title="다음 (→)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -157,12 +190,17 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   function load() {
     api('list').then(function (r) {
       admin = r.admin; posts = r.posts;
+      // 팝업이 열려 있으면 같은 글의 새 내용으로 바꿔 둔다
+      if (current) { for (var k = 0; k < posts.length; k++) if (posts[k].id === current.id) { current = posts[k]; paintComments(current); } }
       var g = $('grid'); g.textContent = '';
       if (!posts.length) { var e = document.createElement('p'); e.className = 'empty'; e.textContent = '아직 없습니다. 첫 캐릭터를 올려 보세요.'; g.appendChild(e); return; }
       posts.forEach(function (p) {
         var b = document.createElement('button'); b.type = 'button'; b.className = 'item';
         var f = document.createElement('div'); f.className = 'face'; f.innerHTML = face(p.code);
-        var c = document.createElement('div'); c.className = 'cap'; c.textContent = p.text || '';
+        var c = document.createElement('div'); c.className = 'cap';
+        var nm = document.createElement('span'); nm.className = 'name'; nm.textContent = p.text || ''; c.appendChild(nm);
+        var nc = (p.comments || []).length;
+        if (nc) { var cc = document.createElement('span'); cc.className = 'cc'; cc.textContent = '[' + nc + ']'; cc.setAttribute('aria-label', '댓글 ' + nc + '개'); c.appendChild(cc); }
         b.setAttribute('aria-label', (p.text || '캐릭터') + ' 크게 보기');
         b.appendChild(f); b.appendChild(c);
         // 추천 받은 글은 왼쪽 위에 작게 따봉과 숫자
@@ -183,6 +221,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('pop-open').href = '../#' + encodeURI(p.code);
     // 같은 IP로 올린 글은 올린 사람이 고치고 지울 수 있다 (관리자는 지우기만)
     paintLike(p);
+    paintComments(p);
+    $('pop-ctext').value = '';
     $('pop-del').hidden = !(admin || p.mine);
     $('pop-fix').hidden = !p.mine;
     $('pop-edit').hidden = true;
@@ -230,6 +270,42 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
   });
   function note(t) { $('pop-msg').textContent = t; }
+
+  // ---------- 댓글: 누구나 달고, 단 사람(같은 IP)과 관리자가 지운다 ----------
+  function paintComments(p) {
+    var list = p.comments || [], ul = $('pop-comments');
+    ul.textContent = '';
+    $('pop-ccount').textContent = list.length ? String(list.length) : '';
+    if (!list.length) { var e = document.createElement('li'); e.className = 'none'; e.style.background = 'none'; e.style.padding = '0'; e.textContent = '아직 댓글이 없습니다.'; ul.appendChild(e); }
+    list.forEach(function (c) {
+      var li = document.createElement('li'), body = document.createElement('div'); body.className = 'body';
+      if (c.writer) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = '글쓴이'; body.appendChild(t); }
+      body.appendChild(document.createTextNode(c.text));
+      var m = document.createElement('span'); m.className = 'meta';
+      m.textContent = new Date(c.at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }); body.appendChild(m);
+      li.appendChild(body);
+      if (c.mine || admin) {
+        var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×';
+        x.setAttribute('aria-label', '댓글 지우기'); x.title = '지우기';
+        x.onclick = function () {
+          if (!confirm('댓글을 지울까요?')) return;
+          api('uncomment', { id: p.id, cid: c.id }).then(function (r) { p.comments = r.comments; paintComments(p); load(); }, function (er) { note(er.message); });
+        };
+        li.appendChild(x);
+      }
+      ul.appendChild(li);
+    });
+  }
+  $('pop-cform').onsubmit = function (e) {
+    e.preventDefault();
+    var p = current, text = $('pop-ctext').value.trim();
+    if (!p || !text) return;
+    $('pop-csend').disabled = true;
+    api('comment', { id: p.id, text: text }).then(function (r) {
+      p.comments = r.comments; $('pop-ctext').value = ''; paintComments(p); load();
+      var ul = $('pop-comments'); if (ul.lastChild && ul.lastChild.scrollIntoView) ul.lastChild.scrollIntoView({ block: 'nearest' });
+    }, function (er) { note(er.message); }).then(function () { $('pop-csend').disabled = false; });
+  };
 
   // 생성기의 "이미지 복사"와 같은 이미지 (왼쪽 위 구석에 DOVEMAYO.COM)
   function png(code) {

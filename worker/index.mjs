@@ -2,6 +2,9 @@
 //   GET  /api/board/list            new (pending) and approved posts, all public
 //   GET|POST /api/board/show/list|submit|edit|delete   showcase posts {code, text}; edit/delete by the writer (same IP) or admin
 //   POST /api/board/show/like       {id}  toggles this visitor's 추천 (one per salted IP hash); list sends likes + liked
+//   POST /api/board/show/comment    {id, text}  댓글 (anyone); list sends comments [{id, text, at, mine, writer}]
+//   POST /api/board/show/uncomment  {id, cid}   delete a 댓글: its writer (same IP hash) or admin
+//   (show/edit: admin may also send {code} to fix a post's combination code, e.g. after a part was redrawn under a new id)
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve         {id}                      admin only
 //   POST /api/board/delete          {id}                      admin, or the writer (same IP)
@@ -11,6 +14,7 @@
 // Storage: one Durable Object (class Board, SQLite-backed). "index" = array of posts (newest first),
 // "img:<id>" = image bytes. Each post keeps `by`, a salted hash of the writer's IP (never the IP itself),
 // so the writer can edit or delete it from the same IP; lists send only `mine: true/false`. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
+// Rate limits are keyed by the same salted hash ("rateh:..."); raw IPs are never stored. Old "rate:<ip>" keys are removed once (cleanupRawIpKeys).
 import { DurableObject } from 'cloudflare:workers';
 const MAX_TEXT = 500, MAX_IMAGE = 600 * 1024, MAX_POSTS = 400, PER_HOUR = 6;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -36,8 +40,7 @@ async function writer(request, env) {
 }
 
 async function submit(request, env) {
-  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-  const rateKey = 'rate:' + ip, hour = Math.floor(Date.now() / 3600000);
+  const rateKey = 'rateh:' + ((await writer(request, env)) || 'unknown'), hour = Math.floor(Date.now() / 3600000);
   const rate = await env.BOARD.get(rateKey);
   const used = rate && rate.hour === hour ? rate.n : 0;
   if (used >= PER_HOUR) return fail('잠시 뒤에 다시 보내 주세요. (한 시간에 ' + PER_HOUR + '개까지)', 429);
@@ -66,31 +69,59 @@ async function submit(request, env) {
 }
 
 // Showcase ("자랑 게시판"): a post is a combination code and a short text; the page draws the face from the code.
-const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300;
+const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300, MAX_COMMENT = 200, MAX_COMMENTS = 300, COMMENTS_PER_HOUR = 30;
+const commentView = (c, p, me) => ({ id: c.id, text: c.text, at: c.at, mine: !!me && c.by === me, writer: !!c.by && c.by === p.by });
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+// 한 시간에 limit 번까지. key 는 소금 친 IP 해시로 만든다
+async function rateOk(env, key, limit) {
+  const hour = Math.floor(Date.now() / 3600000), rate = await env.BOARD.get(key);
+  const used = rate && rate.hour === hour ? rate.n : 0;
+  if (used >= limit) return false;
+  await env.BOARD.put(key, { hour, n: used + 1 });
+  return true;
+}
 async function show(request, env, path, admin) {
   const list = (await env.BOARD.get('show')) || [], me = await writer(request, env);
   if (path === 'list' && request.method === 'GET') {
     return json({ admin, posts: list.slice(0, 600).map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me,
-      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me) })) });
+      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me),
+      comments: (p.comments || []).map((c) => commentView(c, p, me)) })) });
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   let body;
   try { body = await request.json(); } catch (e) { return fail('잘못된 요청입니다.'); }
   if (path === 'submit') {
-    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-    const rateKey = 'rate-show:' + ip, hour = Math.floor(Date.now() / 3600000);
-    const rate = await env.BOARD.get(rateKey);
-    const used = rate && rate.hour === hour ? rate.n : 0;
-    if (used >= 12) return fail('잠시 뒤에 다시 올려 주세요.', 429);
     const code = String(body.code || '').trim();
     if (!/^[^<>"'&]{6,900}$/.test(code) || code.indexOf(':') < 0) return fail('조합 코드가 올바르지 않습니다.');
     const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    if (!(await rateOk(env, 'rateh-show:' + (me || 'unknown'), 12))) return fail('잠시 뒤에 다시 올려 주세요.', 429);
+    const id = newId();
     list.unshift({ id, code, text, at: new Date().toISOString(), by: me });
     if (list.length > MAX_SHOW) list.length = MAX_SHOW;
     await env.BOARD.put('show', list);
-    await env.BOARD.put(rateKey, { hour, n: used + 1 });
     return json({ ok: true, id });
+  }
+  if (path === 'comment' || path === 'uncomment') {
+    const p = list.find((x) => x.id === body.id);
+    if (!p) return fail('없는 글입니다.', 404);
+    const comments = p.comments || (p.comments = []);
+    if (path === 'comment') {
+      if (!me) return fail('댓글을 달 수 없습니다.', 403);
+      const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_COMMENT);
+      if (!text) return fail('댓글을 적어 주세요.');
+      if (comments.length >= MAX_COMMENTS) return fail('댓글이 가득 찼습니다.', 503);
+      if (!(await rateOk(env, 'rateh-comment:' + me, COMMENTS_PER_HOUR))) return fail('잠시 뒤에 다시 달아 주세요.', 429);
+      const c = { id: newId(), text, at: new Date().toISOString(), by: me };
+      comments.push(c);
+      await env.BOARD.put('show', list);
+      return json({ ok: true, comment: commentView(c, p, me), comments: comments.map((x) => commentView(x, p, me)) });
+    }
+    const i = comments.findIndex((c) => c.id === body.cid);
+    if (i < 0) return fail('없는 댓글입니다.', 404);
+    if (!admin && !(me && comments[i].by === me)) return fail('단 곳(같은 IP)에서만 지울 수 있습니다.', 403);
+    comments.splice(i, 1);
+    await env.BOARD.put('show', list);
+    return json({ ok: true, comments: comments.map((x) => commentView(x, p, me)) });
   }
   if (path === 'like') {
     // 추천: 같은 IP(소금 친 해시)당 한 번. 다시 누르면 취소된다
@@ -108,7 +139,15 @@ async function show(request, env, path, admin) {
     if (i < 0) return fail('없는 글입니다.', 404);
     const mine = !!me && list[i].by === me;
     if (!mine && !admin) return fail('올린 곳(같은 IP)에서만 고치거나 지울 수 있습니다.', 403);
-    if (path === 'edit') list[i].text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
+    if (path === 'edit') {
+      if (body.text != null) list[i].text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SHOW_TEXT);
+      if (body.code != null) {
+        if (!admin) return fail('조합 코드는 관리자만 고칠 수 있습니다.', 403);
+        const code = String(body.code).trim();
+        if (!/^[^<>"'&]{6,900}$/.test(code) || code.indexOf(':') < 0) return fail('조합 코드가 올바르지 않습니다.');
+        list[i].code = code;
+      }
+    }
     else list.splice(i, 1);
     await env.BOARD.put('show', list);
     return json({ ok: true });
@@ -166,10 +205,21 @@ async function board(request, env, path) {
 }
 
 // The board lives in one object so reads and writes of the index never race.
+// Earlier versions keyed rate limits by the raw IP ("rate:<ip>", "rate-show:<ip>"). Remove those once.
+async function cleanupRawIpKeys(storage) {
+  if (await storage.get('cleanup:raw-ip-rate')) return;
+  for (const prefix of ['rate:', 'rate-show:']) {
+    const keys = [...(await storage.list({ prefix })).keys()];
+    for (let i = 0; i < keys.length; i += 128) await storage.delete(keys.slice(i, i + 128));
+  }
+  await storage.put('cleanup:raw-ip-rate', new Date().toISOString());
+}
+
 export class Board extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     const env = { BOARD: this.ctx.storage, BOARD_ADMIN_KEY: this.env.BOARD_ADMIN_KEY };
+    try { await cleanupRawIpKeys(this.ctx.storage); } catch (e) { /* 다음 요청에서 다시 */ }
     try { return await board(request, env, url.pathname.slice('/api/board/'.length)); }
     catch (e) { return fail('서버 오류', 500); }
   }
