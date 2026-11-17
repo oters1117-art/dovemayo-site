@@ -1,5 +1,5 @@
 /*
- * 캐릭터 생성기 조합 엔진
+ * 둘기마요 아바타 생성기 조합 엔진
  *
  * 그림은 전부 parts/ 폴더의 SVG 파일에 있다. tools/build.js 가 그 파일들을 읽어
  * js/parts-data.js 로 묶고, 이 엔진은 CG.load() 로 받은 조각을 레이어 순서대로 쌓기만 한다.
@@ -103,9 +103,10 @@
     { group: 'hair', subs: [{ items: ['front', 'side', 'back', 'extra', 'hairColor'] }] },
     { group: 'eyes', subs: [
       { items: ['eye', 'fold', 'lowline', 'lash', 'lowlash'] },
+      // 눈 위치는 속눈썹과 눈동자 사이 (주인 지시 2026-11-17)
+      { name: '눈 위치', items: ['eyeSize', 'eyeTilt', 'eyeGap', 'eyeY', 'around'] },
       { name: '눈동자', items: ['iris', 'pupil', 'hl'] },
-      { name: '눈 색', items: ['eyeColor', 'oddColor'] },
-      { name: '눈 위치', items: ['eyeSize', 'eyeTilt', 'eyeGap', 'eyeY', 'around'] }
+      { name: '눈 색', items: ['eyeColor', 'oddColor'] }
     ] },
     { group: 'face', subs: [
       { items: ['face', 'skinColor', 'skinfx', 'makeup'] },
@@ -257,6 +258,15 @@
   }
   function canFlip(state, key) { return flipKind(state, key) === 'flip'; }
 
+  // 지금 이름을 돌려준다. 이름을 바꾼 파츠는 _parts.json 의 "old"(tools/rename.js)로 예전 이름도 받는다
+  function currentId(key, id) {
+    var list = parts[key] || [];
+    if (id == null) return null;
+    if (findIn(list, id)) return id;
+    for (var i = 0; i < list.length; i++) if (list[i].old && list[i].old.indexOf(id) >= 0) return list[i].id;
+    return null;
+  }
+
   function normalize(state) {
     var s = defaultState();
     s.flip = {};
@@ -265,9 +275,10 @@
     FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
     SIDE_KEYS.forEach(function (k) { var v = state.only && state.only[k]; if (v === 'l' || v === 'r') s.only[k] = v; });
     CATEGORIES.forEach(function (c) {
-      var was = ONE_SIDE[c.key] && ONE_SIDE[c.key][state[c.key]];
-      if (was && findIn(parts[c.key], was) && !findIn(parts[c.key], state[c.key])) { s[c.key] = was; s.only[c.key] = 'l'; return; }
-      if (findIn(parts[c.key], state[c.key])) s[c.key] = state[c.key];
+      var id = currentId(c.key, state[c.key]);
+      var was = !id && ONE_SIDE[c.key] && currentId(c.key, ONE_SIDE[c.key][state[c.key]]);
+      if (was) { s[c.key] = was; s.only[c.key] = 'l'; return; }
+      if (id) s[c.key] = id;
     });
     MOVED.forEach(function (m) {
       if (state[m.from] !== m.id || findIn(parts[m.from], m.id) || !findIn(parts[m.to], m.id)) return;

@@ -6,56 +6,56 @@
   'use strict';
   var EN = {
     front: {
-      gapshort: 'short full bangs with small gaps at the sides', gap: 'full bangs with small gaps at the sides', gaplong: 'long full bangs with small gaps at the sides',
-      blunt: 'straight-cut blunt bangs', bluntlong: 'long straight-cut blunt bangs reaching the eyes',
-      mushroomshort: 'short rounded mushroom bangs', mushroom: 'rounded mushroom bangs',
-      choppyshort: 'short choppy bangs', choppy: 'choppy uneven bangs', zigzagshort: 'short zigzag (sawtooth) bangs', zigzag: 'zigzag (sawtooth) bangs',
-      mbang: 'M-shaped bangs', mbanglong: 'long M-shaped bangs', tribang: 'triangle-pointed bangs',
-      curly: 'curly bangs', curlylong: 'long curly bangs', eyecover2: 'long bangs covering both eyes', seethrough: 'thin see-through bangs',
-      antenna: 'see-through bangs with two antenna strands', centerwisp: 'forehead showing with a few wisps in the middle', centerlock: 'forehead showing with one lock in the middle',
-      parted: 'center-parted fringe', side73: '7:3 side part', curtain: 'curtain bangs', curtainlong: 'long curtain bangs',
-      sidebang: 'side-swept bangs', sidebanglong: 'long side-swept bangs', diagonal: 'diagonally cut bangs', diagonallong: 'long diagonally cut bangs',
-      sidecurveshort: 'short bangs curving to one side', sidecurve: 'bangs curving to one side', sidecurvelong: 'long bangs curving to one side',
-      eyecover1: 'long bangs covering one eye', kkaennip: 'sleek side-swept bangs tucked to one side (Korean kkaennip style)', pinned: 'bangs pinned back to one side',
-      braidbang: 'braided bangs', twostrand: 'two long strands framing the face', longcurlin: 'long face-framing bangs curling inward',
-      himebang: 'hime-cut straight bangs', longwave: 'long wavy face-framing bangs', 'longwave-one': 'a long wavy face-framing strand on one side',
-      allback: 'hair slicked back with no bangs, forehead fully showing', babyhair: 'hair slicked back with baby hairs on the forehead'
+      'full-gap-s': 'short full bangs with small gaps at the sides', 'full-gap-m': 'full bangs with small gaps at the sides', 'full-gap-l': 'long full bangs with small gaps at the sides',
+      'blunt-m': 'straight-cut blunt bangs', 'blunt-l': 'long straight-cut blunt bangs reaching the eyes',
+      'mushroom-s': 'short rounded mushroom bangs', 'mushroom-m': 'rounded mushroom bangs',
+      'choppy-s': 'short choppy bangs', 'choppy-m': 'choppy uneven bangs', 'zigzag-s': 'short zigzag (sawtooth) bangs', 'zigzag-m': 'zigzag (sawtooth) bangs',
+      'm-shape-m': 'M-shaped bangs', 'm-shape-l': 'long M-shaped bangs', triangle: 'triangle-pointed bangs',
+      'curly-m': 'curly bangs', 'curly-l': 'long curly bangs', 'eyecover-both': 'long bangs covering both eyes', seethrough: 'thin see-through bangs',
+      antenna: 'see-through bangs with two antenna strands', 'center-wisp': 'forehead showing with a few wisps in the middle', 'center-lock': 'forehead showing with one lock in the middle',
+      'parted-center': 'center-parted fringe', 'parted-73': '7:3 side part', 'curtain-m': 'curtain bangs', 'curtain-l': 'long curtain bangs',
+      'side-swept-m': 'side-swept bangs', 'side-swept-l': 'long side-swept bangs', 'diagonal-m': 'diagonally cut bangs', 'diagonal-l': 'long diagonally cut bangs',
+      'side-curve-s': 'short bangs curving to one side', 'side-curve-m': 'bangs curving to one side', 'side-curve-l': 'long bangs curving to one side',
+      'eyecover-one': 'long bangs covering one eye', kkaennip: 'sleek side-swept bangs tucked to one side (Korean kkaennip style)', pinned: 'bangs pinned back to one side',
+      'braid-bang': 'braided bangs', 'long-twostrand': 'two long strands framing the face', 'long-curl-in': 'long face-framing bangs curling inward',
+      'long-hime': 'hime-cut straight bangs', 'long-wave': 'long wavy face-framing bangs', 'long-wave-one': 'a long wavy face-framing strand on one side',
+      allback: 'hair slicked back with no bangs, forehead fully showing', 'allback-babyhair': 'hair slicked back with baby hairs on the forehead'
     },
     extra: {
-      ahoge1: 'a small ahoge (stray hair strand) on top', ahoge2: 'a long ahoge (stray hair strand) on top', apple: 'an "apple" tuft tied up on top of the head',
-      knot: 'a small half-up tie at the back', halfbun: 'a half-up bun', crownbraid: 'a crown braid around the head', buns: 'small buns on the sides of the head',
-      sidetails: 'small side tails', sidetailslong: 'long side tails', pigtails: 'short pigtails',
-      twinhighx: 'high twin tails', halftwin: 'half-up twin tails (two side-up)', ponyx: 'a high ponytail', flipends: 'flipped-out hair ends'
+      'ahoge-s': 'a small ahoge (stray hair strand) on top', 'ahoge-l': 'a long ahoge (stray hair strand) on top', apple: 'an "apple" tuft tied up on top of the head',
+      'halfup-knot': 'a small half-up tie at the back', 'halfup-bun': 'a half-up bun', 'braid-crown': 'a crown braid around the head', 'bun-two': 'small buns on the sides of the head',
+      'tail-side-m': 'small side tails', 'tail-side-l': 'long side tails', pigtail: 'short pigtails',
+      'twin-high-top': 'high twin tails', 'twin-half': 'half-up twin tails (two side-up)', 'pony-high-top': 'a high ponytail', 'flip-ends': 'flipped-out hair ends'
     },
     side: {
-      sideburn: 'short sideburns', aegyo: 'thin wisps in front of the ears', jawshort: 'straight side locks to the jaw', jaw: 'straight side locks past the jaw',
-      long: 'long straight side locks to the shoulders', chest: 'long straight side locks reaching the chest', xxlong: 'very long straight side locks reaching the waist',
-      hime: 'hime-cut side locks', himelong: 'long hime-cut side locks', spike: 'spiky side locks', spikelong: 'long spiky side locks',
-      curlin: 'side locks curling inward', curlinlong: 'long side locks curling inward', curl: 'side locks with curled ends', curllong: 'long side locks with curled ends',
-      volumecurl: 'voluminous inward-curled side locks', volumecurllong: 'long voluminous inward-curled side locks', messyin: 'long messy inward-curled side locks',
-      flipout: 'side locks flipping outward', flipoutlong: 'long side locks flipping outward',
-      waveshort: 'short wavy side locks', wave: 'wavy side locks', wavelong: 'long wavy side locks', roll: 'vertical ringlet (drill) side curls',
-      braid: 'braided side locks', braidlong: 'long braided side locks', braidtemple: 'a small braid at the temple', tied: 'side locks tied at the ends'
+      sideburn: 'short sideburns', aegyo: 'thin wisps in front of the ears', 'straight-ss': 'straight side locks to the jaw', 'straight-s': 'straight side locks past the jaw',
+      'straight-m': 'long straight side locks to the shoulders', 'straight-l': 'long straight side locks reaching the chest', 'straight-ll': 'very long straight side locks reaching the waist',
+      'hime-m': 'hime-cut side locks', 'hime-l': 'long hime-cut side locks', 'spike-m': 'spiky side locks', 'spike-l': 'long spiky side locks',
+      'curl-in-m': 'side locks curling inward', 'curl-in-l': 'long side locks curling inward', 'curl-end-m': 'side locks with curled ends', 'curl-end-l': 'long side locks with curled ends',
+      'curl-in-volume-m': 'voluminous inward-curled side locks', 'curl-in-volume-l': 'long voluminous inward-curled side locks', 'curl-in-messy-l': 'long messy inward-curled side locks',
+      'flip-out-m': 'side locks flipping outward', 'flip-out-l': 'long side locks flipping outward',
+      'wave-s': 'short wavy side locks', 'wave-m': 'wavy side locks', 'wave-l': 'long wavy side locks', roll: 'vertical ringlet (drill) side curls',
+      'braid-m': 'braided side locks', 'braid-l': 'long braided side locks', 'braid-temple': 'a small braid at the temple', tied: 'side locks tied at the ends'
     },
     back: {
-      none: 'short hair', pixie: 'a short pixie cut', pixielong: 'a pixie cut', spiky: 'short spiky hair', curlyshort: 'short curly hair', wolf: 'a wolf cut',
-      earbob: 'an ear-length bob', chinbob: 'a chin-length bob', bob: 'a bob', longbob: 'a long bob to the shoulders', sharpbob: 'a sharp blunt-cut bob', tassel: 'a tassel cut',
-      medium: 'straight shoulder-length hair', midlong: 'straight medium-long hair', long: 'long straight hair',
-      chincurl: 'a short cut curling inward', curlin: 'medium hair curling inward', curlmid: 'long hair curling inward',
-      flipshort: 'a short cut flipping outward', flipout: 'medium hair flipping outward',
-      wavechin: 'short wavy hair', wavem: 'medium wavy hair', wavelongbob: 'long wavy hair', wavel: 'very long wavy hair',
-      hippieshort: 'short hippie perm', hippie: 'hippie perm', waveperm: 'long water-wave perm', scurl: 'very long hair with big S-curls', curlyl: 'long voluminous curly hair',
-      layered: 'layered medium hair', layeredlong: 'long layered hair', hush: 'a hush cut',
-      ponyhighshort: 'a short high ponytail', ponyhigh: 'a long high ponytail', ponylow: 'a low ponytail', sidepony: 'a side ponytail', sideponylong: 'a long side ponytail',
-      frontdrape: 'hair tied and draped over one shoulder', twinhigh: 'high twin tails', twinhighlong: 'long high twin tails',
-      twinshort: 'short low twin tails', twin: 'low twin tails', twinlong: 'long low twin tails', pigtail: 'pigtails', drilltwin: 'drill (ringlet) twin tails',
-      braid1: 'a single braid', 'braid-big-side': 'a thick side braid', braid2short: 'two short braids', braid2: 'two long braids', 'braid-ring': 'two braided loops',
-      bun1: 'a bun on top of the head', bun_l: 'a big bun on top of the head', bun2: 'two buns', buntwin: 'buns with twin tails', lowbun: 'a low side bun', lowbuns: 'two low buns',
-      clawup: 'hair twisted up with a claw clip'
+      none: 'short hair', 'pixie-s': 'a short pixie cut', 'pixie-m': 'a pixie cut', 'spiky-m': 'short spiky hair', 'curly-s': 'short curly hair', wolf: 'a wolf cut',
+      'bob-s': 'an ear-length bob', 'bob-m': 'a chin-length bob', 'bob-l': 'a bob', 'bob-ll': 'a long bob to the shoulders', 'bob-sharp': 'a sharp blunt-cut bob', tassel: 'a tassel cut',
+      'straight-s': 'straight shoulder-length hair', 'straight-m': 'straight medium-long hair', 'straight-l': 'long straight hair',
+      'curl-in-s': 'a short cut curling inward', 'curl-in-m': 'medium hair curling inward', 'curl-in-l': 'long hair curling inward',
+      'flip-out-s': 'a short cut flipping outward', 'flip-out-m': 'medium hair flipping outward',
+      'wave-s': 'short wavy hair', 'wave-m': 'medium wavy hair', 'wave-l': 'long wavy hair', 'wave-ll': 'very long wavy hair',
+      'hippie-s': 'short hippie perm', 'hippie-m': 'hippie perm', 'wave-perm-l': 'long water-wave perm', 's-curl-ll': 'very long hair with big S-curls', 'curly-volume-l': 'long voluminous curly hair',
+      'layered-m': 'layered medium hair', 'layered-l': 'long layered hair', hush: 'a hush cut',
+      'pony-high-s': 'a short high ponytail', 'pony-high-l': 'a long high ponytail', 'pony-low': 'a low ponytail', 'pony-side-m': 'a side ponytail', 'pony-side-l': 'a long side ponytail',
+      'drape-front': 'hair tied and draped over one shoulder', 'twin-high-s': 'short high twin tails', 'twin-high-m': 'high twin tails', 'twin-high-l': 'long high twin tails', 'twin-high-ll': 'very long high twin tails',
+      'twin-low-s': 'short low twin tails', 'twin-low-m': 'low twin tails', 'twin-low-l': 'long low twin tails', pigtail: 'pigtails', 'twin-drill': 'drill (ringlet) twin tails',
+      'braid-one': 'a single braid', 'braid-side-big': 'a thick side braid', 'braid-two-s': 'two short braids', 'braid-two-l': 'two long braids', 'braid-ring': 'two braided loops',
+      'bun-top-m': 'a bun on top of the head', 'bun-top-l': 'a big bun on top of the head', 'bun-two': 'two buns', 'bun-twin': 'buns with twin tails', 'bun-low': 'a low side bun', 'bun-low-two': 'two low buns',
+      'updo-claw': 'hair twisted up with a claw clip'
     },
     eye: {
       round: 'round eyes', tsuri: 'upturned (tsurime) eyes', tare: 'droopy (tareme) eyes', jito: 'half-lidded unimpressed (jitome) eyes', almond: 'almond-shaped eyes',
-      cat: 'cat-like eyes', sharp: 'long sharp eyes', deformed: 'big round chibi eyes', sleepy: 'sleepy eyes', slit: 'narrow slit eyes',
+      cat: 'cat-like eyes', sharp: 'long sharp eyes', deformed: 'big round chibi eyes', sleepy: 'sleepy eyes', calm: 'calm gentle eyes', slit: 'narrow slit eyes',
       smile: 'smiling crescent eyes', closed: 'closed eyes', fox: 'fox-like narrow eyes'
     },
     fold: { inner: 'inner double eyelids', outer: 'double eyelids' },
@@ -111,44 +111,44 @@
   // NovelAI (Anime V4/V4.5) 용 Danbooru 태그. 쉼표로 잇고 밑줄 대신 띄어쓰기. 빈 문자열은 태그 없음
   var NAI = {
     front: {
-      gapshort: 'short bangs, blunt bangs', gap: 'blunt bangs', gaplong: 'blunt bangs, long bangs', blunt: 'blunt bangs', bluntlong: 'blunt bangs, long bangs',
-      mushroomshort: 'short bangs, blunt bangs, rounded bangs', mushroom: 'blunt bangs, rounded bangs', choppyshort: 'short bangs, choppy bangs', choppy: 'choppy bangs',
-      zigzagshort: 'short bangs, jagged bangs', zigzag: 'jagged bangs', mbang: 'bangs, hair intakes', mbanglong: 'long bangs, hair intakes', tribang: 'pointy bangs',
-      curly: 'curly bangs', curlylong: 'long bangs, curly bangs', eyecover2: 'hair over eyes', seethrough: 'see-through bangs', antenna: 'see-through bangs, antenna hair',
-      centerwisp: 'forehead, single hair strand', centerlock: 'forehead, single hair strand', parted: 'parted bangs, forehead', side73: 'side part, asymmetrical bangs',
-      curtain: 'curtained hair', curtainlong: 'curtained hair, long bangs', sidebang: 'swept bangs', sidebanglong: 'swept bangs, long bangs',
-      diagonal: 'asymmetrical bangs', diagonallong: 'asymmetrical bangs, long bangs', sidecurveshort: 'swept bangs, short bangs', sidecurve: 'swept bangs', sidecurvelong: 'swept bangs, long bangs',
-      eyecover1: 'hair over one eye', kkaennip: 'swept bangs, hair over one eye', pinned: 'swept bangs, hairclip', braidbang: 'braided bangs', twostrand: 'long sidelocks, parted bangs',
-      longcurlin: 'long bangs, parted bangs', himebang: 'blunt bangs, hime cut', longwave: 'long bangs, wavy hair', 'longwave-one': 'single sidelock, wavy hair',
-      allback: 'hair slicked back, forehead, no bangs', babyhair: 'hair slicked back, forehead, no bangs'
+      'full-gap-s': 'short bangs, blunt bangs', 'full-gap-m': 'blunt bangs', 'full-gap-l': 'blunt bangs, long bangs', 'blunt-m': 'blunt bangs', 'blunt-l': 'blunt bangs, long bangs',
+      'mushroom-s': 'short bangs, blunt bangs, rounded bangs', 'mushroom-m': 'blunt bangs, rounded bangs', 'choppy-s': 'short bangs, choppy bangs', 'choppy-m': 'choppy bangs',
+      'zigzag-s': 'short bangs, jagged bangs', 'zigzag-m': 'jagged bangs', 'm-shape-m': 'bangs, hair intakes', 'm-shape-l': 'long bangs, hair intakes', triangle: 'pointy bangs',
+      'curly-m': 'curly bangs', 'curly-l': 'long bangs, curly bangs', 'eyecover-both': 'hair over eyes', seethrough: 'see-through bangs', antenna: 'see-through bangs, antenna hair',
+      'center-wisp': 'forehead, single hair strand', 'center-lock': 'forehead, single hair strand', 'parted-center': 'parted bangs, forehead', 'parted-73': 'side part, asymmetrical bangs',
+      'curtain-m': 'curtained hair', 'curtain-l': 'curtained hair, long bangs', 'side-swept-m': 'swept bangs', 'side-swept-l': 'swept bangs, long bangs',
+      'diagonal-m': 'asymmetrical bangs', 'diagonal-l': 'asymmetrical bangs, long bangs', 'side-curve-s': 'swept bangs, short bangs', 'side-curve-m': 'swept bangs', 'side-curve-l': 'swept bangs, long bangs',
+      'eyecover-one': 'hair over one eye', kkaennip: 'swept bangs, hair over one eye', pinned: 'swept bangs, hairclip', 'braid-bang': 'braided bangs', 'long-twostrand': 'long sidelocks, parted bangs',
+      'long-curl-in': 'long bangs, parted bangs', 'long-hime': 'blunt bangs, hime cut', 'long-wave': 'long bangs, wavy hair', 'long-wave-one': 'single sidelock, wavy hair',
+      allback: 'hair slicked back, forehead, no bangs', 'allback-babyhair': 'hair slicked back, forehead, no bangs'
     },
     extra: {
-      ahoge1: 'ahoge', ahoge2: 'ahoge, huge ahoge', apple: 'topknot', knot: 'half updo', halfbun: 'half updo, single hair bun', crownbraid: 'crown braid', buns: 'double bun',
-      sidetails: 'two side up', sidetailslong: 'two side up', pigtails: 'short twintails', twinhighx: 'twintails, high twintails', halftwin: 'two side up',
-      ponyx: 'high ponytail', flipends: 'flipped hair'
+      'ahoge-s': 'ahoge', 'ahoge-l': 'ahoge, huge ahoge', apple: 'topknot', 'halfup-knot': 'half updo', 'halfup-bun': 'half updo, single hair bun', 'braid-crown': 'crown braid', 'bun-two': 'double bun',
+      'tail-side-m': 'two side up', 'tail-side-l': 'two side up', pigtail: 'short twintails', 'twin-high-top': 'twintails, high twintails', 'twin-half': 'two side up',
+      'pony-high-top': 'high ponytail', 'flip-ends': 'flipped hair'
     },
     side: {
-      sideburn: 'sideburns', aegyo: 'sidelocks', jawshort: 'sidelocks', jaw: 'sidelocks', long: 'long sidelocks', chest: 'long sidelocks', xxlong: 'long sidelocks',
-      hime: 'hime cut, sidelocks', himelong: 'hime cut, long sidelocks', spike: 'spiked hair, sidelocks', spikelong: 'spiked hair, long sidelocks',
-      curlin: 'sidelocks', curlinlong: 'long sidelocks', curl: 'curled sidelocks', curllong: 'long sidelocks, curled sidelocks', volumecurl: 'sidelocks', volumecurllong: 'long sidelocks',
-      messyin: 'messy hair, long sidelocks', flipout: 'flipped hair, sidelocks', flipoutlong: 'flipped hair, long sidelocks',
-      waveshort: 'wavy hair, sidelocks', wave: 'wavy hair, sidelocks', wavelong: 'wavy hair, long sidelocks', roll: 'drill sidelocks, ringlets',
-      braid: 'braided sidelock', braidlong: 'braided sidelock, long sidelocks', braidtemple: 'french braid', tied: 'tied sidelocks, sidelocks'
+      sideburn: 'sideburns', aegyo: 'sidelocks', 'straight-ss': 'sidelocks', 'straight-s': 'sidelocks', 'straight-m': 'long sidelocks', 'straight-l': 'long sidelocks', 'straight-ll': 'long sidelocks',
+      'hime-m': 'hime cut, sidelocks', 'hime-l': 'hime cut, long sidelocks', 'spike-m': 'spiked hair, sidelocks', 'spike-l': 'spiked hair, long sidelocks',
+      'curl-in-m': 'sidelocks', 'curl-in-l': 'long sidelocks', 'curl-end-m': 'curled sidelocks', 'curl-end-l': 'long sidelocks, curled sidelocks', 'curl-in-volume-m': 'sidelocks', 'curl-in-volume-l': 'long sidelocks',
+      'curl-in-messy-l': 'messy hair, long sidelocks', 'flip-out-m': 'flipped hair, sidelocks', 'flip-out-l': 'flipped hair, long sidelocks',
+      'wave-s': 'wavy hair, sidelocks', 'wave-m': 'wavy hair, sidelocks', 'wave-l': 'wavy hair, long sidelocks', roll: 'drill sidelocks, ringlets',
+      'braid-m': 'braided sidelock', 'braid-l': 'braided sidelock, long sidelocks', 'braid-temple': 'french braid', tied: 'tied sidelocks, sidelocks'
     },
     back: {
-      none: 'short hair', pixie: 'very short hair, pixie cut', pixielong: 'short hair, pixie cut', spiky: 'short hair, spiked hair', curlyshort: 'short hair, curly hair', wolf: 'medium hair, wolf cut',
-      earbob: 'short hair, bob cut', chinbob: 'short hair, bob cut', bob: 'bob cut', longbob: 'medium hair, bob cut', sharpbob: 'short hair, bob cut, straight hair', tassel: 'short hair, bob cut, straight hair',
-      medium: 'medium hair, straight hair', midlong: 'long hair, straight hair', long: 'long hair, straight hair', chincurl: 'short hair', curlin: 'medium hair', curlmid: 'long hair',
-      flipshort: 'short hair, flipped hair', flipout: 'medium hair, flipped hair', wavechin: 'short hair, wavy hair', wavem: 'medium hair, wavy hair', wavelongbob: 'long hair, wavy hair', wavel: 'very long hair, wavy hair',
-      hippieshort: 'medium hair, curly hair', hippie: 'long hair, curly hair', waveperm: 'long hair, wavy hair', scurl: 'very long hair, wavy hair', curlyl: 'long hair, curly hair, big hair',
-      layered: 'medium hair, layered hair', layeredlong: 'long hair, layered hair', hush: 'medium hair, layered hair',
-      ponyhighshort: 'high ponytail, short ponytail', ponyhigh: 'high ponytail, long hair', ponylow: 'low ponytail', sidepony: 'side ponytail', sideponylong: 'side ponytail, long hair',
-      frontdrape: 'hair over shoulder, low ponytail', twinhigh: 'twintails', twinhighlong: 'twintails, long hair', twinshort: 'low twintails, short twintails', twin: 'low twintails', twinlong: 'low twintails, long hair',
-      pigtail: 'short twintails', drilltwin: 'twin drills', braid1: 'single braid', 'braid-big-side': 'side braid, hair over shoulder', braid2short: 'twin braids', braid2: 'twin braids, long hair', 'braid-ring': 'braided hair rings',
-      bun1: 'single hair bun', bun_l: 'single hair bun, big hair bun', bun2: 'double bun', buntwin: 'double bun, twintails', lowbun: 'low side bun', lowbuns: 'double bun, low bun', clawup: 'hair up, hair clip'
+      none: 'short hair', 'pixie-s': 'very short hair, pixie cut', 'pixie-m': 'short hair, pixie cut', 'spiky-m': 'short hair, spiked hair', 'curly-s': 'short hair, curly hair', wolf: 'medium hair, wolf cut',
+      'bob-s': 'short hair, bob cut', 'bob-m': 'short hair, bob cut', 'bob-l': 'bob cut', 'bob-ll': 'medium hair, bob cut', 'bob-sharp': 'short hair, bob cut, straight hair', tassel: 'short hair, bob cut, straight hair',
+      'straight-s': 'medium hair, straight hair', 'straight-m': 'long hair, straight hair', 'straight-l': 'long hair, straight hair', 'curl-in-s': 'short hair', 'curl-in-m': 'medium hair', 'curl-in-l': 'long hair',
+      'flip-out-s': 'short hair, flipped hair', 'flip-out-m': 'medium hair, flipped hair', 'wave-s': 'short hair, wavy hair', 'wave-m': 'medium hair, wavy hair', 'wave-l': 'long hair, wavy hair', 'wave-ll': 'very long hair, wavy hair',
+      'hippie-s': 'medium hair, curly hair', 'hippie-m': 'long hair, curly hair', 'wave-perm-l': 'long hair, wavy hair', 's-curl-ll': 'very long hair, wavy hair', 'curly-volume-l': 'long hair, curly hair, big hair',
+      'layered-m': 'medium hair, layered hair', 'layered-l': 'long hair, layered hair', hush: 'medium hair, layered hair',
+      'pony-high-s': 'high ponytail, short ponytail', 'pony-high-l': 'high ponytail, long hair', 'pony-low': 'low ponytail', 'pony-side-m': 'side ponytail', 'pony-side-l': 'side ponytail, long hair',
+      'drape-front': 'hair over shoulder, low ponytail', 'twin-high-s': 'twintails, short twintails', 'twin-high-m': 'twintails', 'twin-high-l': 'twintails, long hair', 'twin-high-ll': 'twintails, very long hair', 'twin-low-s': 'low twintails, short twintails', 'twin-low-m': 'low twintails', 'twin-low-l': 'low twintails, long hair',
+      pigtail: 'short twintails', 'twin-drill': 'twin drills', 'braid-one': 'single braid', 'braid-side-big': 'side braid, hair over shoulder', 'braid-two-s': 'twin braids', 'braid-two-l': 'twin braids, long hair', 'braid-ring': 'braided hair rings',
+      'bun-top-m': 'single hair bun', 'bun-top-l': 'single hair bun, big hair bun', 'bun-two': 'double bun', 'bun-twin': 'double bun, twintails', 'bun-low': 'low side bun', 'bun-low-two': 'double bun, low bun', 'updo-claw': 'hair up, hair clip'
     },
     eye: { round: 'round eyes', tsuri: 'tsurime', tare: 'tareme', jito: 'jitome', almond: '', cat: 'tsurime, slit pupils', sharp: 'sharp eyes, tsurime', deformed: 'large eyes',
-      sleepy: 'half-closed eyes', slit: 'narrowed eyes', smile: '^ ^', closed: 'closed eyes', fox: 'narrowed eyes, tsurime' },
+      sleepy: 'half-closed eyes', calm: '', slit: 'narrowed eyes', smile: '^ ^', closed: 'closed eyes', fox: 'narrowed eyes, tsurime' },
     fold: { inner: '', outer: '' },
     lash: { up1: '', up3: 'eyelashes', up5: 'long eyelashes', down1: '', down1c: '', down3: 'eyelashes', down5: 'long eyelashes' },
     lowlash: { n3: 'lower eyelashes', n5: 'lower eyelashes', n7: 'lower eyelashes' },
@@ -190,19 +190,19 @@
   };
   // 2026-11-15 추가 파츠
   function add(dict, key, o) { dict[key] = dict[key] || {}; for (var k in o) dict[key][k] = o[k]; }
-  add(EN, 'front', { 'center-blunt-s': 'short narrow blunt bangs only in the center', 'center-blunt': 'narrow blunt bangs only in the center', 'center-blunt-l': 'long narrow blunt bangs only in the center' });
-  add(NAI, 'front', { 'center-blunt-s': 'blunt bangs, short bangs', 'center-blunt': 'blunt bangs', 'center-blunt-l': 'blunt bangs, long bangs' });
+  add(EN, 'front', { 'center-blunt-s': 'short narrow blunt bangs only in the center', 'center-blunt-m': 'narrow blunt bangs only in the center', 'center-blunt-l': 'long narrow blunt bangs only in the center' });
+  add(NAI, 'front', { 'center-blunt-s': 'blunt bangs, short bangs', 'center-blunt-m': 'blunt bangs', 'center-blunt-l': 'blunt bangs, long bangs' });
   add(EN, 'side', { 'curl-in-one': 'a single inward-curled side lock' });
-  add(EN, 'extra', { stray: 'stray flyaway strands by the face', 'stray-line': 'stray flyaway strands on top of the head', 'sidetails-mini': 'tiny twin tails' });
-  add(EN, 'back', { 'frontdrape-loose': 'hair loosely tied and draped over one shoulder', 'braid-loose-side': 'a loose side braid over one shoulder',
-    'twin-big-s': 'short fluffy twin tails', 'twin-big': 'fluffy twin tails', 'twin-big-l': 'big fluffy twin tails', 'spiky-l': 'spiky hair' });
+  add(EN, 'extra', { 'stray-side': 'stray flyaway strands by the face', 'stray-top': 'stray flyaway strands on top of the head', 'twin-mini': 'tiny twin tails' });
+  add(EN, 'back', { 'drape-front-loose': 'hair loosely tied and draped over one shoulder', 'braid-side-loose': 'a loose side braid over one shoulder',
+    'twin-big-s': 'short fluffy twin tails', 'twin-big-m': 'fluffy twin tails', 'twin-big-l': 'big fluffy twin tails', 'spiky-l': 'spiky hair' });
   add(EN, 'ear', { 'cat-anger': 'cat ears flattened back in anger', hamster: 'small round hamster ears', bear: 'round bear ears', rabbit: 'long rabbit ears' });
   add(NAI, 'ear', { 'cat-anger': 'cat ears, animal ears, ears down', hamster: 'hamster ears, animal ears', bear: 'bear ears, animal ears', rabbit: 'rabbit ears, animal ears' });
   add(EN, 'mouth', { 'smile-l': 'a big open-mouthed smile', tsk: 'a small displeased "tsk" mouth' });
   add(NAI, 'side', { 'curl-in-one': 'sidelocks, curled sidelocks' });
-  add(NAI, 'extra', { stray: 'messy hair, hair strand', 'stray-line': 'messy hair, flyaway hair', 'sidetails-mini': 'short twintails, two side up' });
-  add(NAI, 'back', { 'frontdrape-loose': 'hair over shoulder, low ponytail, loose hair', 'braid-loose-side': 'side braid, hair over shoulder, loose braid',
-    'twin-big-s': 'short twintails, fluffy hair', 'twin-big': 'twintails, fluffy hair', 'twin-big-l': 'twintails, fluffy hair, big hair', 'spiky-l': 'medium hair, spiked hair' });
+  add(NAI, 'extra', { 'stray-side': 'messy hair, hair strand', 'stray-top': 'messy hair, flyaway hair', 'twin-mini': 'short twintails, two side up' });
+  add(NAI, 'back', { 'drape-front-loose': 'hair over shoulder, low ponytail, loose hair', 'braid-side-loose': 'side braid, hair over shoulder, loose braid',
+    'twin-big-s': 'short twintails, fluffy hair', 'twin-big-m': 'twintails, fluffy hair', 'twin-big-l': 'twintails, fluffy hair, big hair', 'spiky-l': 'medium hair, spiked hair' });
   add(NAI, 'mouth', { 'smile-l': 'laughing, open mouth, big smile', tsk: 'tsk, closed mouth, annoyed' });
   // 굵게 그린 눈썹: 원래 눈썹 + 굵게
   ['flat', 'arch', 'down', 'up', 'angled', 'thick', 'thin', 'short', 'frown', 'danmuji'].forEach(function (id) {

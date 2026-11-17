@@ -5,10 +5,10 @@
   var HISTORY_MAX = 100;
 
   var state = CG.defaultState();
-  // 얼굴형(둥근형)과 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다)
+  // 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다). 얼굴형 고정은 주인 지시로 뺐다(2026-11-17)
   // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
   // 오드아이도 '없음'으로 고정한 채 시작한다
-  var locks = { face: true, skinColor: true, earring: true, facewear: true, oddColor: true };
+  var locks = { skinColor: true, earring: true, facewear: true, oddColor: true };
   var history = [];
   var cursor = -1;
   // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다
