@@ -17,6 +17,7 @@ http://localhost:4173 에서 확인합니다. 별도 설치나 서버 데이터�
 
 - 홈페이지: `dist/index.html`
 - 스타일: `dist/style.css` (수정 후 `node scripts/sync-style.mjs` 실행)
+- 메인 카드 아이콘: `icons/*.svg` (블로그·인스타그램·X·유튜브·치지직·갤러리·캐릭터·이름·스네이크·다시 태어나기·음악). 편집기로 고친 뒤 `node scripts/sync-icons.mjs`를 돌리면 `dist/index.html`의 카드 안에 들어간다(첫 화면이 빨리 뜨도록 파일을 따로 불러오지 않고 HTML에 넣는다). 선 색·굵기는 카드 CSS를 따르고, 파일의 맨 바깥 `stroke-width`를 바꾸면 그 굵기가 들어간다. 안쪽 도형에 직접 칠한 색은 그대로 나온다. 스티커 카드는 `dist/stickers-cat.svg`, 폰트 카드는 글자(`Aa`)다.
 - 게임 화면/입력: `dist/snake.mjs`
 - 게임 규칙: `dist/snake-engine.mjs`
 - 음악 발판: `dist/music-pads.mjs`
