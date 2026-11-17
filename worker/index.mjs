@@ -5,8 +5,8 @@
 //   POST /api/board/show/comment    {id, text}  댓글 (anyone); list sends comments [{id, text, at, mine, writer}]
 //   POST /api/board/show/uncomment  {id, cid}   delete a 댓글: its writer (same IP hash) or admin
 //   (show/edit: admin may also send {code} to fix a post's combination code, e.g. after a part was redrawn under a new id)
-//   POST /api/board/show/nick       {roll?: true, name?, color?}  this visitor's nickname (per salted IP hash, unique);
-//                                   first call without fields assigns a random Spore-style name. The admin is always "둘기마요".
+//   POST /api/board/show/nick       {roll?: true, color?}  this visitor's nickname (per salted IP hash, unique). Names come only
+//                                   from the dice (random Spore-style); the first call assigns one. The admin is always "둘기마요".
 //   list sends me: {name, color, owner}, and nick: {...} on each post and comment (null when the writer never had one)
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve         {id}                      admin only
@@ -78,7 +78,8 @@ const commentView = (c, p, me) => ({ id: c.id, text: c.text, at: c.at, mine: !!m
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 // ---------- 닉네임: IP 해시마다 하나, 다른 사람과 겹치지 않는다. 관리자는 늘 "둘기마요" ----------
 const OWNER_NICK = '둘기마요', OWNER_COLOR = '#5d4e48';
-const NICK_COLORS = ['#2b2523', '#5d4e48', '#7d726e', '#c9573f', '#d9822b', '#b08a1e', '#4f8a3c', '#2f8f83', '#2f6bd8', '#5b55c9', '#9b4fb8', '#d0508a'];
+// 부드러운 색 24개 (흰 바탕에서 읽히는 밝기)
+const NICK_COLORS = ['#d47a8a', '#d986a8', '#c97fb5', '#b98ccc', '#a487cf', '#8f8ad6', '#7b93d6', '#6f8fb0', '#6aa3d0', '#5aa3a8', '#5fae99', '#7fa37a', '#84996a', '#9aa55a', '#c4a24a', '#d4a05a', '#d9956b', '#e08a74', '#c98266', '#b58a96', '#a08c80', '#8c7166', '#9a8f8a', '#7f8fa3'];
 const RESERVED = /둘기마요|dovemayo|관리자|운영자|admin/i;
 const nickKey = (h) => 'nick:' + h;
 const nameKey = (n) => 'nickname:' + n.replace(/\s+/g, '').toLowerCase();
@@ -155,16 +156,11 @@ async function show(request, env, path, admin) {
     const color = body.color != null ? String(body.color) : null;
     if (color != null && NICK_COLORS.indexOf(color) < 0) return fail('고를 수 있는 색이 아닙니다.');
     let name = null;
-    if (body.name != null || body.roll) {
+    if (body.name != null) return fail('닉네임은 주사위로만 바꿀 수 있습니다.');
+    if (body.roll) {
       if (n && n.owner) return fail('둘기마요의 닉네임은 바꿀 수 없습니다.', 403);
-      if (!(await rateOk(env, 'rateh-nick:' + me, 60))) return fail('잠시 뒤에 다시 바꿔 주세요.', 429);
-      if (body.roll) name = await randomNick(env);
-      else {
-        name = String(body.name).replace(/\s+/g, ' ').trim();
-        if (!name || [...name].length > 12) return fail('닉네임은 1~12자로 적어 주세요.');
-        if (/[<>&"'\u0000-\u001f]/.test(name)) return fail('닉네임에 쓸 수 없는 글자가 있습니다.');
-        if (RESERVED.test(name)) return fail('쓸 수 없는 닉네임입니다.');
-      }
+      if (!(await rateOk(env, 'rateh-nick:' + me, 60))) return fail('잠시 뒤에 다시 뽑아 주세요.', 429);
+      name = await randomNick(env);
     } else if (!n) name = await randomNick(env);
     if (name) {
       const got = await claimNick(env, me, name, color, false);

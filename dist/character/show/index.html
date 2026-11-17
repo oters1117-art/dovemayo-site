@@ -55,7 +55,6 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .comments li{display:flex;gap:6px;align-items:flex-start;font-size:14px;background:#f7f4f2;border-radius:10px;padding:6px 8px}
 .comments li .body{flex:1;min-width:0;overflow-wrap:anywhere}
 .comments li .meta{display:block;font-size:11px;color:var(--muted)}
-.comments li .tag{font-size:11px;color:#2f6bd8;font-weight:600;margin-right:4px}
 .comments li .x{flex:none;border:0;background:none;padding:0 2px;color:var(--muted);font-size:16px;line-height:1.2}
 .comments li .x:hover{color:var(--on)}
 .comments .none{font-size:13px;color:var(--muted)}
@@ -63,15 +62,17 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .cform input{flex:1}
 /* 닉네임: 이름 색은 고른 프리셋 색 */
 .nick{font-weight:700}
-.pop .by{margin:4px 2px 0;text-align:center;font-size:14px}
+.pop .byline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:6px 2px 10px}
+.pop .byline .by{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop .byline .by .nick{font-weight:400}
+.pop .byline .when{margin:0;flex:none}
 .comments li .nick{margin-right:6px}
 .me{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-8px 0 18px;font-size:14px;color:var(--muted);position:relative}
 .me .dot{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--rule);flex:none}
 .me .nick{font-size:15px}
 .me .ib{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border-radius:9px;color:var(--ink)}
 .me .ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.me input{width:12em}
-.colors{position:absolute;left:62px;top:30px;z-index:5;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(6,26px);gap:6px;box-shadow:0 8px 24px rgba(60,40,30,.16)}
+.colors{position:absolute;left:62px;top:30px;z-index:5;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(8,26px);gap:6px;box-shadow:0 8px 24px rgba(60,40,30,.16)}
 .colors button{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--rule)}
 .colors button[aria-selected=true]{box-shadow:0 0 0 2px var(--ink)}
 .pop .text{margin:12px 2px 0;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
@@ -107,14 +108,12 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     </div>
   </form>
 
-  <!-- 내 닉네임 (IP 기준, 다른 사람과 겹치지 않음): 색 점을 누르면 색 프리셋, 주사위는 새 이름, 연필은 직접 적기 -->
+  <!-- 내 닉네임 (IP 기준, 다른 사람과 겹치지 않음): 색 점을 누르면 색 프리셋, 이름은 주사위로만 -->
   <div id="me" class="me" hidden>
     <span>내 닉네임</span>
     <button type="button" id="me-dot" class="dot" aria-haspopup="listbox" aria-expanded="false" aria-label="닉네임 색 고르기" title="닉네임 색"></button>
     <span id="me-name" class="nick"></span>
-    <input id="me-input" type="text" maxlength="12" aria-label="닉네임 적기" hidden>
     <button type="button" id="me-roll" class="ib" aria-label="닉네임 다시 뽑기" title="다시 뽑기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/></svg></button>
-    <button type="button" id="me-edit" class="ib" aria-label="닉네임 직접 적기" title="직접 적기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     <div id="me-colors" class="colors" role="listbox" aria-label="닉네임 색" hidden></div>
     <span id="me-msg" class="msg" role="status" style="margin:0"></span>
   </div>
@@ -132,8 +131,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       <input id="pop-edit-text" type="text" maxlength="300" aria-label="한 줄 고치기">
       <button type="button" id="pop-edit-save" class="primary">저장</button>
     </div>
-    <p id="pop-by" class="by"></p>
-    <p id="pop-when" class="when"></p>
+    <!-- 한 줄: 왼쪽 닉네임, 오른쪽 날짜 -->
+    <div class="byline"><span id="pop-by" class="by"></span><span id="pop-when" class="when"></span></div>
     <p id="pop-msg" class="msg" role="status"></p>
     <div class="acts">
       <button type="button" id="pop-like" class="like" aria-pressed="false">추천</button>
@@ -296,7 +295,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   function note(t) { $('pop-msg').textContent = t; }
 
   // ---------- 닉네임 ----------
-  var COLORS = ['#2b2523', '#5d4e48', '#7d726e', '#c9573f', '#d9822b', '#b08a1e', '#4f8a3c', '#2f8f83', '#2f6bd8', '#5b55c9', '#9b4fb8', '#d0508a'];
+  // 부드러운 색 24개 (서버 worker/index.mjs 의 NICK_COLORS 와 같아야 한다)
+  var COLORS = ['#d47a8a', '#d986a8', '#c97fb5', '#b98ccc', '#a487cf', '#8f8ad6', '#7b93d6', '#6f8fb0', '#6aa3d0', '#5aa3a8', '#5fae99', '#7fa37a', '#84996a', '#9aa55a', '#c4a24a', '#d4a05a', '#d9956b', '#e08a74', '#c98266', '#b58a96', '#a08c80', '#8c7166', '#9a8f8a', '#7f8fa3'];
   var me = null, meAsked = false;
   // 글·댓글의 닉네임 (닉네임이 생기기 전에 올린 사람은 "익명")
   function paintBy(el, n, inline) {
@@ -312,28 +312,13 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('me-name').textContent = n.name; $('me-name').style.color = n.color;
     $('me-dot').style.background = n.color;
     // 둘기마요(관리자)는 이름을 바꾸지 않는다. 색만 고른다
-    $('me-roll').hidden = $('me-edit').hidden = !!n.owner;
+    $('me-roll').hidden = !!n.owner;
   }
   function meNote(t) { $('me-msg').textContent = t || ''; }
   function nickApi(body) {
     return api('nick', body).then(function (r) { paintMe(r.me); meNote(''); load(); return r; }, function (x) { meNote(x.message); throw x; });
   }
   $('me-roll').onclick = function () { $('me-roll').disabled = true; nickApi({ roll: true }).catch(function () {}).then(function () { $('me-roll').disabled = false; }); };
-  $('me-edit').onclick = function () {
-    var inp = $('me-input');
-    if (!inp.hidden) { saveName(); return; }
-    inp.value = me ? me.name : ''; inp.hidden = false; $('me-name').hidden = true; inp.focus(); inp.select();
-  };
-  function endEdit() { $('me-input').hidden = true; $('me-name').hidden = false; }
-  function saveName() {
-    var v = $('me-input').value.trim();
-    if (!v || (me && v === me.name)) { endEdit(); return; }
-    nickApi({ name: v }).then(endEdit, function () { $('me-input').focus(); });
-  }
-  $('me-input').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); saveName(); }
-    if (e.key === 'Escape') { e.preventDefault(); endEdit(); meNote(''); }
-  });
   // 색 점: 프리셋이 드롭다운처럼 뜬다
   function closeColors() { $('me-colors').hidden = true; $('me-dot').setAttribute('aria-expanded', 'false'); }
   $('me-dot').onclick = function (e) {
@@ -361,7 +346,6 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     list.forEach(function (c) {
       var li = document.createElement('li'), body = document.createElement('div'); body.className = 'body';
       paintBy(body, c.nick, true);
-      if (c.writer) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = '글쓴이'; body.appendChild(t); }
       body.appendChild(document.createTextNode(c.text));
       var m = document.createElement('span'); m.className = 'meta';
       m.textContent = new Date(c.at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }); body.appendChild(m);
