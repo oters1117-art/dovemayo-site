@@ -14,9 +14,10 @@ h1{font-size:22px;margin:0}
 .back{font-size:13px;color:var(--muted)}
 .lead{color:var(--muted);margin:8px 0 16px}
 .box{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:14px 16px}
-.row{display:grid;grid-template-columns:5.5em 1fr 2.2em;gap:10px;align-items:center;margin:4px 0}
-.row label{font-weight:600}
-.row output{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:6.5em 1fr 6.5em;gap:10px;align-items:center;margin:6px 0}
+.row span{font-size:13px;color:var(--muted);white-space:nowrap}
+.row span:last-child{text-align:right}
+@media(max-width:420px){.row{grid-template-columns:5.6em 1fr 5.6em}.row span{font-size:12px}}
 input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .note{font-size:12px;color:var(--muted);margin:2px 0 10px}
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -37,6 +38,8 @@ h2{font-size:15px;margin:24px 0 8px}
 .tabs button{border-radius:999px;padding:7px 16px}
 .tabs button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .names.spore{grid-template-columns:repeat(3,minmax(0,1fr))}
+.names.spore.one{grid-template-columns:minmax(0,1fr)}
+.names.spore.one button{padding:22px 8px;font-size:22px;font-weight:600}
 @media(max-width:520px){.names.spore{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
@@ -53,9 +56,8 @@ h2{font-size:15px;margin:24px 0 8px}
 
   <section id="pane-ko" role="tabpanel" aria-labelledby="tab-ko">
   <div class="box">
-    <div class="row"><label for="w-sur">성 가중치</label><input id="w-sur" type="range" min="0" max="10" step="1" value="5"><output id="o-sur"></output></div>
-    <div class="row"><label for="w-name">이름 가중치</label><input id="w-name" type="range" min="0" max="10" step="1" value="5"><output id="o-name"></output></div>
-    <p class="note">높을수록 흔한 성·이름이 많이 나옵니다. 0이면 모두 같은 확률입니다.</p>
+    <div class="row"><span>희귀한 성씨</span><input id="w-sur" type="range" min="-10" max="10" step="1" value="5" aria-label="성씨: 희귀한 쪽에서 흔한 쪽까지"><span>흔한 성씨</span></div>
+    <div class="row"><span>희귀한 이름</span><input id="w-name" type="range" min="-10" max="10" step="1" value="5" aria-label="이름: 희귀한 쪽에서 흔한 쪽까지"><span>흔한 이름</span></div>
     <div class="bar">
       <label><input id="space" type="checkbox"> 성과 이름 띄어 쓰기</label>
       <button type="button" id="again" class="primary">다시 뽑기</button>
@@ -74,6 +76,7 @@ h2{font-size:15px;margin:24px 0 8px}
     <p class="note" style="margin-top:0">형용사와 명사를 하나씩 골라 붙입니다. 예: 귀여운 고양이</p>
     <div class="bar">
       <label><input id="spore-space" type="checkbox" checked> 띄어 쓰기</label>
+      <label style="margin-right:0"><input id="spore-many" type="checkbox"> 여러 개 뽑기</label>
       <button type="button" id="spore-again" class="primary">다시 뽑기</button>
     </div>
   </div>
@@ -91,7 +94,7 @@ h2{font-size:15px;margin:24px 0 8px}
   var $ = function (id) { return document.getElementById(id); };
 
   // 순위 i (0 = 가장 흔함) 의 비중 = 기본 비중 × exp(-가중치 × i / 개수).
-  // 가중치 0 은 모두 같고, 10 이면 앞쪽 10% 안에서 거의 다 나온다.
+  // 슬라이더 가운데(0)는 모두 같고, 오른쪽 끝(10)은 흔한 쪽, 왼쪽 끝(-10)은 희귀한 쪽에서 거의 다 나온다.
   function table(list, weight) {
     var n = list.length, sum = 0, acc = [];
     for (var i = 0; i < n; i++) {
@@ -135,7 +138,6 @@ h2{font-size:15px;margin:24px 0 8px}
   }
   function draw() {
     var ws = +$('w-sur').value, wn = +$('w-name').value, gap = $('space').checked ? ' ' : '';
-    $('o-sur').textContent = ws; $('o-name').textContent = wn;
     var sur = table(D.surnames, ws);
     fill($('female'), sur, table(D.female, wn), gap);
     fill($('male'), sur, table(D.male, wn), gap);
@@ -161,15 +163,22 @@ h2{font-size:15px;margin:24px 0 8px}
   var S = window.SPORE_DATA;
   function drawSpore() {
     var box = $('spore'), gap = $('spore-space').checked ? ' ' : '', seen = {};
+    var many = $('spore-many').checked, count = many ? COUNT : 1;
     box.textContent = '';
-    for (var i = 0, tries = 0; i < COUNT && tries < COUNT * 20; tries++) {
+    box.className = 'names spore' + (many ? '' : ' one');
+    try { localStorage.setItem('name-spore', JSON.stringify({ g: !!gap, m: many })); } catch (e) {}
+    for (var i = 0, tries = 0; i < count && tries < COUNT * 20; tries++) {
       var name = S.adj[Math.floor(Math.random() * S.adj.length)] + gap + S.noun[Math.floor(Math.random() * S.noun.length)];
       if (seen[name]) continue;
       seen[name] = 1; i++;
       var b = document.createElement('button'); b.type = 'button'; b.textContent = name; box.appendChild(b);
     }
   }
-  $('spore-space').onchange = $('spore-again').onclick = drawSpore;
+  try {
+    var sp = JSON.parse(localStorage.getItem('name-spore') || 'null');
+    if (sp) { $('spore-space').checked = !!sp.g; $('spore-many').checked = !!sp.m; }
+  } catch (e) {}
+  $('spore-space').onchange = $('spore-many').onchange = $('spore-again').onclick = drawSpore;
   drawSpore();
 
   // 탭: 마지막에 본 탭을 기억한다 (주소 #spore 로도 열린다)
