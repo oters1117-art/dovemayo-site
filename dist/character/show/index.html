@@ -44,15 +44,10 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .side svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .side:disabled{opacity:.25}
 @media(max-width:560px){.side{position:fixed;bottom:18px;z-index:11}.side.prev{left:18px}.side.next{right:18px}.dim{padding-bottom:80px}}
-.pop{background:var(--card);border-radius:20px;padding:16px;width:min(100%,520px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
+/* 세로: 위에 큰 그림, 아래에 글·버튼·댓글 (팝업 안에서 스크롤) */
+.pop{background:var(--card);border-radius:20px;padding:16px;width:min(100%,600px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .pop .face{border-radius:16px;overflow:hidden;aspect-ratio:1}
 .pop .info{display:flex;flex-direction:column;min-width:0}
-/* PC: 왼쪽에 큰 그림(화면 높이에 맞춤), 오른쪽에 글·버튼·댓글 */
-@media(min-width:900px){
-  .pop{width:auto;max-width:calc(100vw - 150px);display:grid;grid-template-columns:min(600px,calc(100vh - 64px),calc(100dvh - 64px),calc(100vw - 520px)) 320px;gap:18px;align-items:stretch;overflow:hidden}
-  .pop .face{align-self:start}
-  .pop .info{max-height:min(600px,calc(100vh - 64px),calc(100dvh - 64px));overflow:auto}
-  .pop .text{text-align:left}.pop .when{text-align:left}.pop .msg{text-align:left}
 }
 .comments{margin-top:14px;border-top:1px solid var(--rule);padding-top:10px;flex:1}
 .comments h2{font-size:13px;margin:0 0 6px;color:var(--muted);font-weight:600}
@@ -66,6 +61,19 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .comments .none{font-size:13px;color:var(--muted)}
 .cform{display:flex;gap:6px;margin-top:8px}
 .cform input{flex:1}
+/* 닉네임: 이름 색은 고른 프리셋 색 */
+.nick{font-weight:700}
+.pop .by{margin:4px 2px 0;text-align:center;font-size:14px}
+.comments li .nick{margin-right:6px}
+.me{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-8px 0 18px;font-size:14px;color:var(--muted);position:relative}
+.me .dot{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--rule);flex:none}
+.me .nick{font-size:15px}
+.me .ib{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border-radius:9px;color:var(--ink)}
+.me .ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.me input{width:12em}
+.colors{position:absolute;left:62px;top:30px;z-index:5;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(6,26px);gap:6px;box-shadow:0 8px 24px rgba(60,40,30,.16)}
+.colors button{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--rule)}
+.colors button[aria-selected=true]{box-shadow:0 0 0 2px var(--ink)}
 .pop .text{margin:12px 2px 0;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
 .pop .edit{display:flex;gap:8px;margin-top:12px}
 .pop .edit input{flex:1}
@@ -99,6 +107,18 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     </div>
   </form>
 
+  <!-- 내 닉네임 (IP 기준, 다른 사람과 겹치지 않음): 색 점을 누르면 색 프리셋, 주사위는 새 이름, 연필은 직접 적기 -->
+  <div id="me" class="me" hidden>
+    <span>내 닉네임</span>
+    <button type="button" id="me-dot" class="dot" aria-haspopup="listbox" aria-expanded="false" aria-label="닉네임 색 고르기" title="닉네임 색"></button>
+    <span id="me-name" class="nick"></span>
+    <input id="me-input" type="text" maxlength="12" aria-label="닉네임 적기" hidden>
+    <button type="button" id="me-roll" class="ib" aria-label="닉네임 다시 뽑기" title="다시 뽑기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/></svg></button>
+    <button type="button" id="me-edit" class="ib" aria-label="닉네임 직접 적기" title="직접 적기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <div id="me-colors" class="colors" role="listbox" aria-label="닉네임 색" hidden></div>
+    <span id="me-msg" class="msg" role="status" style="margin:0"></span>
+  </div>
+
   <div id="grid" class="grid"></div>
 </main>
 
@@ -112,6 +132,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       <input id="pop-edit-text" type="text" maxlength="300" aria-label="한 줄 고치기">
       <button type="button" id="pop-edit-save" class="primary">저장</button>
     </div>
+    <p id="pop-by" class="by"></p>
     <p id="pop-when" class="when"></p>
     <p id="pop-msg" class="msg" role="status"></p>
     <div class="acts">
@@ -190,6 +211,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   function load() {
     api('list').then(function (r) {
       admin = r.admin; posts = r.posts;
+      // 내 닉네임: 아직 없으면 한 번 뽑아 달라고 한다
+      if (r.me) paintMe(r.me); else if (!meAsked) { meAsked = true; nickApi({}).catch(function () {}); }
       // 팝업이 열려 있으면 같은 글의 새 내용으로 바꿔 둔다
       if (current) { for (var k = 0; k < posts.length; k++) if (posts[k].id === current.id) { current = posts[k]; paintComments(current); } }
       var g = $('grid'); g.textContent = '';
@@ -221,6 +244,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('pop-open').href = '../#' + encodeURI(p.code);
     // 같은 IP로 올린 글은 올린 사람이 고치고 지울 수 있다 (관리자는 지우기만)
     paintLike(p);
+    paintBy($('pop-by'), p.nick);
     paintComments(p);
     $('pop-ctext').value = '';
     $('pop-del').hidden = !(admin || p.mine);
@@ -271,6 +295,63 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   });
   function note(t) { $('pop-msg').textContent = t; }
 
+  // ---------- 닉네임 ----------
+  var COLORS = ['#2b2523', '#5d4e48', '#7d726e', '#c9573f', '#d9822b', '#b08a1e', '#4f8a3c', '#2f8f83', '#2f6bd8', '#5b55c9', '#9b4fb8', '#d0508a'];
+  var me = null, meAsked = false;
+  // 글·댓글의 닉네임 (닉네임이 생기기 전에 올린 사람은 "익명")
+  function paintBy(el, n, inline) {
+    var s = document.createElement('span'); s.className = 'nick';
+    s.textContent = n ? n.name : '익명';
+    s.style.color = n ? n.color : 'var(--muted)';
+    if (inline) { el.appendChild(s); return; }
+    el.textContent = ''; el.appendChild(s);
+  }
+  function paintMe(n) {
+    me = n;
+    $('me').hidden = false;
+    $('me-name').textContent = n.name; $('me-name').style.color = n.color;
+    $('me-dot').style.background = n.color;
+    // 둘기마요(관리자)는 이름을 바꾸지 않는다. 색만 고른다
+    $('me-roll').hidden = $('me-edit').hidden = !!n.owner;
+  }
+  function meNote(t) { $('me-msg').textContent = t || ''; }
+  function nickApi(body) {
+    return api('nick', body).then(function (r) { paintMe(r.me); meNote(''); load(); return r; }, function (x) { meNote(x.message); throw x; });
+  }
+  $('me-roll').onclick = function () { $('me-roll').disabled = true; nickApi({ roll: true }).catch(function () {}).then(function () { $('me-roll').disabled = false; }); };
+  $('me-edit').onclick = function () {
+    var inp = $('me-input');
+    if (!inp.hidden) { saveName(); return; }
+    inp.value = me ? me.name : ''; inp.hidden = false; $('me-name').hidden = true; inp.focus(); inp.select();
+  };
+  function endEdit() { $('me-input').hidden = true; $('me-name').hidden = false; }
+  function saveName() {
+    var v = $('me-input').value.trim();
+    if (!v || (me && v === me.name)) { endEdit(); return; }
+    nickApi({ name: v }).then(endEdit, function () { $('me-input').focus(); });
+  }
+  $('me-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); saveName(); }
+    if (e.key === 'Escape') { e.preventDefault(); endEdit(); meNote(''); }
+  });
+  // 색 점: 프리셋이 드롭다운처럼 뜬다
+  function closeColors() { $('me-colors').hidden = true; $('me-dot').setAttribute('aria-expanded', 'false'); }
+  $('me-dot').onclick = function (e) {
+    e.stopPropagation();
+    var box = $('me-colors');
+    if (!box.hidden) { closeColors(); return; }
+    box.textContent = '';
+    COLORS.forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.style.background = c;
+      b.setAttribute('role', 'option'); b.setAttribute('aria-label', c); b.setAttribute('aria-selected', me && me.color === c ? 'true' : 'false');
+      b.onclick = function () { closeColors(); nickApi({ color: c }).catch(function () {}); };
+      box.appendChild(b);
+    });
+    box.hidden = false; $('me-dot').setAttribute('aria-expanded', 'true');
+  };
+  document.addEventListener('click', function (e) { if (!$('me-colors').hidden && !$('me-colors').contains(e.target) && e.target !== $('me-dot')) closeColors(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('me-colors').hidden) closeColors(); });
+
   // ---------- 댓글: 누구나 달고, 단 사람(같은 IP)과 관리자가 지운다 ----------
   function paintComments(p) {
     var list = p.comments || [], ul = $('pop-comments');
@@ -279,6 +360,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     if (!list.length) { var e = document.createElement('li'); e.className = 'none'; e.style.background = 'none'; e.style.padding = '0'; e.textContent = '아직 댓글이 없습니다.'; ul.appendChild(e); }
     list.forEach(function (c) {
       var li = document.createElement('li'), body = document.createElement('div'); body.className = 'body';
+      paintBy(body, c.nick, true);
       if (c.writer) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = '글쓴이'; body.appendChild(t); }
       body.appendChild(document.createTextNode(c.text));
       var m = document.createElement('span'); m.className = 'meta';

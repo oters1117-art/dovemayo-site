@@ -5,6 +5,9 @@
 //   POST /api/board/show/comment    {id, text}  댓글 (anyone); list sends comments [{id, text, at, mine, writer}]
 //   POST /api/board/show/uncomment  {id, cid}   delete a 댓글: its writer (same IP hash) or admin
 //   (show/edit: admin may also send {code} to fix a post's combination code, e.g. after a part was redrawn under a new id)
+//   POST /api/board/show/nick       {roll?: true, name?, color?}  this visitor's nickname (per salted IP hash, unique);
+//                                   first call without fields assigns a random Spore-style name. The admin is always "둘기마요".
+//   list sends me: {name, color, owner}, and nick: {...} on each post and comment (null when the writer never had one)
 //   POST /api/board/submit          {text, image?: dataURL}  -> pending post
 //   POST /api/board/approve         {id}                      admin only
 //   POST /api/board/delete          {id}                      admin, or the writer (same IP)
@@ -16,6 +19,7 @@
 // so the writer can edit or delete it from the same IP; lists send only `mine: true/false`. A Durable Object needs no extra Cloudflare permission beyond deploying the script.
 // Rate limits are keyed by the same salted hash ("rateh:..."); raw IPs are never stored. Old "rate:<ip>" keys are removed once (cleanupRawIpKeys).
 import { DurableObject } from 'cloudflare:workers';
+import { ADJ, NOUN } from './spore-names.mjs';
 const MAX_TEXT = 500, MAX_IMAGE = 600 * 1024, MAX_POSTS = 400, PER_HOUR = 6;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 const fail = (message, status = 400) => json({ error: message }, status);
@@ -72,6 +76,46 @@ async function submit(request, env) {
 const MAX_SHOW = 2000, MAX_SHOW_TEXT = 300, MAX_COMMENT = 200, MAX_COMMENTS = 300, COMMENTS_PER_HOUR = 30;
 const commentView = (c, p, me) => ({ id: c.id, text: c.text, at: c.at, mine: !!me && c.by === me, writer: !!c.by && c.by === p.by });
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+// ---------- 닉네임: IP 해시마다 하나, 다른 사람과 겹치지 않는다. 관리자는 늘 "둘기마요" ----------
+const OWNER_NICK = '둘기마요', OWNER_COLOR = '#5d4e48';
+const NICK_COLORS = ['#2b2523', '#5d4e48', '#7d726e', '#c9573f', '#d9822b', '#b08a1e', '#4f8a3c', '#2f8f83', '#2f6bd8', '#5b55c9', '#9b4fb8', '#d0508a'];
+const RESERVED = /둘기마요|dovemayo|관리자|운영자|admin/i;
+const nickKey = (h) => 'nick:' + h;
+const nameKey = (n) => 'nickname:' + n.replace(/\s+/g, '').toLowerCase();
+const nickView = (n) => (n ? { name: n.name, color: n.color, owner: !!n.owner } : null);
+async function getNicks(env, hashes) {
+  const keys = [...new Set(hashes.filter(Boolean))].map(nickKey), out = new Map();
+  for (let i = 0; i < keys.length; i += 128) for (const [k, v] of await env.BOARD.get(keys.slice(i, i + 128))) out.set(k.slice(5), v);
+  return out;
+}
+async function randomNick(env) {
+  for (let i = 0; i < 60; i++) {
+    const name = ADJ[Math.floor(Math.random() * ADJ.length)] + ' ' + NOUN[Math.floor(Math.random() * NOUN.length)];
+    if (!RESERVED.test(name) && !(await env.BOARD.get(nameKey(name)))) return name;
+  }
+  return null;
+}
+// name 을 me 의 닉네임으로. 다른 사람이 쓰는 이름이면 false
+async function claimNick(env, me, name, color, owner) {
+  const old = await env.BOARD.get(nickKey(me));
+  if (!owner) {
+    const holder = await env.BOARD.get(nameKey(name));
+    if (holder && holder !== me) return false;
+    await env.BOARD.put(nameKey(name), me);
+  }
+  if (old && !old.owner && nameKey(old.name) !== nameKey(name) && (await env.BOARD.get(nameKey(old.name))) === me) await env.BOARD.delete(nameKey(old.name));
+  const n = { name, color: color || (old && old.color) || NICK_COLORS[Math.floor(Math.random() * NICK_COLORS.length)] };
+  if (owner) n.owner = true;
+  await env.BOARD.put(nickKey(me), n);
+  return n;
+}
+// 관리자 키로 들어온 IP 의 닉네임은 "둘기마요" (그 IP 로 올린 예전 글·댓글도 둘기마요로 보인다)
+async function ownerNick(env, me) {
+  const n = me && (await env.BOARD.get(nickKey(me)));
+  if (!me || (n && n.owner)) return n;
+  return claimNick(env, me, OWNER_NICK, (n && n.color) || OWNER_COLOR, true);
+}
+
 // 한 시간에 limit 번까지. key 는 소금 친 IP 해시로 만든다
 async function rateOk(env, key, limit) {
   const hour = Math.floor(Date.now() / 3600000), rate = await env.BOARD.get(key);
@@ -83,9 +127,13 @@ async function rateOk(env, key, limit) {
 async function show(request, env, path, admin) {
   const list = (await env.BOARD.get('show')) || [], me = await writer(request, env);
   if (path === 'list' && request.method === 'GET') {
-    return json({ admin, posts: list.slice(0, 600).map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me,
-      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me),
-      comments: (p.comments || []).map((c) => commentView(c, p, me)) })) });
+    if (admin) await ownerNick(env, me);
+    const shown = list.slice(0, 600), who = [me];
+    for (const p of shown) { who.push(p.by); for (const c of p.comments || []) who.push(c.by); }
+    const nicks = await getNicks(env, who), nick = (h) => nickView(h && nicks.get(h));
+    return json({ admin, me: nick(me), posts: shown.map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me,
+      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me), nick: nick(p.by),
+      comments: (p.comments || []).map((c) => Object.assign(commentView(c, p, me), { nick: nick(c.by) })) })) });
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);
   let body;
@@ -101,6 +149,31 @@ async function show(request, env, path, admin) {
     await env.BOARD.put('show', list);
     return json({ ok: true, id });
   }
+  if (path === 'nick') {
+    if (!me) return fail('닉네임을 정할 수 없습니다.', 403);
+    let n = admin ? await ownerNick(env, me) : await env.BOARD.get(nickKey(me));
+    const color = body.color != null ? String(body.color) : null;
+    if (color != null && NICK_COLORS.indexOf(color) < 0) return fail('고를 수 있는 색이 아닙니다.');
+    let name = null;
+    if (body.name != null || body.roll) {
+      if (n && n.owner) return fail('둘기마요의 닉네임은 바꿀 수 없습니다.', 403);
+      if (!(await rateOk(env, 'rateh-nick:' + me, 60))) return fail('잠시 뒤에 다시 바꿔 주세요.', 429);
+      if (body.roll) name = await randomNick(env);
+      else {
+        name = String(body.name).replace(/\s+/g, ' ').trim();
+        if (!name || [...name].length > 12) return fail('닉네임은 1~12자로 적어 주세요.');
+        if (/[<>&"'\u0000-\u001f]/.test(name)) return fail('닉네임에 쓸 수 없는 글자가 있습니다.');
+        if (RESERVED.test(name)) return fail('쓸 수 없는 닉네임입니다.');
+      }
+    } else if (!n) name = await randomNick(env);
+    if (name) {
+      const got = await claimNick(env, me, name, color, false);
+      if (!got) return fail('다른 사람이 쓰는 닉네임입니다.', 409);
+      n = got;
+    } else if (color != null && n) { n.color = color; await env.BOARD.put(nickKey(me), n); }
+    if (!n) return fail('닉네임을 뽑지 못했습니다. 다시 눌러 주세요.', 503);
+    return json({ ok: true, me: nickView(n), colors: NICK_COLORS });
+  }
   if (path === 'comment' || path === 'uncomment') {
     const p = list.find((x) => x.id === body.id);
     if (!p) return fail('없는 글입니다.', 404);
@@ -114,14 +187,16 @@ async function show(request, env, path, admin) {
       const c = { id: newId(), text, at: new Date().toISOString(), by: me };
       comments.push(c);
       await env.BOARD.put('show', list);
-      return json({ ok: true, comment: commentView(c, p, me), comments: comments.map((x) => commentView(x, p, me)) });
+      const nicks = await getNicks(env, comments.map((x) => x.by));
+      return json({ ok: true, comments: comments.map((x) => Object.assign(commentView(x, p, me), { nick: nickView(nicks.get(x.by)) })) });
     }
     const i = comments.findIndex((c) => c.id === body.cid);
     if (i < 0) return fail('없는 댓글입니다.', 404);
     if (!admin && !(me && comments[i].by === me)) return fail('단 곳(같은 IP)에서만 지울 수 있습니다.', 403);
     comments.splice(i, 1);
     await env.BOARD.put('show', list);
-    return json({ ok: true, comments: comments.map((x) => commentView(x, p, me)) });
+    const nicks = await getNicks(env, comments.map((x) => x.by));
+    return json({ ok: true, comments: comments.map((x) => Object.assign(commentView(x, p, me), { nick: nickView(nicks.get(x.by)) })) });
   }
   if (path === 'like') {
     // 추천: 같은 IP(소금 친 해시)당 한 번. 다시 누르면 취소된다

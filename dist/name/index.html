@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>랜덤 이름 생성기</title>
-<meta name="description" content="흔한 정도를 조절해서 한국 이름을 뽑는 랜덤 이름 생성기. 이름을 누르면 복사됩니다.">
+<meta name="description" content="한국 이름(흔한 정도 조절)과 스포어식 이름(형용사 + 명사)을 뽑는 랜덤 이름 생성기. 이름을 누르면 복사됩니다.">
 <style>
 :root{--page:#f4f1ee;--card:#fff;--ink:#2b2523;--muted:#7d726e;--rule:#e4ddd8;--accent:#5d4e48;--on:#c9573f}
 *{box-sizing:border-box}
@@ -32,6 +32,12 @@ h2{font-size:15px;margin:24px 0 8px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:8px 14px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s}
 #toast.on{opacity:.92}
 @media(max-width:520px){.names{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 한글 이름 / 스포어식 이름 탭 */
+.tabs{display:flex;gap:6px;margin:0 0 14px}
+.tabs button{border-radius:999px;padding:7px 16px}
+.tabs button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.names.spore{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:520px){.names.spore{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -40,6 +46,12 @@ h2{font-size:15px;margin:24px 0 8px}
   <h1>랜덤 이름 생성기</h1>
   <p class="lead">이름을 누르면 복사됩니다.</p>
 
+  <div class="tabs" role="tablist" aria-label="이름 종류">
+    <button type="button" role="tab" id="tab-ko" aria-controls="pane-ko" aria-selected="true">한글 이름</button>
+    <button type="button" role="tab" id="tab-spore" aria-controls="pane-spore" aria-selected="false">스포어식 이름</button>
+  </div>
+
+  <section id="pane-ko" role="tabpanel" aria-labelledby="tab-ko">
   <div class="box">
     <div class="row"><label for="w-sur">성 가중치</label><input id="w-sur" type="range" min="0" max="10" step="1" value="5"><output id="o-sur"></output></div>
     <div class="row"><label for="w-name">이름 가중치</label><input id="w-name" type="range" min="0" max="10" step="1" value="5"><output id="o-name"></output></div>
@@ -54,9 +66,24 @@ h2{font-size:15px;margin:24px 0 8px}
   <div id="female" class="names"></div>
   <h2>남자</h2>
   <div id="male" class="names"></div>
+  </section>
+
+  <!-- 스포어식 이름: 형용사 + 명사 (spore-data.js, 원본은 spore_name_gen.xlsx) -->
+  <section id="pane-spore" role="tabpanel" aria-labelledby="tab-spore" hidden>
+  <div class="box">
+    <p class="note" style="margin-top:0">형용사와 명사를 하나씩 골라 붙입니다. 예: 귀여운 고양이</p>
+    <div class="bar">
+      <label><input id="spore-space" type="checkbox" checked> 띄어 쓰기</label>
+      <button type="button" id="spore-again" class="primary">다시 뽑기</button>
+    </div>
+  </div>
+  <h2>이름</h2>
+  <div id="spore" class="names spore"></div>
+  </section>
 </main>
 <div id="toast" role="status"></div>
 <script src="names-data.js"></script>
+<script src="spore-data.js"></script>
 <script>
 (function () {
   'use strict';
@@ -129,6 +156,35 @@ h2{font-size:15px;margin:24px 0 8px}
   } catch (e) {}
   $('w-sur').oninput = $('w-name').oninput = $('space').onchange = $('again').onclick = draw;
   draw();
+
+  // ---------- 스포어식 이름 ----------
+  var S = window.SPORE_DATA;
+  function drawSpore() {
+    var box = $('spore'), gap = $('spore-space').checked ? ' ' : '', seen = {};
+    box.textContent = '';
+    for (var i = 0, tries = 0; i < COUNT && tries < COUNT * 20; tries++) {
+      var name = S.adj[Math.floor(Math.random() * S.adj.length)] + gap + S.noun[Math.floor(Math.random() * S.noun.length)];
+      if (seen[name]) continue;
+      seen[name] = 1; i++;
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = name; box.appendChild(b);
+    }
+  }
+  $('spore-space').onchange = $('spore-again').onclick = drawSpore;
+  drawSpore();
+
+  // 탭: 마지막에 본 탭을 기억한다 (주소 #spore 로도 열린다)
+  function tab(which) {
+    ['ko', 'spore'].forEach(function (t) {
+      $('tab-' + t).setAttribute('aria-selected', t === which ? 'true' : 'false');
+      $('pane-' + t).hidden = t !== which;
+    });
+    try { localStorage.setItem('name-tab', which); } catch (e) {}
+  }
+  $('tab-ko').onclick = function () { tab('ko'); };
+  $('tab-spore').onclick = function () { tab('spore'); };
+  var first = location.hash === '#spore' ? 'spore' : location.hash === '#ko' ? 'ko' : null;
+  if (!first) { try { first = localStorage.getItem('name-tab'); } catch (e) {} }
+  tab(first === 'spore' ? 'spore' : 'ko');
 })();
 </script>
 </body>
