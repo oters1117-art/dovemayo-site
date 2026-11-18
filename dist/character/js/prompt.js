@@ -87,7 +87,8 @@
     cloth: { tee: 'a crew-neck T-shirt', vneck: 'a V-neck T-shirt', turtleneck: 'a turtleneck sweater', hoodie: 'a hoodie with drawstrings', shirt: 'a collared button-up shirt',
       sailor: 'a sailor school uniform', offshoulder: 'an off-shoulder top with a ruffle', cami: 'a camisole with thin straps',
       ringer: 'a ringer T-shirt with a contrasting neckband', squareneck: 'a square-neck top', highneck: 'a mock-neck top', polo: 'a polo shirt',
-      tanktop: 'a tank top', sleeveless: 'a sleeveless top', halter: 'a halter top tied behind the neck', halterneck: 'a high-neck halter top' },
+      tanktop: 'a tank top', sleeveless: 'a sleeveless top', halter: 'a halter top tied behind the neck', halterneck: 'a high-neck halter top',
+      'offshoulder-half': 'a one-shoulder top', 'sailor-mono': 'a sailor uniform with a same-color collar and contrasting stripes', 'shirt-lock': 'a fully buttoned collared shirt' },
     outer: { jacket: 'an open tailored jacket', coat: 'an open coat with wide lapels', field: 'an open field jacket with a chest pocket', padding: 'an open puffer jacket',
       denim: 'an open denim jacket', zipup: 'an open zip-up hoodie', cardigan: 'an open cardigan', vest: 'a knit vest', apron: 'an apron' },
     neck: { tie: 'a necktie', ribbon: 'a ribbon bow tie' }
@@ -175,7 +176,8 @@
     cloth: { tee: 't-shirt', vneck: 'v-neck, t-shirt', turtleneck: 'turtleneck, sweater', hoodie: 'hoodie, drawstring', shirt: 'collared shirt',
       sailor: 'serafuku, sailor collar', offshoulder: 'off-shoulder shirt, bare shoulders', cami: 'camisole, bare shoulders',
       ringer: 't-shirt, ringer t-shirt', squareneck: 'square neckline', highneck: 'high collar, sweater', polo: 'polo shirt',
-      tanktop: 'tank top', sleeveless: 'sleeveless shirt', halter: 'halterneck, bare shoulders', halterneck: 'halterneck, high collar, bare shoulders' },
+      tanktop: 'tank top', sleeveless: 'sleeveless shirt', halter: 'halterneck, bare shoulders', halterneck: 'halterneck, high collar, bare shoulders',
+      'offshoulder-half': 'single bare shoulder, asymmetrical clothes', 'sailor-mono': 'serafuku, sailor collar', 'shirt-lock': 'collared shirt, buttoned' },
     outer: { jacket: 'open jacket, blazer', coat: 'open coat', field: 'open jacket, military jacket', padding: 'open jacket, puffer jacket', denim: 'open jacket, denim jacket',
       zipup: 'open hoodie, zipper', cardigan: 'open cardigan', vest: 'sweater vest', apron: 'apron' },
     neck: { tie: 'necktie', ribbon: 'neck ribbon' }
