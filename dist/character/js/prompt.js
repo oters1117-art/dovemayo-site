@@ -194,6 +194,12 @@
     acc: { red: 'red', burgundy: 'red', pink: 'pink', babypink: 'pink', yellow: 'yellow', mustard: 'yellow', beige: 'brown', brown: 'brown', sage: 'green', khaki: 'green', skyblue: 'blue', navy: 'blue',
       lavender: 'purple', gold: 'gold', silver: 'silver', white: 'white', gray: 'grey', black: 'black' }
   };
+  // 2026-11-19 추가 색 (눈·악세사리·옷)
+  add(EN_COLOR, 'eye', { crimson: 'crimson', rose: 'rose', peach: 'peach', orange: 'orange', lime: 'lime green', jade: 'jade green', forest: 'forest green', cyan: 'cyan', cobalt: 'cobalt blue', steel: 'steel blue', lilac: 'lilac', violet: 'violet', plum: 'plum', pale: 'pale whitish' });
+  add(NAI_COLOR, 'eye', { crimson: 'red', rose: 'pink', peach: 'orange', orange: 'orange', lime: 'green', jade: 'green', forest: 'green', cyan: 'aqua', cobalt: 'blue', steel: 'blue', lilac: 'purple', violet: 'purple', plum: 'purple', pale: 'white' });
+  add(EN_COLOR, 'acc', { coral: 'coral', peach: 'peach', orange: 'orange', lemon: 'lemon yellow', mint: 'mint', green: 'green', teal: 'teal', cobalt: 'cobalt blue', denim: 'denim blue', purple: 'purple', plum: 'plum', hotpink: 'hot pink', rosegold: 'rose gold', ivory: 'ivory', charcoal: 'charcoal' });
+  add(NAI_COLOR, 'acc', { coral: 'orange', peach: 'orange', orange: 'orange', lemon: 'yellow', mint: 'aqua', green: 'green', teal: 'aqua', cobalt: 'blue', denim: 'blue', purple: 'purple', plum: 'purple', hotpink: 'pink', rosegold: 'pink', ivory: 'white', charcoal: 'grey' });
+  ['cloth', 'outer', 'cloth2'].forEach(function (k) { add(EN_COLOR, k, { lightgray: 'light gray', chocolate: 'chocolate brown', wine: 'wine red', terracotta: 'terracotta', orange: 'orange', mustard: 'mustard', forest: 'forest green', teal: 'teal', cobalt: 'cobalt blue', purple: 'purple', cream: 'cream', peach: 'peach', coral: 'coral', lemon: 'lemon yellow', sage: 'sage green', babyblue: 'baby blue', lilac: 'lilac', dustypink: 'dusty pink' }); });
   // 2026-11-15 추가 파츠
   function add(dict, key, o) { dict[key] = dict[key] || {}; for (var k in o) dict[key][k] = o[k]; }
   add(EN, 'front', { 'center-blunt-s': 'short narrow blunt bangs only in the center', 'center-blunt-m': 'narrow blunt bangs only in the center', 'center-blunt-l': 'long narrow blunt bangs only in the center' });
