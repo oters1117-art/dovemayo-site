@@ -41,6 +41,9 @@ h2{font-size:15px;margin:24px 0 8px}
 .names.spore.one{grid-template-columns:minmax(0,1fr)}
 .names.spore.one button{padding:22px 8px;font-size:22px;font-weight:600}
 @media(max-width:520px){.names.spore{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 스포어식 탭: 같은 밝기의 연보라 배경 */
+body{transition:background-color .2s}
+body.spore{background:#f0edf6}
 </style>
 </head>
 <body>
@@ -75,7 +78,6 @@ h2{font-size:15px;margin:24px 0 8px}
   <div class="box">
     <p class="note" style="margin-top:0">형용사와 명사를 하나씩 골라 붙입니다. 예: 귀여운 고양이</p>
     <div class="bar">
-      <label><input id="spore-space" type="checkbox" checked> 띄어 쓰기</label>
       <label style="margin-right:0"><input id="spore-many" type="checkbox"> 여러 개 뽑기</label>
       <button type="button" id="spore-again" class="primary">다시 뽑기</button>
     </div>
@@ -162,11 +164,12 @@ h2{font-size:15px;margin:24px 0 8px}
   // ---------- 스포어식 이름 ----------
   var S = window.SPORE_DATA;
   function drawSpore() {
-    var box = $('spore'), gap = $('spore-space').checked ? ' ' : '', seen = {};
+    // 형용사와 명사 사이는 늘 띄어 쓴다
+    var box = $('spore'), gap = ' ', seen = {};
     var many = $('spore-many').checked, count = many ? COUNT : 1;
     box.textContent = '';
     box.className = 'names spore' + (many ? '' : ' one');
-    try { localStorage.setItem('name-spore', JSON.stringify({ g: !!gap, m: many })); } catch (e) {}
+    try { localStorage.setItem('name-spore', JSON.stringify({ m: many })); } catch (e) {}
     for (var i = 0, tries = 0; i < count && tries < COUNT * 20; tries++) {
       var name = S.adj[Math.floor(Math.random() * S.adj.length)] + gap + S.noun[Math.floor(Math.random() * S.noun.length)];
       if (seen[name]) continue;
@@ -176,9 +179,9 @@ h2{font-size:15px;margin:24px 0 8px}
   }
   try {
     var sp = JSON.parse(localStorage.getItem('name-spore') || 'null');
-    if (sp) { $('spore-space').checked = !!sp.g; $('spore-many').checked = !!sp.m; }
+    if (sp) $('spore-many').checked = !!sp.m;
   } catch (e) {}
-  $('spore-space').onchange = $('spore-many').onchange = $('spore-again').onclick = drawSpore;
+  $('spore-many').onchange = $('spore-again').onclick = drawSpore;
   drawSpore();
 
   // 탭: 마지막에 본 탭을 기억한다 (주소 #spore 로도 열린다)
@@ -187,6 +190,7 @@ h2{font-size:15px;margin:24px 0 8px}
       $('tab-' + t).setAttribute('aria-selected', t === which ? 'true' : 'false');
       $('pane-' + t).hidden = t !== which;
     });
+    document.body.classList.toggle('spore', which === 'spore');
     try { localStorage.setItem('name-tab', which); } catch (e) {}
   }
   $('tab-ko').onclick = function () { tab('ko'); };

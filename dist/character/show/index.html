@@ -48,8 +48,8 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .pop{background:var(--card);border-radius:20px;padding:16px;width:min(100%,600px);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .pop .face{border-radius:16px;overflow:hidden;aspect-ratio:1}
 .pop .info{display:flex;flex-direction:column;min-width:0}
-}
-.comments{margin-top:14px;border-top:1px solid var(--rule);padding-top:10px;flex:1}
+.pop:focus{outline:none}
+.comments{margin-top:16px;border-top:1px solid var(--rule);padding-top:10px;flex:1}
 .comments h2{font-size:13px;margin:0 0 6px;color:var(--muted);font-weight:600}
 .comments ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .comments li{display:flex;gap:6px;align-items:flex-start;font-size:14px;background:#f7f4f2;border-radius:10px;padding:6px 8px}
@@ -81,8 +81,9 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .pop .when{font-size:12px;color:var(--muted);margin:2px 2px 10px;text-align:center}
 .pop .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .pop .acts a{display:inline-block;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 14px;background:#fff}
-.pop .acts .close{margin-left:auto}
-.pop .acts.own{margin-top:8px}
+/* 수정·삭제는 이미지 복사·생성기에서 열기 줄의 오른쪽 */
+.pop .acts .mine{margin-left:auto;display:flex;gap:8px}
+.pop .acts .mine:empty{display:none}
 .pop .msg{margin:0 2px 8px;min-height:0;text-align:center}
 .pop .msg:empty{display:none}
 [hidden]{display:none!important}
@@ -123,7 +124,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 
 <div id="dim" class="dim" hidden>
   <button type="button" id="pop-prev" class="side prev" aria-label="이전 캐릭터" title="이전 (←)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-  <div class="pop" role="dialog" aria-modal="true" aria-label="자랑 글">
+  <div class="pop" role="dialog" aria-modal="true" aria-label="자랑 글 (바깥을 누르거나 Esc, 뒤로 가기로 닫힘)" tabindex="-1">
     <div id="pop-face" class="face"></div>
     <div class="info">
     <p id="pop-text" class="text"></p>
@@ -138,6 +139,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       <button type="button" id="pop-like" class="like" aria-pressed="false">추천</button>
       <button type="button" id="pop-copy-img">이미지 복사</button>
       <a id="pop-open" href="../">생성기에서 열기</a>
+      <span class="mine"><button type="button" id="pop-fix" hidden>수정</button><button type="button" id="pop-del" class="danger" hidden>삭제</button></span>
     </div>
     <section class="comments" aria-label="댓글">
       <h2>댓글 <span id="pop-ccount"></span></h2>
@@ -147,11 +149,6 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
         <button type="submit" id="pop-csend">등록</button>
       </form>
     </section>
-    <div class="acts own">
-      <button type="button" id="pop-fix" hidden>수정</button>
-      <button type="button" id="pop-del" class="danger" hidden>삭제</button>
-      <button type="button" id="pop-close" class="close">닫기</button>
-    </div>
     </div>
   </div>
   <button type="button" id="pop-next" class="side next" aria-label="다음 캐릭터" title="다음 (→)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -254,7 +251,9 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     $('pop-prev').disabled = i <= 0; $('pop-next').disabled = i < 0 || i >= posts.length - 1;
     var wasOpen = !$('dim').hidden;
     $('dim').hidden = false;
-    if (!wasOpen) $('pop-close').focus();
+    // 뒤로 가기(휴대폰)는 팝업만 닫는다: 처음 열 때 기록을 하나 쌓고, 옆 글로 넘길 때는 그 기록을 바꾼다
+    try { if (wasOpen) history.replaceState({ pop: p.id }, ''); else history.pushState({ pop: p.id }, ''); } catch (e) { /* 무시 */ }
+    if (!wasOpen) document.querySelector('.pop').focus();
   }
   // 방향키(←→)나 이전·다음 버튼으로 옆 카드로 넘어간다. 목록이 새로 불러와져도 같은 글(id)을 기준으로 찾는다
   function move(d) {
@@ -267,7 +266,12 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
   }
   $('pop-prev').onclick = function () { move(-1); };
   $('pop-next').onclick = function () { move(1); };
-  function close() { $('dim').hidden = true; current = null; }
+  function hide() { $('dim').hidden = true; current = null; closeColors(); }
+  // 바깥 클릭·Esc: 쌓아 둔 기록을 되돌려(뒤로 가기와 같은 길) 닫는다
+  function close() {
+    if (history.state && history.state.pop) history.back(); else hide();
+  }
+  window.addEventListener('popstate', function () { if (!$('dim').hidden) hide(); });
   function paintLike(p) {
     $('pop-like').setAttribute('aria-pressed', p.liked ? 'true' : 'false');
     $('pop-like').innerHTML = THUMB + '추천' + (p.likes ? ' ' + p.likes : '');
@@ -282,7 +286,6 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
       load();
     }, function (x) { note(x.message); }).then(function () { $('pop-like').disabled = false; });
   };
-  $('pop-close').onclick = close;
   $('dim').addEventListener('click', function (e) { if (e.target === $('dim')) close(); });
   document.addEventListener('keydown', function (e) {
     if ($('dim').hidden) return;

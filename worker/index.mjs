@@ -132,8 +132,25 @@ async function show(request, env, path, admin) {
     const shown = list.slice(0, 600), who = [me];
     for (const p of shown) { who.push(p.by); for (const c of p.comments || []) who.push(c.by); }
     const nicks = await getNicks(env, who), nick = (h) => nickView(h && nicks.get(h));
+    // 닉네임이 없는 글쓴이·댓글쓴이(닉네임 기능 전에 올린 사람 등)에게 무작위 닉네임을 붙인다 (주인 지시 2026-11-18). 한 번 붙으면 그대로
+    for (const h of new Set(who)) {
+      if (!h || nicks.has(h)) continue;
+      const name = await randomNick(env), got = name && (await claimNick(env, h, name, null, false));
+      if (got) nicks.set(h, got);
+    }
+    // 글쓴이 기록(by)이 생기기 전의 첫 글들: 누가 썼는지 알 수 없으니 글마다 무작위 닉네임을 하나 붙여 글에 저장한다
+    let changed = false;
+    for (const p of shown) {
+      if (p.by || p.nick) continue;
+      const name = await randomNick(env);
+      if (!name) continue;
+      await env.BOARD.put(nameKey(name), 'post:' + p.id);
+      p.nick = { name, color: NICK_COLORS[Math.floor(Math.random() * NICK_COLORS.length)] };
+      changed = true;
+    }
+    if (changed) await env.BOARD.put('show', list);
     return json({ admin, me: nick(me), posts: shown.map((p) => ({ id: p.id, code: p.code, text: p.text, at: p.at, mine: !!me && p.by === me,
-      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me), nick: nick(p.by),
+      likes: (p.likes || []).length, liked: !!me && (p.likes || []).includes(me), nick: nick(p.by) || nickView(p.nick),
       comments: (p.comments || []).map((c) => Object.assign(commentView(c, p, me), { nick: nick(c.by) })) })) });
   }
   if (request.method !== 'POST') return fail('지원하지 않는 요청입니다.', 405);

@@ -245,6 +245,8 @@
   // 한쪽만 버튼으로 대신하게 되어 지운 '한쪽' 파츠. 예전 조합 코드는 원래 파츠 + 왼쪽만으로 읽는다
   var ONE_SIDE = { side: { 'wavelong-one': 'wavelong', tuckone: 'long' }, extra: { onetail: 'sidetails' } };
   // 다른 항목으로 옮긴 파츠. 예전 조합 코드(자랑 게시판 글 등)는 새 자리에서 읽는다. 반전도 따라간다
+  // 립 그림(parts/lip)이 맞춰진 입의 가장 낮은 선 높이 (기본 입 '작은 미소')
+  var LIP_BASE_LOW = 478;
   var MOVED = [{ from: 'skinfx', id: 'bandage', to: 'facewear' }];
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
   function flipKind(state, key) {
@@ -935,6 +937,8 @@
       if (!p || p.none || !p.pieces) return;
       // 눈 높이·간격은 눈썹과 안경에도, 입 높이는 입과 립에도 같이 적용한다
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
+      // 립은 입의 가장 낮은 선(빌드가 적은 mouth.low)을 따라간다. 립 그림은 작은 미소(low 478) 기준
+      if (c.key === 'lip') { var ml = (part('mouth') || {}).low; if (ml) tf[1] += ml - LIP_BASE_LOW; }
       // 동물 귀(earringAt 이 있는 귀 모양)에서는 귀걸이를 그 귀로 옮겨 머리 위 레이어에 그린다. 기준은 사람 귓불 (201, 440)
       var earAt = c.key === 'earring' ? (part('ear') || {}).earringAt : null;
       // 목 장식: 옷의 neckAt 높이로 옮긴다 (그림은 y=632 기준). neckAt 이 없는 옷(티·피부)에는 안 그린다
