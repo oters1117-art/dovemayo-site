@@ -285,7 +285,7 @@
     en.push('Face: ' + join(face) + '.');
     var clothC = color('clothColor', state), clothP = color('clothColor2', state), hasNeck = has('neck', state) && (part('cloth', state) || {}).neckAt;
     var outerC = color('outerColor', state);
-    var showCloth = !CG.clothesHidden;
+    var showCloth = true;   // 공개판도 상의는 보인다 (외투·목 장식은 공개판에서 늘 없음)
     if (showCloth && (has('cloth', state) || has('outer', state))) en.push('Clothes: ' + join([has('cloth', state) && c(clothC) + ' ' + piece('cloth', state, 'en'),
       has('outer', state) && c(outerC) + ' ' + piece('outer', state, 'en') + (has('cloth', state) ? ' over it' : ''), hasNeck && c(clothP) + ' ' + piece('neck', state, 'en')]) + '.');
     if (accKeys.length) en.push('Accessories: ' + join(accKeys.map(function (k) { return piece(k, state, 'en'); })) + (accC && (has('acc', state) || has('earring', state)) ? '; accessory color ' + c(accC) : '') + '.');

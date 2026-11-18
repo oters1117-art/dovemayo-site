@@ -9,6 +9,8 @@
   // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
   // 오드아이도 '없음'으로 고정한 채 시작한다
   var locks = { skinColor: true, earring: true, facewear: true, oddColor: true };
+  // 홈페이지: 상의는 흰 라운드넥 티로 고정한 채 시작 (주인 2026-11-19). 고정을 풀면 랜덤에 들어간다
+  if (CG.clothesPublic) { locks.cloth = true; locks.clothColor = true; }
   var history = [];
   var cursor = -1;
   // 현실 모드: { key: true } 인 항목은 랜덤에서 판타지 선택지(동물 귀 등)를 뽑지 않는다. 이 브라우저에 기억한다

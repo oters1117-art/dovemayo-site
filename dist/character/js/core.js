@@ -118,15 +118,17 @@
     { group: 'bg', subs: [{ items: ['bgColor'] }] }
   ];
 
-  // 옷은 아직 로컬에서만 (주인 2026-11-16 "아직 옷은 사이트에 올리지 마").
-  // 공개 사이트(dovemayo.com)에서는 옷 묶음을 숨기고 예전처럼 흰 라운드넥 티만 입힌다. 로컬에서 공개 화면을 보려면 주소에 ?public
-  var HIDE_CLOTHES = typeof location !== 'undefined' &&
+  // 공개 사이트(dovemayo.com): 옷은 상의만 (주인 2026-11-19 "홈페이지에 상의 커스텀만, 기본값은 흰색 라운드티로 락").
+  // 외투·목 장식은 아직 작업 중이라 숨기고 늘 없음. 이름을 아직 안 붙인 상의(_parts.json 의 name 이 파일 이름 그대로)도 뺀다.
+  // 기본 상의는 흰 라운드넥 티이고, app.js 가 상의·상의 색을 고정한 채 시작한다. 로컬에서 공개 화면을 보려면 주소에 ?public
+  var PUBLIC_CLOTH = typeof location !== 'undefined' &&
     (/(^|\.)dovemayo\.com$|workers\.dev$/.test(location.hostname || '') || /[?&]public\b/.test(location.search || ''));
+  var PUBLIC_HIDDEN = { outer: 1, outerColor: 1, neck: 1 };
   function publicClothes(s) {
-    if (!HIDE_CLOTHES) return s;
-    var d = defaultState();
-    s.cloth = 'tee'; s.neck = 'none'; s.outer = 'none';
-    s.clothColor = d.clothColor; s.outerColor = d.outerColor; s.clothColor2 = d.clothColor2;
+    if (!PUBLIC_CLOTH) return s;
+    s.neck = 'none'; s.outer = 'none';
+    if (s.flip) { delete s.flip.outer; delete s.flip.neck; }
+    s.outerColor = defaultOf(palettes.outer);
     return s;
   }
 
@@ -140,9 +142,14 @@
       return null;
     }
     LAYOUT.forEach(function (L) {
-      if (HIDE_CLOTHES && L.group === 'cloth') return;
       var g = GROUPS.filter(function (x) { return x.key === L.group; })[0], blocks = [];
-      L.subs.forEach(function (sb) {
+      var subs = L.subs;
+      // 공개 화면의 옷 묶음: 상의 · 상의 색 · 포인트 색 한 줄만
+      if (PUBLIC_CLOTH && L.group === 'cloth') {
+        subs = [{ items: ['cloth', 'clothColor', 'clothColor2'] }];
+        for (var hk in PUBLIC_HIDDEN) used[hk] = 1;
+      }
+      subs.forEach(function (sb) {
         var items = [];
         sb.items.forEach(function (k) { var it = find(k); if (it) { items.push(it); used[k] = 1; } });
         blocks.push({ group: g, sub: sb.name ? { key: sb.name, name: sb.name } : null, items: items });
@@ -166,6 +173,7 @@
   function load(data) {
     base = data.base || {};
     CATEGORIES.forEach(function (c) { parts[c.key] = (data.parts && data.parts[c.key]) || []; });
+    if (PUBLIC_CLOTH) parts.cloth = parts.cloth.filter(function (p) { return p.none || p.name !== p.id; });
   }
 
   function addPalette(name, list) { palettes[name] = list; }
@@ -235,11 +243,13 @@
     var s = {};
     CATEGORIES.forEach(function (c) { s[c.key] = defaultOf(parts[c.key]); });
     COLOR_SLOTS.forEach(function (c) { s[c.key] = defaultOf(palettes[c.palette]); });
+    if (PUBLIC_CLOTH && findIn(parts.cloth, 'tee')) s.cloth = 'tee';
     return s;
   }
 
   // 좌우 반전할 수 있는 항목 (그대로 한 번만 그리는 full 조각이 뒤집힌다). 조합 코드에는 fl:hf.hs 처럼 적힌다
-  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'earring', 'facewear', 'oddColor'];
+  // 옷(상의·외투·목 장식)은 full 조각이 있을 때만 (셔츠의 비대칭 깃 등, 2026-11-19)
+  var FLIP_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'glasses', 'earring', 'facewear', 'oddColor', 'cloth', 'outer', 'neck'];
   // 한쪽만 그릴 수 있는 항목 (half 조각만 있는 파츠를 왼쪽만 / 오른쪽만 그린다). 조합 코드에는 sl:s / sr:ae 처럼 적힌다
   var SIDE_KEYS = ['front', 'extra', 'side', 'back', 'skinfx', 'acc', 'earring'];
   // 한쪽만 버튼으로 대신하게 되어 지운 '한쪽' 파츠. 예전 조합 코드는 원래 파츠 + 왼쪽만으로 읽는다
@@ -1074,7 +1084,7 @@
     fromHsl: fromHsl,
     layout: LAYOUT,
     panel: panel,
-    clothesHidden: HIDE_CLOTHES,
+    clothesPublic: PUBLIC_CLOTH,
     parts: parts,
     palettes: palettes,
     load: load,
