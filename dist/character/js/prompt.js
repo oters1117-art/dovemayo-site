@@ -85,7 +85,9 @@
       hoop: 'hoop earrings', drop: 'drop earrings', bar: 'long bar earrings', cuff: 'ear cuffs' },
     facewear: { mask: 'a white face mask', maskblack: 'a black face mask', bandage: 'an adhesive bandage on the cheek', bandagenose: 'an adhesive bandage across the nose' },
     cloth: { tee: 'a crew-neck T-shirt', vneck: 'a V-neck T-shirt', turtleneck: 'a turtleneck sweater', hoodie: 'a hoodie with drawstrings', shirt: 'a collared button-up shirt',
-      sailor: 'a sailor school uniform', offshoulder: 'an off-shoulder top with a ruffle', cami: 'a camisole with thin straps' },
+      sailor: 'a sailor school uniform', offshoulder: 'an off-shoulder top with a ruffle', cami: 'a camisole with thin straps',
+      ringer: 'a ringer T-shirt with a contrasting neckband', squareneck: 'a square-neck top', highneck: 'a mock-neck top', polo: 'a polo shirt',
+      tanktop: 'a tank top', sleeveless: 'a sleeveless top', halter: 'a halter top tied behind the neck', halterneck: 'a high-neck halter top' },
     outer: { jacket: 'an open tailored jacket', coat: 'an open coat with wide lapels', field: 'an open field jacket with a chest pocket', padding: 'an open puffer jacket',
       denim: 'an open denim jacket', zipup: 'an open zip-up hoodie', cardigan: 'an open cardigan', vest: 'a knit vest', apron: 'an apron' },
     neck: { tie: 'a necktie', ribbon: 'a ribbon bow tie' }
@@ -171,7 +173,9 @@
     earring: { 'stud-mini': 'stud earrings', stud: 'stud earrings', 'stud-mini-2': 'stud earrings, ear piercing', 'stud-big1-mini2': 'stud earrings, ear piercing', hoop: 'hoop earrings', drop: 'earrings', bar: 'earrings', cuff: 'earcuff' },
     facewear: { mask: 'mouth mask, white mask', maskblack: 'mouth mask, black mask', bandage: 'bandaid on cheek', bandagenose: 'bandaid on nose' },
     cloth: { tee: 't-shirt', vneck: 'v-neck, t-shirt', turtleneck: 'turtleneck, sweater', hoodie: 'hoodie, drawstring', shirt: 'collared shirt',
-      sailor: 'serafuku, sailor collar', offshoulder: 'off-shoulder shirt, bare shoulders', cami: 'camisole, bare shoulders' },
+      sailor: 'serafuku, sailor collar', offshoulder: 'off-shoulder shirt, bare shoulders', cami: 'camisole, bare shoulders',
+      ringer: 't-shirt, ringer t-shirt', squareneck: 'square neckline', highneck: 'high collar, sweater', polo: 'polo shirt',
+      tanktop: 'tank top', sleeveless: 'sleeveless shirt', halter: 'halterneck, bare shoulders', halterneck: 'halterneck, high collar, bare shoulders' },
     outer: { jacket: 'open jacket, blazer', coat: 'open coat', field: 'open jacket, military jacket', padding: 'open jacket, puffer jacket', denim: 'open jacket, denim jacket',
       zipup: 'open hoodie, zipper', cardigan: 'open cardigan', vest: 'sweater vest', apron: 'apron' },
     neck: { tie: 'necktie', ribbon: 'neck ribbon' }

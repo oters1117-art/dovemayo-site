@@ -938,7 +938,8 @@
       // 눈 높이·간격은 눈썹과 안경에도, 입 높이는 입과 립에도 같이 적용한다
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
       // 립은 입의 가장 낮은 선(빌드가 적은 mouth.low)을 따라간다. 립 그림은 작은 미소(low 478) 기준
-      if (c.key === 'lip') { var ml = (part('mouth') || {}).low; if (ml) tf[1] += ml - LIP_BASE_LOW; }
+      // 입의 lipY(_parts.json)가 있으면 그만큼 더 내린다
+      if (c.key === 'lip') { var mo = part('mouth') || {}; if (mo.low) tf[1] += mo.low - LIP_BASE_LOW; if (mo.lipY) tf[1] += mo.lipY; }
       // 동물 귀(earringAt 이 있는 귀 모양)에서는 귀걸이를 그 귀로 옮겨 머리 위 레이어에 그린다. 기준은 사람 귓불 (201, 440)
       var earAt = c.key === 'earring' ? (part('ear') || {}).earringAt : null;
       // 목 장식: 옷의 neckAt 높이로 옮긴다 (그림은 y=632 기준). neckAt 이 없는 옷(티·피부)에는 안 그린다
