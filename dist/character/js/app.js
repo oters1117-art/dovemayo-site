@@ -538,6 +538,7 @@
   $('ico-random').addEventListener('click', function () { commit(CG.randomState(state, locks, null, real, masc)); });
   $('ico-prev').addEventListener('click', function () { travel(-1); });
   $('ico-copy').addEventListener('click', copyImage);
+  $('ico-save').addEventListener('click', savePng);
   // 자랑게시판으로: 자랑 게시판으로 가서 한 줄 적고 올린다 (조합 코드를 주소로 넘긴다)
   function showOff() { location.href = 'https://dovemayo.com/character/show/#new=' + encodeURIComponent(CG.encode(state)); }
   $('btn-show').addEventListener('click', showOff);

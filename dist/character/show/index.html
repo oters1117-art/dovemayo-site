@@ -49,6 +49,9 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
 .pop .face{border-radius:16px;overflow:hidden;aspect-ratio:1}
 .pop .info{display:flex;flex-direction:column;min-width:0}
 .pop:focus{outline:none}
+/* 휴대폰: 팝업에서 가로로 밀면 이전·다음 글. 가로 동작은 페이지가 받고(브라우저 뒤로 가기 제스처로 새지 않게), 세로 스크롤은 그대로 */
+.dim{touch-action:pan-y;overscroll-behavior:contain}
+html,body{overscroll-behavior-x:none}
 .comments{margin-top:16px;border-top:1px solid var(--rule);padding-top:10px;flex:1}
 .comments h2{font-size:13px;margin:0 0 6px;color:var(--muted);font-weight:600}
 .comments ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -138,6 +141,7 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     <div class="acts">
       <button type="button" id="pop-like" class="like" aria-pressed="false">추천</button>
       <button type="button" id="pop-copy-img">이미지 복사</button>
+      <button type="button" id="pop-save">PNG 저장</button>
       <a id="pop-open" href="../">생성기에서 열기</a>
       <span class="mine"><button type="button" id="pop-fix" hidden>수정</button><button type="button" id="pop-del" class="danger" hidden>삭제</button></span>
     </div>
@@ -413,6 +417,30 @@ input[type=text]{font:inherit;color:inherit;border:1px solid var(--rule);border-
     try { navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function () { note('이미지를 복사했습니다.'); }, asFile); }
     catch (e) { asFile(); }
   };
+  // PNG 저장: 이미지 복사와 같은 그림을 파일로 (휴대폰처럼 복사가 안 되는 곳에서도 된다)
+  $('pop-save').onclick = function () {
+    var p = current; if (!p) return;
+    png(p.code).then(function (b) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'character.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+      note('PNG로 저장했습니다.');
+    }, function () { note('이미지를 만들지 못했습니다.'); });
+  };
+  // 휴대폰: 팝업에서 옆으로 밀면 이전·다음 글 (왼쪽으로 밀면 다음)
+  (function () {
+    var sx = null, sy = 0, st = 0;
+    $('dim').addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1 || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { sx = null; return; }
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    $('dim').addEventListener('touchend', function (e) {
+      if (sx == null) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - st < 900) move(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
   $('pop-fix').onclick = function () {
     $('pop-edit').hidden = !$('pop-edit').hidden;
     if ($('pop-edit').hidden) return;
