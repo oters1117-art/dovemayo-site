@@ -281,8 +281,11 @@
     var tools = el('span', { class: 'tools' });
     var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
     tools.appendChild(flip || el('span', { class: 'tool-gap' }));
-    tools.appendChild(diceButton(cat.key));
-    tools.appendChild(lockButton(cat.key));
+    // 커스텀 옵션(코 높이 등)은 랜덤에 안 들어가서 랜덤·고정 버튼이 없다
+    if (!cat.custom) {
+      tools.appendChild(diceButton(cat.key));
+      tools.appendChild(lockButton(cat.key));
+    }
     if (SERVER) tools.appendChild(fileButton(cat));
     row.appendChild(tools);
 

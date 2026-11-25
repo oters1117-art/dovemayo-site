@@ -67,8 +67,8 @@
     { key: 'brow', code: 'b', name: '눈썹', group: 'face' },
     { key: 'mouth', code: 'm', name: '입', group: 'face' },
     { key: 'mouthY', code: 'xm', name: '입 높이', group: 'face', type: 'eye' },
-    // 코 높이 (2026-11-25): 코(parts/base/nose.svg)를 위아래로 옮긴다
-    { key: 'noseY', code: 'xn', name: '코 높이', group: 'face', type: 'eye' },
+    // 코 높이 (2026-11-25): 코(parts/base/nose.svg)를 위아래로 옮긴다. 커스텀 옵션(랜덤으로 안 바뀜)
+    { key: 'noseY', code: 'xn', name: '코 높이', group: 'face', type: 'eye', custom: true },
     // 눈 각도(바깥 눈꼬리가 올라감/처짐), 눈썹 간격·높이·각도 (그림 없이 수치만)
     { key: 'eyeTilt', code: 'xt', name: '눈 각도', group: 'eyes', type: 'eye' },
     { key: 'browGap', code: 'bx', name: '눈썹 간격', group: 'face', type: 'eye' },
@@ -118,7 +118,8 @@
     { group: 'face', subs: [
       { items: ['face', 'skinColor', 'skinfx', 'makeup'] },
       { items: ['brow', 'browGap', 'browY', 'browTilt'] },
-      { items: ['mouth', 'mouthY', 'noseY', 'lip', 'ear'] }
+      { items: ['mouth', 'mouthY', 'lip', 'ear'] },
+      { custom: true, items: ['noseY'] }
     ] },
     { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }, { custom: true, items: [], slots: 'acc' }] },
     { group: 'cloth', subs: [{ items: ['cloth', 'clothColor'] }, { items: ['outer', 'outerColor'] }, { items: ['neck', 'clothColor2'] }] },
@@ -266,6 +267,8 @@
   // 다른 항목으로 옮긴 파츠. 예전 조합 코드(자랑 게시판 글 등)는 새 자리에서 읽는다. 반전도 따라간다
   // 립 그림(parts/lip)이 맞춰진 입의 가장 낮은 선 높이 (기본 입 '작은 미소')
   var LIP_BASE_LOW = 478;
+  // 쌍꺼풀 선의 진하기 (피부 선 색). 코도 이 진하기의 색으로 칠한다
+  var FOLD_OPACITY = 0.5;
   var MOVED = [{ from: 'skinfx', id: 'bandage', to: 'facewear' }];
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
   function flipKind(state, key) {
@@ -318,7 +321,7 @@
     });
   }
   // 커스텀 옵션 색 (랜덤에서 그대로 둔다)
-  function isCustomKey(key) { for (var i = 0; i < COLOR_SLOTS.length; i++) if (COLOR_SLOTS[i].key === key) return !!COLOR_SLOTS[i].custom; return false; }
+  function isCustomKey(key) { var all = CATEGORIES.concat(COLOR_SLOTS); for (var i = 0; i < all.length; i++) if (all[i].key === key) return !!all[i].custom; return false; }
 
   // 지금 이름을 돌려준다. 이름을 바꾼 파츠는 _parts.json 의 "old"(tools/rename.js)로 예전 이름도 받는다
   function currentId(key, id) {
@@ -399,7 +402,7 @@
     locks = locks || {};
     var b = normalize(prev), s = {};
     CATEGORIES.forEach(function (c) {
-      s[c.key] = locks[c.key] ? b[c.key] : randomPart(c, rnd, real, masc);
+      s[c.key] = locks[c.key] || c.custom ? b[c.key] : randomPart(c, rnd, real, masc);
     });
     // 목 장식은 넥타이·리본을 달 곳(neckAt)이 있는 옷에만
     if (!locks.neck && !(findIn(parts.cloth || [], s.cloth) || {}).neckAt) s.neck = 'none';
@@ -484,7 +487,8 @@
       blush: c.blush || mix(c.hex, '#d04a50', 0.3),
       lip: c.lip || mix('#dc6450', c.line, 0.25),
       lid: c.lid || mix(c.hex, c.line, 0.75),
-      nose: c.nose || mix(c.hex, c.line, 0.6)
+      // 코는 쌍꺼풀 선과 같은 색: 피부 위에 피부 선 색을 FOLD_OPACITY 만큼 (주인 2026-11-25)
+      nose: mix(c.hex, c.line, FOLD_OPACITY)
     };
   }
 
@@ -815,7 +819,7 @@
     if (on(opt.fold) && eye.white) {
       if ((m = custom(eye, 'fold', opt.fold))) out += m;
       // 윗 아이라인을 따라 눈 앞(안쪽 눈머리)부터 2/3 까지, 피부 선 색. 선 위치 0 = 바깥 눈꼬리, 1 = 눈머리
-      else if (up.length) out += stroke(polyD(offsetLine(up, c, opt.fold.from || 0.3, opt.fold.to || 0.9, opt.fold.gap || 11)), 'cg-sl', ' style="stroke-width:' + (opt.fold.width || 5) + ';opacity:' + (opt.fold.opacity || 0.5) + '"');
+      else if (up.length) out += stroke(polyD(offsetLine(up, c, opt.fold.from || 0.3, opt.fold.to || 0.9, opt.fold.gap || 11)), 'cg-sl', ' style="stroke-width:' + (opt.fold.width || 5) + ';opacity:' + (opt.fold.opacity || FOLD_OPACITY) + '"');
     }
     if (on(opt.lash)) {
       if ((m = custom(eye, 'lash', opt.lash))) out += m;

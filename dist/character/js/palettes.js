@@ -106,9 +106,9 @@
 
 
   // 피부: 지금 쓰던 색이 기본이고 비중이 가장 높다. 밝은 계열일수록 자주 나온다.
-  // line 은 얼굴·몸 윤곽선 색. blush·lip·lid·nose 를 안 적으면 hex 와 line 에서 계산한다 (core.js 의 skinOf)
+  // line 은 얼굴·몸 윤곽선 색. blush·lip·lid 를 안 적으면 hex 와 line 에서 계산한다. 코는 늘 쌍꺼풀 선 색 (core.js 의 skinOf)
   CG.addPalette('skin', [
-    { id: 'base', name: '기본', hex: '#fdeeea', line: '#b46352', blush: '#f3bfb8', lip: '#dc6450', lid: '#8b8284', nose: '#b98a88', group: '밝은', w: 8, isDefault: true },
+    { id: 'base', name: '기본', hex: '#fdeeea', line: '#b46352', blush: '#f3bfb8', lip: '#dc6450', lid: '#8b8284', group: '밝은', w: 8, isDefault: true },
     { id: 'porcelain', name: '포슬린', hex: '#fbf3f1', line: '#ad6158', group: '밝은', w: 3 },
     { id: 'peach', name: '피치', hex: '#fff0e6', line: '#b8674f', group: '밝은', w: 3 },
     { id: 'ivory', name: '아이보리', hex: '#fbf0e0', line: '#b0704f', group: '밝은', w: 3 },
