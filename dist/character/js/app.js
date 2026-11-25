@@ -7,8 +7,8 @@
   var state = CG.defaultState();
   // 피부색(기본)은 고정한 채 시작한다 (고정 버튼을 풀면 랜덤에 포함된다). 얼굴형 고정은 주인 지시로 뺐다(2026-11-17)
   // 악세사리(안경 제외)도 '없음'으로 고정한 채 시작한다
-  // 오드아이도 '없음'으로 고정한 채 시작한다
-  var locks = { skinColor: true, earring: true, facewear: true, oddColor: true };
+  // 오드아이·흰자위 색·추가 슬롯은 커스텀 옵션이라 랜덤에서 아예 안 바뀐다 (2026-11-25, core.js)
+  var locks = { skinColor: true, earring: true, facewear: true };
   // 홈페이지: 상의는 흰 라운드넥 티로 고정한 채 시작 (주인 2026-11-19). 고정을 풀면 랜덤에 들어간다
   if (CG.clothesPublic) { locks.cloth = true; locks.clothColor = true; }
   var history = [];
@@ -88,7 +88,7 @@
   // ---------- 파츠 줄 ----------
   var ICON = {
     random: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.5v5.5H16"/><path d="M2.5 19.5V14H8"/><path d="M4.4 9.5A8 8 0 0 1 17.6 6.3L21.5 10M2.5 14l3.9 3.7a8 8 0 0 0 13.2-3.2"/></svg>',
-    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
+    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(35 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
     // 좌우 반전: 가운데 축(점선)을 향한 삼각형 두 개
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2.5 3"/><path d="M3 6.5 9 12l-6 5.5z"/><path d="M21 6.5 15 12l6 5.5z"/></svg>',
     // 대칭 / 왼쪽만 / 오른쪽만: 그려지는 쪽은 채우고, 안 그려지는 쪽은 흐린 테두리만
@@ -164,7 +164,7 @@
 
   // ---------- 썸네일로 고르기 ----------
   // 크기·간격·높이·각도 같은 수치 항목은 드롭다운 그대로 (위 = 크게/멀게/위로, 가운데 = 기본, 아래 = 작게/가깝게/아래로)
-  var PLAIN = { iris: 1, eyeGap: 1, eyeY: 1, eyeSize: 1, mouthY: 1, eyeTilt: 1, browGap: 1, browY: 1, browTilt: 1 };
+  var PLAIN = { iris: 1, eyeGap: 1, eyeY: 1, eyeSize: 1, mouthY: 1, noseY: 1, eyeTilt: 1, browGap: 1, browY: 1, browTilt: 1 };
   // 썸네일 밑그림: 이 캐릭터를 반투명하게 깔고, 고르는 항목만 진하게 겹친다
   var THUMB_BASE = 'hf:allback,hx:none,hs:none,hb:none,e:almond,d:none,u:none,xg:normal,xy:normal,xs:normal,l:none,w:none,i:normal,p:basic,h:none,f:round,er:normal,s:none,k:none,ey:none,kl:none,b:flat,m:line,xm:normal,a:none,g:none,ae:none,af:none,ch:milkbrown,ce:hazel,co:none,cs:base,ca:gold,cb:cream';
   var THUMB_BOX = { hair: '40 20 622 622', eye: '196 236 310 310', face: '130 160 442 442', cloth: '176 352 350 350' };
@@ -199,37 +199,29 @@
     window.scrollBy(0, dy);
   }
 
-  function buildPartRow(cat) {
-    var list = CG.parts[cat.key];
-    var item = el('div', { class: 'part-item' });
-    var row = el('div', { class: 'row' });
-    var select = null, pick = null, label = null, card = null, thumbs = [];
-    if (PLAIN[cat.key]) {
-      select = el('select', { 'aria-label': cat.name });
-      list.forEach(function (p) { select.appendChild(el('option', { value: p.id }, p.name)); });
-      select.addEventListener('change', function () { set(cat.key, select.value); });
-    } else {
-      // 드롭다운 모양 버튼. 누르면 아래에 썸네일 카드가 열린다 (묶음 이름별로, 고른 것은 테두리)
-      pick = el('button', { type: 'button', class: 'pick', 'aria-expanded': 'false', 'aria-label': cat.name + ' 고르기' });
-      label = el('span', { class: 'pick-name' });
-      pick.appendChild(label);
-      pick.appendChild(el('span', { class: 'pick-arrow', 'aria-hidden': 'true' }, '▾'));
-      card = el('div', { class: 'thumb-card', hidden: '' });
-      var close = function () { card.hidden = true; pick.setAttribute('aria-expanded', 'false'); };
-      pick.addEventListener('click', function () {
-        if (!card.hidden) { closePick(); return; }
-        var before = pick.getBoundingClientRect().top;
-        closePick();
-        keepInPlace(pick, before);
-        if (!card.children.length) fillCard();
-        card.hidden = false;
-        pick.setAttribute('aria-expanded', 'true');
-        openPick = { close: close, step: step, cols: cols };
-        paintThumbs();
-        var on = card.querySelector('[aria-pressed="true"]');
-        if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
-      });
+  // 썸네일 고르기 버튼 + 카드. key: 썸네일을 그릴 항목, getId/setId: 지금 값 읽기·바꾸기 (추가 슬롯도 같이 쓴다)
+  function makePicker(name, key, getId, setId) {
+    var list = CG.parts[key], thumbs = [];
+    // 드롭다운 모양 버튼. 누르면 아래에 썸네일 카드가 열린다 (묶음 이름별로, 고른 것은 테두리)
+    var pick = el('button', { type: 'button', class: 'pick', 'aria-expanded': 'false', 'aria-label': name + ' 고르기' });
+    var label = el('span', { class: 'pick-name' });
+    pick.appendChild(label);
+    pick.appendChild(el('span', { class: 'pick-arrow', 'aria-hidden': 'true' }, '▾'));
+    var card = el('div', { class: 'thumb-card', hidden: '' });
+    var close = function () { card.hidden = true; pick.setAttribute('aria-expanded', 'false'); };
+    function open() {
+      var before = pick.getBoundingClientRect().top;
+      closePick();
+      keepInPlace(pick, before);
+      if (!card.children.length) fillCard();
+      card.hidden = false;
+      pick.setAttribute('aria-expanded', 'true');
+      openPick = { close: close, step: step, cols: cols };
+      paintThumbs();
+      var on = card.querySelector('[aria-pressed="true"]');
+      if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
     }
+    pick.addEventListener('click', function () { if (!card.hidden) closePick(); else open(); });
     function fillCard() {
       var boxName, grid = null;
       list.forEach(function (p, i) {
@@ -239,9 +231,9 @@
           grid = card.appendChild(el('div', { class: 'thumb-grid' }));
         }
         var b = el('button', { type: 'button', class: 'thumb', title: p.name, 'aria-label': p.name, 'aria-pressed': 'false' });
-        b.innerHTML = thumbSvg(cat.key, p.id) + '<span class="th-name"></span>';
+        b.innerHTML = thumbSvg(key, p.id) + '<span class="th-name"></span>';
         b.lastChild.textContent = p.name;
-        b.addEventListener('click', function () { set(cat.key, p.id); });
+        b.addEventListener('click', function () { setId(p.id); });
         grid.appendChild(b);
         thumbs[i] = b;
       });
@@ -249,9 +241,9 @@
     // 키보드: ←→ 이전·다음, ↑↓ 한 줄 위·아래
     function step(d) {
       var i = 0;
-      for (var n = 0; n < list.length; n++) if (list[n].id === state[cat.key]) i = n;
+      for (var n = 0; n < list.length; n++) if (list[n].id === getId()) i = n;
       i = Math.max(0, Math.min(list.length - 1, i + d));
-      set(cat.key, list[i].id);
+      setId(list[i].id);
       if (thumbs[i] && thumbs[i].scrollIntoView) thumbs[i].scrollIntoView({ block: 'nearest' });
     }
     function cols() {
@@ -260,11 +252,32 @@
       return k;
     }
     function paintThumbs() {
-      list.forEach(function (p, i) { if (thumbs[i]) thumbs[i].setAttribute('aria-pressed', p.id === state[cat.key] ? 'true' : 'false'); });
+      list.forEach(function (p, i) { if (thumbs[i]) thumbs[i].setAttribute('aria-pressed', p.id === getId() ? 'true' : 'false'); });
+    }
+    function paint() {
+      var cur = null;
+      list.forEach(function (p) { if (p.id === getId()) cur = p; });
+      label.textContent = cur ? cur.name : '';
+      if (!card.hidden) paintThumbs();
+    }
+    return { pick: pick, card: card, paint: paint, open: open, close: function () { if (!card.hidden) closePick(); } };
+  }
+
+  function buildPartRow(cat) {
+    var list = CG.parts[cat.key];
+    var item = el('div', { class: 'part-item' });
+    var row = el('div', { class: 'row' });
+    var select = null, picker = null;
+    if (PLAIN[cat.key]) {
+      select = el('select', { 'aria-label': cat.name });
+      list.forEach(function (p) { select.appendChild(el('option', { value: p.id }, p.name)); });
+      select.addEventListener('change', function () { set(cat.key, select.value); });
+    } else {
+      picker = makePicker(cat.name, cat.key, function () { return state[cat.key]; }, function (id) { set(cat.key, id); });
     }
 
     row.appendChild(el('span', { class: 'name' }, cat.name));
-    row.appendChild(select || pick);
+    row.appendChild(select || picker.pick);
     var tools = el('span', { class: 'tools' });
     var flip = CG.FLIP_KEYS.indexOf(cat.key) >= 0 ? flipButton(cat) : null;
     tools.appendChild(flip || el('span', { class: 'tool-gap' }));
@@ -274,18 +287,97 @@
     row.appendChild(tools);
 
     item.appendChild(row);
-    if (card) item.appendChild(card);
+    if (picker) item.appendChild(picker.card);
     controls[cat.key] = function () {
       if (select) select.value = state[cat.key];
-      else {
-        var cur = null;
-        list.forEach(function (p) { if (p.id === state[cat.key]) cur = p; });
-        label.textContent = cur ? cur.name : '';
-        if (!card.hidden) paintThumbs();
-      }
+      else picker.paint();
       if (flip) paintFlip(flip, cat);
     };
     return item;
+  }
+
+  // ---------- 추가 슬롯 (커스텀 옵션: 머리·악세사리를 하나 더) ----------
+  // 줄마다 [항목 고르기] [파츠 썸네일] [반전] [빼기]. 맨 아래 "+ 추가" 버튼. 랜덤은 슬롯을 바꾸지 않는다
+  var SLOT_TEXT = { hair: '머리 추가', acc: '악세사리 추가' };
+  function catDef(key) { return CG.categories.filter(function (c) { return c.key === key; })[0]; }
+  function firstId(key) { var l = CG.parts[key] || []; return l.length ? l[0].id : 'none'; }
+  function editSlots(g, fn) {
+    var next = JSON.parse(JSON.stringify(state));
+    next.slots = next.slots || {}; next.slots[g] = next.slots[g] || [];
+    fn(next.slots[g]);
+    commit(next);
+  }
+  function buildSlots(g) {
+    var def = CG.slots[g], wrap = el('div', { class: 'slots' }), list = el('div', { class: 'rows' });
+    var add = el('button', { type: 'button', class: 'slot-add' }, '+ ' + SLOT_TEXT[g]);
+    var shown = '', rows = [], openAt = null;
+    add.addEventListener('click', function () {
+      openAt = ((state.slots && state.slots[g]) || []).length;
+      editSlots(g, function (arr) { arr.push({ k: def.keys[0], id: firstId(def.keys[0]) }); });
+    });
+    wrap.appendChild(list);
+    wrap.appendChild(add);
+    function slotRow(i) {
+      var sl = function () { return state.slots[g][i]; };
+      var item = el('div', { class: 'part-item' }), row = el('div', { class: 'row slot-row' });
+      var kind = el('select', { class: 'slot-kind', 'aria-label': (i + 1) + '번째 추가 슬롯 항목' });
+      def.keys.forEach(function (k) { kind.appendChild(el('option', { value: k }, catDef(k).name)); });
+      kind.value = sl().k;
+      kind.addEventListener('change', function () {
+        openAt = i;
+        editSlots(g, function (arr) { arr[i] = { k: kind.value, id: firstId(kind.value) }; });
+      });
+      var key = sl().k, cat = catDef(key);
+      var picker = makePicker(cat.name, key, function () { return sl() && sl().id; }, function (id) { editSlots(g, function (arr) { arr[i].id = id; }); });
+      var tools = el('span', { class: 'tools' });
+      var flip = iconButton('flip', 'flip', cat.name + ' 좌우 반전', '좌우 반전');
+      flip.addEventListener('click', function () {
+        editSlots(g, function (arr) {
+          var x = arr[i], p = CG.parts[x.k].filter(function (q) { return q.id === x.id; })[0];
+          if (CG.pieceKind(p, x.k) === 'side') { x.o = !x.o ? 'l' : x.o === 'l' ? 'r' : undefined; if (!x.o) delete x.o; }
+          else if (x.f) delete x.f; else x.f = 1;
+        });
+      });
+      var del = el('button', { type: 'button', class: 'tool slot-del', 'aria-label': (i + 1) + '번째 추가 슬롯 빼기', title: '빼기' }, '×');
+      del.addEventListener('click', function () { picker.close(); editSlots(g, function (arr) { arr.splice(i, 1); }); });
+      tools.appendChild(flip); tools.appendChild(del);
+      row.appendChild(kind); row.appendChild(picker.pick); row.appendChild(tools);
+      item.appendChild(row); item.appendChild(picker.card);
+      list.appendChild(item);
+      return {
+        picker: picker,
+        paint: function () {
+          var x = sl(); if (!x) return;
+          picker.paint();
+          // 반전 버튼: 지금 고른 파츠에 따라 좌우 반전 / 대칭·왼쪽만·오른쪽만 (원래 항목 줄과 같다)
+          var p = CG.parts[x.k].filter(function (q) { return q.id === x.id; })[0], k2 = CG.pieceKind(p, x.k), mode = x.o || 'both';
+          var icon = k2 === 'side' ? (mode === 'l' ? 'sideL' : mode === 'r' ? 'sideR' : 'sideBoth') : 'flip';
+          if (flip.getAttribute('data-icon') !== icon) { flip.innerHTML = ICON[icon]; flip.setAttribute('data-icon', icon); }
+          flip.className = 'flip tool' + (k2 && (k2 === 'side' || CG.FLIP_KEYS.indexOf(x.k) >= 0) ? '' : ' idle');
+          flip.setAttribute('aria-pressed', (k2 === 'side' ? mode !== 'both' : !!x.f) ? 'true' : 'false');
+          flip.title = k2 === 'side' ? SIDE_TEXT[mode] : '좌우 반전';
+        }
+      };
+    }
+    controls['slots-' + g] = function () {
+      var arr = (state.slots && state.slots[g]) || [];
+      // 줄 수나 항목이 바뀌었을 때만 다시 만든다 (파츠만 바꿀 때는 열린 썸네일 카드를 그대로 둔다)
+      var sig = arr.map(function (x) { return x.k; }).join(',');
+      var fresh = sig !== shown;
+      if (fresh) {
+        closePick();
+        list.textContent = '';
+        rows = arr.map(function (x, i) { return slotRow(i); });
+        shown = sig;
+      }
+      rows.forEach(function (r) { r.paint(); });
+      add.hidden = arr.length >= def.max;
+      list.hidden = !arr.length;
+      // 새로 넣은 줄(또는 항목을 바꾼 줄)은 썸네일 카드를 바로 연다
+      if (fresh && openAt != null && rows[openAt]) rows[openAt].picker.open();
+      openAt = null;
+    };
+    return wrap;
   }
 
   // ---------- 색 줄 ----------
@@ -299,8 +391,11 @@
     // 오드아이는 어느 쪽 눈인지 바꾸는 반전 버튼이 붙는다
     var flip = CG.FLIP_KEYS.indexOf(slot.key) >= 0 ? flipButton(slot) : null;
     if (flip) head.appendChild(flip);
-    head.appendChild(diceButton(slot.key));
-    head.appendChild(lockButton(slot.key));
+    // 커스텀 옵션 색은 랜덤에 안 들어가서 랜덤·고정 버튼이 없다
+    if (!slot.custom) {
+      head.appendChild(diceButton(slot.key));
+      head.appendChild(lockButton(slot.key));
+    }
 
     var box = el('div', { class: 'swatches' });
     var buttons = list.map(function (c) {
@@ -513,6 +608,7 @@
 
   // ---------- 시작 ----------
   // 묶음(헤어 / 눈 / 얼굴 / 악세사리 / 배경) 순서와 그 안의 줄 순서는 core.js 의 panel() 이 정한다
+  // 커스텀 옵션(랜덤으로 안 바뀌고 직접 고르는 항목)은 묶음 맨 아래 접힌 칸. 쓰고 있는 것의 개수를 제목 옆에 적는다
   var $groups = $('groups'), lastGroup = null, sec = null;
   CG.panel().forEach(function (block) {
     var rows = el('div', { class: 'rows' });
@@ -520,12 +616,29 @@
       if (it.kind === 'color') rows.appendChild(buildColorRow(it.def));
       else if (CG.parts[it.def.key].length) rows.appendChild(buildPartRow(it.def));
     });
+    if (block.slots) rows.appendChild(buildSlots(block.slots));
     if (!rows.children.length) return;
     if (block.group !== lastGroup) {
       sec = el('section', { class: 'group', 'data-group': block.group.key });
       sec.appendChild(el('h2', null, block.group.name));
       $groups.appendChild(sec);
       lastGroup = block.group;
+    }
+    if (block.custom) {
+      var box = el('details', { class: 'custom-opt' }), sum = el('summary'), badge = el('span', { class: 'custom-count' });
+      sum.appendChild(el('span', null, '커스텀 옵션'));
+      sum.appendChild(badge);
+      box.appendChild(sum);
+      box.appendChild(rows);
+      sec.appendChild(box);
+      var keys = block.items.map(function (it) { return it.def.key; }), g = block.slots;
+      controls['custom-' + block.group.key + (g || '')] = function () {
+        var d = CG.defaultState(), n = 0;
+        keys.forEach(function (k) { if (state[k] !== d[k]) n++; });
+        if (g) n += ((state.slots && state.slots[g]) || []).length;
+        badge.textContent = n ? String(n) : '';
+      };
+      return;
     }
     if (block.sub) sec.appendChild(el('h3', null, block.sub.name));
     sec.appendChild(rows);

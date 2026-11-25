@@ -67,6 +67,8 @@
     { key: 'brow', code: 'b', name: '눈썹', group: 'face' },
     { key: 'mouth', code: 'm', name: '입', group: 'face' },
     { key: 'mouthY', code: 'xm', name: '입 높이', group: 'face', type: 'eye' },
+    // 코 높이 (2026-11-25): 코(parts/base/nose.svg)를 위아래로 옮긴다
+    { key: 'noseY', code: 'xn', name: '코 높이', group: 'face', type: 'eye' },
     // 눈 각도(바깥 눈꼬리가 올라감/처짐), 눈썹 간격·높이·각도 (그림 없이 수치만)
     { key: 'eyeTilt', code: 'xt', name: '눈 각도', group: 'eyes', type: 'eye' },
     { key: 'browGap', code: 'bx', name: '눈썹 간격', group: 'face', type: 'eye' },
@@ -84,11 +86,14 @@
   ];
 
   // after: 그 항목 바로 뒤에 놓는다 (없으면 묶음·소분류의 맨 뒤)
+  // custom: 커스텀 옵션 (접힌 칸에 있고 랜덤으로는 바뀌지 않는다)
   var COLOR_SLOTS = [
     { key: 'hairColor', code: 'ch', name: '헤어 색', palette: 'hair', group: 'hair' },
     { key: 'eyeColor', code: 'ce', name: '눈 색', palette: 'eye', group: 'eyes', sub: 'iris' },
     // 오드아이: 한쪽 눈만 다른 색. '없음'이면 두 눈이 같은 색 (기본은 화면 오른쪽 눈, 반전하면 왼쪽 눈)
-    { key: 'oddColor', code: 'co', name: '오드아이', palette: 'odd', group: 'eyes', sub: 'iris' },
+    { key: 'oddColor', code: 'co', name: '오드아이', palette: 'odd', group: 'eyes', sub: 'iris', custom: true },
+    // 흰자위 색: 눈 파일의 흰자(#ffffff)를 이 색으로 칠한다
+    { key: 'whiteColor', code: 'cx', name: '흰자위 색', palette: 'sclera', group: 'eyes', custom: true },
     { key: 'skinColor', code: 'cs', name: '피부색', palette: 'skin', group: 'face', after: 'face' },
     { key: 'accColor', code: 'ca', name: '악세사리 색', palette: 'acc', group: 'acc' },
     { key: 'clothColor', code: 'cc', name: '상의 색', palette: 'cloth', group: 'cloth' },
@@ -99,21 +104,23 @@
 
   // 화면 순서 (주인 지정 2026-11-15). 묶음 → 소분류(이름 없으면 제목 없이 줄만) → 항목·색 슬롯 key.
   // CATEGORIES 의 순서는 같은 레이어에 쌓는 순서라서 따로 둔다. 여기 없는 항목은 그 묶음 맨 뒤에 붙는다
+  // custom: true 인 소분류는 묶음 맨 아래의 접힌 "커스텀 옵션" 칸에 놓인다 (주인 2026-11-25). slots: 추가 슬롯(SLOTS)
   var LAYOUT = [
-    { group: 'hair', subs: [{ items: ['front', 'side', 'back', 'extra', 'hairColor'] }] },
+    { group: 'hair', subs: [{ items: ['front', 'side', 'back', 'extra', 'hairColor'] }, { custom: true, items: [], slots: 'hair' }] },
     { group: 'eyes', subs: [
       { items: ['eye', 'fold', 'lowline', 'lash', 'lowlash'] },
       // 눈 위치는 속눈썹과 눈동자 사이 (주인 지시 2026-11-17)
       { name: '눈 위치', items: ['eyeSize', 'eyeTilt', 'eyeGap', 'eyeY', 'around'] },
       { name: '눈동자', items: ['iris', 'pupil', 'hl'] },
-      { name: '눈 색', items: ['eyeColor', 'oddColor'] }
+      { name: '눈 색', items: ['eyeColor'] },
+      { custom: true, items: ['whiteColor', 'oddColor'] }
     ] },
     { group: 'face', subs: [
       { items: ['face', 'skinColor', 'skinfx', 'makeup'] },
       { items: ['brow', 'browGap', 'browY', 'browTilt'] },
-      { items: ['mouth', 'mouthY', 'lip', 'ear'] }
+      { items: ['mouth', 'mouthY', 'noseY', 'lip', 'ear'] }
     ] },
-    { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }] },
+    { group: 'acc', subs: [{ items: ['acc', 'glasses', 'earring', 'facewear', 'accColor'] }, { custom: true, items: [], slots: 'acc' }] },
     { group: 'cloth', subs: [{ items: ['cloth', 'clothColor'] }, { items: ['outer', 'outerColor'] }, { items: ['neck', 'clothColor2'] }] },
     { group: 'bg', subs: [{ items: ['bgColor'] }] }
   ];
@@ -152,10 +159,12 @@
       subs.forEach(function (sb) {
         var items = [];
         sb.items.forEach(function (k) { var it = find(k); if (it) { items.push(it); used[k] = 1; } });
-        blocks.push({ group: g, sub: sb.name ? { key: sb.name, name: sb.name } : null, items: items });
+        blocks.push({ group: g, sub: sb.name ? { key: sb.name, name: sb.name } : null, items: items, custom: !!sb.custom, slots: sb.slots || null });
       });
+      // 목록에 없는 항목은 커스텀 옵션이 아닌 마지막 소분류에 붙인다
+      var tail = blocks.filter(function (b) { return !b.custom; }).pop();
       CATEGORIES.concat(COLOR_SLOTS).forEach(function (c) {
-        if (c.group === g.key && !used[c.key] && blocks.length) { blocks[blocks.length - 1].items.push(find(c.key)); used[c.key] = 1; }
+        if (c.group === g.key && !used[c.key] && tail) { tail.items.push(find(c.key)); used[c.key] = 1; }
       });
       out = out.concat(blocks);
     });
@@ -261,7 +270,10 @@
   // 지금 고른 파츠에서 반전 버튼이 하는 일: 'flip' (full 조각이 있어 좌우 반전) / 'side' (half 만 있어 대칭·왼쪽만·오른쪽만) / null
   function flipKind(state, key) {
     if (key === 'oddColor') return state.oddColor && state.oddColor !== 'none' ? 'flip' : null;
-    var p = findIn(parts[key] || [], state[key]);
+    return pieceKind(findIn(parts[key] || [], state[key]), key);
+  }
+  // 파츠 하나의 반전 종류 (추가 슬롯도 같이 쓴다)
+  function pieceKind(p, key) {
     if (!p || !p.pieces) return null;
     var half = false, full = false;
     for (var l in p.pieces) { if (p.pieces[l].full) full = true; if (p.pieces[l].half) half = true; }
@@ -269,6 +281,44 @@
     return half && SIDE_KEYS.indexOf(key) >= 0 ? 'side' : null;
   }
   function canFlip(state, key) { return flipKind(state, key) === 'flip'; }
+
+  // ---------- 추가 슬롯 (커스텀 옵션, 주인 2026-11-25) ----------
+  // 머리·악세사리를 하나 더 얹는다. 슬롯마다 어느 항목(앞머리·옆머리…)에서 고를지 정하고, 그 항목과 같은 레이어에 그린다.
+  // 상태: s.slots.hair = [{ k: 'front', id: 'allback', f: 1(반전) , o: 'l'|'r'(한쪽만) }, ...]
+  // 조합 코드: xh:hf.allback.f~hs.long.l  (슬롯은 ~ 로, 항목 코드·id·반전은 . 로 나눈다). 랜덤은 슬롯을 건드리지 않는다
+  var SLOTS = {
+    hair: { code: 'xh', keys: ['front', 'side', 'back', 'extra'], max: 4 },
+    acc: { code: 'xa', keys: ['acc', 'glasses', 'earring', 'facewear'], max: 4 }
+  };
+  function catOf(key) { for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].key === key) return CATEGORIES[i]; return null; }
+  function cleanSlots(src) {
+    var out = {};
+    for (var g in SLOTS) {
+      out[g] = [];
+      ((src && src[g]) || []).forEach(function (sl) {
+        if (!sl || out[g].length >= SLOTS[g].max || SLOTS[g].keys.indexOf(sl.k) < 0) return;
+        var id = currentId(sl.k, sl.id) || 'none', x = { k: sl.k, id: id };
+        if (sl.f) x.f = 1;
+        if (sl.o === 'l' || sl.o === 'r') x.o = sl.o;
+        out[g].push(x);
+      });
+    }
+    return out;
+  }
+  function slotCode(g, list) {
+    return list.map(function (sl) { return catOf(sl.k).code + '.' + sl.id + (sl.f ? '.f' : '') + (sl.o ? '.' + sl.o : ''); }).join('~');
+  }
+  function slotParse(g, text) {
+    var codeKey = {};
+    SLOTS[g].keys.forEach(function (k) { codeKey[catOf(k).code] = k; });
+    return String(text).split('~').map(function (t) {
+      var a = t.split('.'), x = { k: codeKey[a[0]], id: a[1] };
+      a.slice(2).forEach(function (m) { if (m === 'f') x.f = 1; else if (m === 'l' || m === 'r') x.o = m; });
+      return x;
+    });
+  }
+  // 커스텀 옵션 색 (랜덤에서 그대로 둔다)
+  function isCustomKey(key) { for (var i = 0; i < COLOR_SLOTS.length; i++) if (COLOR_SLOTS[i].key === key) return !!COLOR_SLOTS[i].custom; return false; }
 
   // 지금 이름을 돌려준다. 이름을 바꾼 파츠는 _parts.json 의 "old"(tools/rename.js)로 예전 이름도 받는다
   function currentId(key, id) {
@@ -283,6 +333,7 @@
     var s = defaultState();
     s.flip = {};
     s.only = {};
+    s.slots = cleanSlots(state && state.slots);
     if (!state) return publicClothes(s);
     FLIP_KEYS.forEach(function (k) { if (state.flip && state.flip[k]) s.flip[k] = true; });
     SIDE_KEYS.forEach(function (k) { var v = state.only && state.only[k]; if (v === 'l' || v === 'r') s.only[k] = v; });
@@ -363,8 +414,9 @@
     s.only = {};
     SIDE_KEYS.forEach(function (k) { if (b.only[k]) s.only[k] = b.only[k]; });
     COLOR_SLOTS.forEach(function (c) {
-      s[c.key] = locks[c.key] ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
+      s[c.key] = locks[c.key] || c.custom ? b[c.key] : pickWeighted(palettes[c.palette], rnd).id;
     });
+    s.slots = b.slots;   // 추가 슬롯은 직접 고른 그대로
     return publicClothes(s);
   }
 
@@ -399,6 +451,7 @@
     if (fl.length) out.push('fl:' + fl.join('.'));
     if (sl.length) out.push('sl:' + sl.join('.'));
     if (sr.length) out.push('sr:' + sr.join('.'));
+    for (var g in SLOTS) if (s.slots[g].length) out.push(SLOTS[g].code + ':' + slotCode(g, s.slots[g]));
     return out.join(',');
   }
 
@@ -410,7 +463,10 @@
       if (i < 1) return;
       var head = pair.slice(0, i).trim(), key = map[head];
       var each = function (fn) { pair.slice(i + 1).trim().split('.').forEach(function (code) { if (map[code]) fn(map[code]); }); };
+      var slotG = null;
+      for (var g in SLOTS) if (SLOTS[g].code === head) slotG = g;
       if (key) s[key] = pair.slice(i + 1).trim();
+      else if (slotG) { s.slots = s.slots || {}; s.slots[slotG] = slotParse(slotG, pair.slice(i + 1).trim()); }
       else if (head === 'fl') { s.flip = s.flip || {}; each(function (k) { s.flip[k] = true; }); }
       else if (head === 'sl' || head === 'sr') { s.only = s.only || {}; each(function (k) { s.only[k] = head === 'sl' ? 'l' : 'r'; }); }
     });
@@ -460,6 +516,7 @@
       '--eye': eye['--eye'],
       '--eye-ring': eye['--eye-ring'],
       '--pupil': eye['--pupil'],
+      '--sclera': (colorIn('sclera', s.whiteColor) || { hex: '#ffffff' }).hex,
       '--lash': '#2b201d',
       '--glass': '#3a3336',
       '--acc': acc,
@@ -854,7 +911,8 @@
       if (hl && hl.pupilWhite && body.indexOf('var(--eye)') >= 0) {
         body = body.replace(/var\(--pupil\)/g, '#ffffff').replace(/(fill|stroke)="#000000"/gi, '$1="#ffffff"');
       }
-      out += eye.white + '<g clip-path="url(#' + clipId + ')">' +
+      // 흰자는 흰자위 색(--sclera)으로 칠한다
+      out += eye.white.replace(/fill="#fff(fff)?"/gi, 'fill="var(--sclera)"') + '<g clip-path="url(#' + clipId + ')">' +
         '<g transform="' + t + sc + ')">' + body + '</g>';
       // 홍채 테두리: 눈동자 크기와 상관없이 굵기 7 로 그린다
       if (!pupil.noRing) {
@@ -934,17 +992,37 @@
     }
     put('hairLine', { half: hair.edge || '' });
     if (!parts.ear || !parts.ear.length) put('ear', base.ear);   // 귀 모양 항목이 있으면 거기서 그린다
-    put('mouth', base.nose);
-
     var num = function (key, field) { var o = findIn(parts[key] || [], s[key]); return (o && o[field]) || 0; };
-    var adj = { gap: num('eyeGap', 'dx'), eyeY: num('eyeY', 'dy'), mouthY: num('mouthY', 'dy'), size: num('eyeSize', 'scale') || 1,
+    var adj = { gap: num('eyeGap', 'dx'), eyeY: num('eyeY', 'dy'), mouthY: num('mouthY', 'dy'), noseY: num('noseY', 'dy'), size: num('eyeSize', 'scale') || 1,
       tilt: num('eyeTilt', 'angle'), browGap: num('browGap', 'dx'), browY: num('browY', 'dy'), browTilt: num('browTilt', 'angle') };
+    // 조각을 옮긴다: half 는 (dx, dy), full 은 세로로만 (반전 그룹 안의 half 는 좌우 대칭으로 움직인다)
+    function moved(pc, dx, dy) {
+      if (!pc || (!dx && !dy)) return pc;
+      return {
+        half: pc.half ? '<g transform="translate(' + dx + ' ' + dy + ')">' + pc.half + '</g>' : '',
+        full: pc.full ? '<g transform="translate(0 ' + dy + ')">' + pc.full + '</g>' : ''
+      };
+    }
+    put('mouth', moved(base.nose, 0, adj.noseY));
 
     CATEGORIES.forEach(function (c) {
       if (c.type === 'eye') return;
       cur = c.key;
       var p = part(c.key);
       if (!p || p.none || !p.pieces) return;
+      drawPart(c, p, !!s.flip[c.key], flipKind(s, c.key) === 'side' ? s.only[c.key] : null);
+    });
+    // 추가 슬롯: 같은 항목의 원래 파츠 위에 얹는다
+    cur = null;
+    for (var sg in SLOTS) s.slots[sg].forEach(function (sl) {
+      if (omit[sl.k]) return;
+      var p = findIn(parts[sl.k] || [], sl.id);
+      if (!p || p.none || !p.pieces) return;
+      drawPart(catOf(sl.k), p, !!sl.f, pieceKind(p, sl.k) === 'side' ? sl.o || null : null);
+    });
+
+    // 파츠 하나를 그린다. flipOn: full 조각 좌우 반전, sd: half 조각을 'l' 왼쪽만 / 'r' 오른쪽만
+    function drawPart(c, p, flipOn, sd) {
       // 눈 높이·간격은 눈썹과 안경에도, 입 높이는 입과 립에도 같이 적용한다
       var tf = (c.key === 'brow' || c.key === 'around') ? [-adj.gap, adj.eyeY] : c.key === 'glasses' ? [0, adj.eyeY] : (c.key === 'mouth' || c.key === 'lip') ? [0, adj.mouthY] : null;
       // 립은 입의 가장 낮은 선(빌드가 적은 mouth.low)을 따라간다. 립 그림은 작은 미소(low 478) 기준
@@ -960,11 +1038,9 @@
       }
       // 목 장식을 깃 위(clothUp)에: neckUp 인 상의(세일러) 또는 up 인 목 장식(리본 타이). 넥타이는 깃 아래
       var upNeck = c.key === 'neck' && ((part('cloth') || {}).neckUp || p.up);
-      // half 조각만 있는 파츠는 왼쪽만 / 오른쪽만 그릴 수 있다
-      var sd = flipKind(s, c.key) === 'side' ? s.only[c.key] : null;
       for (var l in p.pieces) {
         var pc = p.pieces[l];
-        if (s.flip[c.key] && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
+        if (flipOn && pc.full) pc = { half: pc.half, full: '<g transform="' + MIRROR + '">' + pc.full + '</g>' };
         if (earAt) {
           var em = 'translate(' + (earAt[0] - 201) + ' ' + (earAt[1] - 440) + ')';
           put('hairTop', { half: pc.half ? '<g transform="' + em + '">' + pc.half + '</g>' : '', full: pc.full ? '<g transform="' + em + '">' + pc.full + '</g>' : '' }, sd);
@@ -978,16 +1054,11 @@
             half: pc.half ? '<g transform="' + btf + '">' + pc.half + '</g>' : '',
             full: pc.full ? '<g transform="translate(0 ' + by + ')">' + pc.full + '</g>' : ''
           };
-        } else if (tf && (tf[0] || tf[1])) {
-          pc = {
-            half: pc.half ? '<g transform="translate(' + tf[0] + ' ' + tf[1] + ')">' + pc.half + '</g>' : '',
-            full: pc.full ? '<g transform="translate(0 ' + tf[1] + ')">' + pc.full + '</g>' : ''
-          };
-        }
+        } else if (tf) pc = moved(pc, tf[0], tf[1]);
         put(upNeck && l === 'cloth' ? 'clothUp' : l, pc, sd);
       }
       if (p.defs) defs += p.defs;
-    });
+    }
     cur = null;
 
     var focusEye = opts.focus === 'around' || CATEGORIES.some(function (c) { return c.key === opts.focus && c.type === 'eye'; });
@@ -1098,7 +1169,10 @@
     FLIP_KEYS: FLIP_KEYS,
     SIDE_KEYS: SIDE_KEYS,
     flipKind: flipKind,
+    pieceKind: pieceKind,
     canFlip: canFlip,
+    slots: SLOTS,
+    isCustomKey: isCustomKey,
     decode: decode,
     compose: compose,
     eyeDetails: eyeDetails,

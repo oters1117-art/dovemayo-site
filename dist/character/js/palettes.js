@@ -160,6 +160,19 @@
 
   // hex 가 null 이면 배경 없이 투명
   // 옷 색 세 칸: 상의 색(기본 흰색), 외투 색(기본 카멜), 포인트 색(셔츠 단추·후드 끈·세일러 깃·넥타이·리본·외투 단추, 기본 네이비)
+  // 흰자위 색 (커스텀 옵션, 2026-11-25). 랜덤에서는 바뀌지 않는다
+  CG.addPalette('sclera', [
+    { id: 'white', name: '흰색', hex: '#ffffff', isDefault: true },
+    { id: 'ivory', name: '아이보리', hex: '#f6efe0' },
+    { id: 'pink', name: '연분홍', hex: '#fbe3e3' },
+    { id: 'blue', name: '연하늘', hex: '#e3eef8' },
+    { id: 'yellow', name: '연노랑', hex: '#f6efb8' },
+    { id: 'gray', name: '회색', hex: '#c9c5c7' },
+    { id: 'red', name: '빨강', hex: '#b8383c' },
+    { id: 'navy', name: '남색', hex: '#2c3550' },
+    { id: 'black', name: '검정', hex: '#262123' }
+  ]);
+
   var CLOTH = [
     { id: 'white', name: '흰색', hex: '#f9f2f1', group: '무채색', w: 3 },
     { id: 'ivory', name: '아이보리', hex: '#f1e8d6', group: '무채색', w: 2 },

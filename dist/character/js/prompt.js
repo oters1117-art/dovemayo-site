@@ -111,6 +111,7 @@
     bg: { greige: 'greige', cream: 'cream', dustypink: 'dusty pink', sage: 'sage green', dustyblue: 'dusty blue', lavender: 'lavender', charcoal: 'charcoal gray' }
   };
   EN_COLOR.odd = EN_COLOR.eye;
+  EN_COLOR.sclera = { white: 'white', ivory: 'ivory', pink: 'pale pink', blue: 'pale blue', yellow: 'pale yellow', gray: 'gray', red: 'red', navy: 'navy', black: 'black' };
 
   // NovelAI (Anime V4/V4.5) 용 Danbooru 태그. 쉼표로 잇고 밑줄 대신 띄어쓰기. 빈 문자열은 태그 없음
   var NAI = {
@@ -266,6 +267,15 @@
     return t;
   }
   function join(arr) { return arr.filter(Boolean).join(', '); }
+  // 추가 슬롯(커스텀 옵션)의 파츠를 [{ key, state }] 로. state 는 그 슬롯 파츠를 원래 항목 자리에 넣은 것
+  function slotStates(g, state) {
+    return ((state.slots && state.slots[g]) || []).filter(function (x) { return x.id !== 'none'; }).map(function (x) {
+      var st = Object.assign({}, state), fl = {}, on = {};
+      st[x.k] = x.id; if (x.f) fl[x.k] = true; if (x.o) on[x.k] = x.o;
+      st.flip = fl; st.only = on;
+      return { key: x.k, state: st };
+    });
+  }
 
   CG.prompt = function (state) {
     state = CG.normalize(state);
@@ -280,17 +290,22 @@
     var tweakKo = { eyeGap: { wide: '눈 간격 조금 멀게', narrow: '눈 간격 조금 가깝게' }, eyeY: { up: '눈 조금 위로', down: '눈 조금 아래로' }, eyeSize: { big: '눈 조금 크게', small: '눈 조금 작게' },
       eyeTilt: { up: '눈꼬리 조금 올라감', down: '눈꼬리 조금 처짐' } };
     var oddSide = state.flip && state.flip.oddColor;
+    var hairX = slotStates('hair', state), accX = slotStates('acc', state);
+    var sclera = state.whiteColor && state.whiteColor !== 'white' ? color('whiteColor', state) : null;
+    var noseEn = ({ up2: 'nose set higher', up: 'nose set slightly higher', down: 'nose set slightly lower', down2: 'nose set lower' })[state.noseY];
+    var noseKo = ({ up2: '코 위로', up: '코 조금 위로', down: '코 조금 아래로', down2: '코 아래로' })[state.noseY];
 
     // ---------- English ----------
     var en = [];
-    en.push('Hair: ' + c(hair) + '. ' + join(hairKeys.map(function (k) { return piece(k, state, 'en'); })) + '.');
+    en.push('Hair: ' + c(hair) + '. ' + join(hairKeys.map(function (k) { return piece(k, state, 'en'); })) +
+      (hairX.length ? '; also ' + join(hairX.map(function (x) { return piece(x.key, x.state, 'en'); })) : '') + '.');
     var eyes = [piece('eye', state, 'en'), eye ? c(eye) + ' irises' : '', has('fold', state) && piece('fold', state, 'en'), has('iris', state) && piece('iris', state, 'en'),
       state.pupil !== 'basic' && piece('pupil', state, 'en'), has('hl', state) && piece('hl', state, 'en'), has('lash', state) && piece('lash', state, 'en'), has('lowlash', state) && piece('lowlash', state, 'en'),
-      LOWLINE_EN[state.lowline]];
+      LOWLINE_EN[state.lowline], sclera && c(sclera) + ' sclera'];
     ['eyeGap', 'eyeY', 'eyeSize', 'eyeTilt'].forEach(function (k) { if (tweak[k][state[k]]) eyes.push(tweak[k][state[k]]); });
     en.push('Eyes: ' + join(eyes) + '.' + (odd ? ' Heterochromia: the eye on the viewer\'s ' + (oddSide ? 'left' : 'right') + ' is ' + c(odd) + '.' : ''));
     var face = [piece('face', state, 'en'), skin ? c(skin) + ' skin' : '', has('ear', state) && piece('ear', state, 'en'), piece('brow', state, 'en'), piece('mouth', state, 'en'),
-      ({ down:'mouth set slightly lower', up: 'mouth set slightly higher' })[state.mouthY],
+      ({ down:'mouth set slightly lower', up: 'mouth set slightly higher' })[state.mouthY], noseEn,
       has('makeup', state) && piece('makeup', state, 'en'), has('lip', state) && piece('lip', state, 'en'), has('around', state) && piece('around', state, 'en'), has('skinfx', state) && piece('skinfx', state, 'en')];
     en.push('Face: ' + join(face) + '.');
     var clothC = color('clothColor', state), clothP = color('clothColor2', state), hasNeck = has('neck', state) && (part('cloth', state) || {}).neckAt;
@@ -298,24 +313,25 @@
     var showCloth = true;   // 공개판도 상의는 보인다 (외투·목 장식은 공개판에서 늘 없음)
     if (showCloth && (has('cloth', state) || has('outer', state))) en.push('Clothes: ' + join([has('cloth', state) && c(clothC) + ' ' + piece('cloth', state, 'en'),
       has('outer', state) && c(outerC) + ' ' + piece('outer', state, 'en') + (has('cloth', state) ? ' over it' : ''), hasNeck && c(clothP) + ' ' + piece('neck', state, 'en')]) + '.');
-    if (accKeys.length) en.push('Accessories: ' + join(accKeys.map(function (k) { return piece(k, state, 'en'); })) + (accC && (has('acc', state) || has('earring', state)) ? '; accessory color ' + c(accC) : '') + '.');
+    if (accKeys.length || accX.length) en.push('Accessories: ' + join(accKeys.map(function (k) { return piece(k, state, 'en'); }).concat(accX.map(function (x) { return piece(x.key, x.state, 'en'); }))) + (accC && (has('acc', state) || has('earring', state)) ? '; accessory color ' + c(accC) : '') + '.');
 
     // ---------- 한국어 ----------
     var ko = [];
     var catName = function (k) { return CG.categories.filter(function (x) { return x.key === k; })[0].name; };
-    ko.push('머리: ' + ck(hair) + '. ' + join(hairKeys.map(function (k) { return catName(k) + ' ' + piece(k, state, 'ko'); })) + '.');
+    ko.push('머리: ' + ck(hair) + '. ' + join(hairKeys.map(function (k) { return catName(k) + ' ' + piece(k, state, 'ko'); })) +
+      (hairX.length ? ' / 더해서 ' + join(hairX.map(function (x) { return catName(x.key) + ' ' + piece(x.key, x.state, 'ko'); })) : '') + '.');
     var eyesKo = [piece('eye', state, 'ko'), eye ? '눈동자 ' + ck(eye) : '', has('fold', state) && piece('fold', state, 'ko'), has('iris', state) && piece('iris', state, 'ko'),
       state.pupil !== 'basic' && '동공 ' + piece('pupil', state, 'ko'), has('hl', state) && '하이라이트 ' + piece('hl', state, 'ko'), has('lash', state) && '속눈썹 ' + piece('lash', state, 'ko'),
-      has('lowlash', state) && '아래 속눈썹 ' + piece('lowlash', state, 'ko'), has('lowline', state) && '아이라인 ' + piece('lowline', state, 'ko')];
+      has('lowlash', state) && '아래 속눈썹 ' + piece('lowlash', state, 'ko'), has('lowline', state) && '아이라인 ' + piece('lowline', state, 'ko'), sclera && '흰자위 ' + ck(sclera)];
     ['eyeGap', 'eyeY', 'eyeSize', 'eyeTilt'].forEach(function (k) { if (tweakKo[k][state[k]]) eyesKo.push(tweakKo[k][state[k]]); });
     ko.push('눈: ' + join(eyesKo) + '.' + (odd ? ' 오드아이: 화면 ' + (oddSide ? '왼쪽' : '오른쪽') + ' 눈은 ' + ck(odd) + '.' : ''));
     var faceKo = [piece('face', state, 'ko'), skin ? '피부 ' + ck(skin) : '', has('ear', state) && piece('ear', state, 'ko'), '눈썹 ' + piece('brow', state, 'ko'), '입 ' + piece('mouth', state, 'ko'),
-      ({ down: '입 조금 아래로', up: '입 조금 위로' })[state.mouthY], has('makeup', state) && piece('makeup', state, 'ko'), has('lip', state) && '립 ' + piece('lip', state, 'ko'),
+      ({ down: '입 조금 아래로', up: '입 조금 위로' })[state.mouthY], noseKo, has('makeup', state) && piece('makeup', state, 'ko'), has('lip', state) && '립 ' + piece('lip', state, 'ko'),
       has('around', state) && piece('around', state, 'ko'), has('skinfx', state) && piece('skinfx', state, 'ko')];
     ko.push('얼굴: ' + join(faceKo) + '.');
     if (showCloth && (has('cloth', state) || has('outer', state))) ko.push('옷: ' + join([has('cloth', state) && piece('cloth', state, 'ko') + ' ' + ck(clothC),
       has('outer', state) && '위에 ' + piece('outer', state, 'ko') + ' ' + ck(outerC), hasNeck && piece('neck', state, 'ko') + ' ' + ck(clothP)]) + '.');
-    if (accKeys.length) ko.push('악세사리: ' + join(accKeys.map(function (k) { return piece(k, state, 'ko'); })) + (accC && (has('acc', state) || has('earring', state)) ? ' / 악세사리 색 ' + ck(accC) : '') + '.');
+    if (accKeys.length || accX.length) ko.push('악세사리: ' + join(accKeys.map(function (k) { return piece(k, state, 'ko'); }).concat(accX.map(function (x) { return piece(x.key, x.state, 'ko'); }))) + (accC && (has('acc', state) || has('earring', state)) ? ' / 악세사리 색 ' + ck(accC) : '') + '.');
 
     // ---------- NovelAI (Danbooru 태그) ----------
     // 순서: 머리색·길이·모양 → 눈 → 얼굴 → 악세사리. 앞쪽 태그가 더 세게 먹는다
@@ -323,16 +339,19 @@
     var tags = [];
     tags.push(suffix(nc('hair', hair), 'hair'));
     ['back', 'front', 'side', 'extra'].forEach(function (k) { if (k === 'back' || has(k, state)) tags.push(nai(k, state)); });
+    hairX.forEach(function (x) { tags.push(nai(x.key, x.state)); });
     if (['front', 'side', 'extra', 'back'].some(function (k) { return state.only && state.only[k]; })) tags.push('asymmetrical hair');
     if (odd && odd.id !== state.eyeColor) tags.push('heterochromia', suffix(nc('eye', eye), 'eyes'), suffix(nc('eye', odd), 'eyes'));
     else tags.push(suffix(nc('eye', eye), 'eyes'));
     ['eye', 'iris', 'pupil', 'hl', 'lash', 'lowlash', 'fold'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
+    if (sclera) tags.push(state.whiteColor === 'black' ? 'black sclera' : 'colored sclera');
     if (has('lowline', state)) tags.push(state.lowline === 'full' || state.lowline === 'innerlow' ? 'eyeliner, thick eyeliner' : 'eyeliner');
     if (state.eyeSize === 'big') tags.push('large eyes');
     ['face', 'ear'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
     tags.push(nc('skin', skin));
     ['brow', 'mouth', 'makeup', 'lip', 'around', 'skinfx'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
     ['acc', 'glasses', 'earring', 'facewear'].forEach(function (k) { if (has(k, state)) tags.push(nai(k, state)); });
+    accX.forEach(function (x) { tags.push(nai(x.key, x.state)); });
     if (showCloth && has('cloth', state)) tags.push(nai('cloth', state));
     if (showCloth && has('outer', state)) tags.push(nai('outer', state));
     if (showCloth && hasNeck) tags.push(nai('neck', state));

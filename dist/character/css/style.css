@@ -225,6 +225,19 @@ button.primary:hover { background: #4d403b; }
 .row .step { width: 34px; }
 .row .file { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
 .row .tools { display: flex; gap: 6px; }
+/* 커스텀 옵션: 묶음 맨 아래 접힌 칸 (랜덤으로 안 바뀌는 항목) */
+.custom-opt { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.custom-opt > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .02em; padding: 4px 0; user-select: none; }
+.custom-opt > summary::-webkit-details-marker { display: none; }
+.custom-opt > summary::before { content: '▸'; font-size: 11px; width: 10px; transition: transform .15s; }
+.custom-opt[open] > summary::before { transform: rotate(90deg); }
+.custom-opt > summary:hover { color: var(--ink); }
+.custom-count:not(:empty) { min-width: 18px; padding: 0 6px; border-radius: 9px; background: var(--group-bg, #f1ebe7); color: var(--ink); font-size: 11px; line-height: 18px; text-align: center; }
+.custom-opt > .rows { margin-top: 8px; }
+.slots { display: grid; gap: 8px; }
+.slots > .rows[hidden], .slot-add[hidden] { display: none; }
+.slot-add { justify-self: start; padding: 7px 14px; font-size: 13px; border-style: dashed; }
+.row .slot-del { font-size: 18px; line-height: 1; }
 .tool, .tool-gap { width: 34px; height: 34px; flex: none; }
 .row .tool, .color-head .tool { padding: 0; display: grid; place-items: center; }
 .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
