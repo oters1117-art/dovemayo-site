@@ -185,7 +185,9 @@ button.primary:hover { background: #4d403b; }
 
 .rows { display: grid; gap: 8px; }
 /* 제목 없는 소분류끼리는 틈으로만 나눈다 */
-.rows + .rows { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--rule); }
+/* 점선: 브라우저 기본 dashed(3px 선 · 2px 틈) 대신 3px 선 · 3px 틈 (주인 2026-11-25 "점선 간격 1.5배") */
+.rows + .rows, .custom-opt { background-image: linear-gradient(90deg, var(--rule) 3px, transparent 3px); background-size: 6px 1px; background-repeat: repeat-x; background-position: 0 0; }
+.rows + .rows { margin-top: 14px; padding-top: 12px; }
 
 .row {
   display: grid;
@@ -226,7 +228,7 @@ button.primary:hover { background: #4d403b; }
 .row .file { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
 .row .tools { display: flex; gap: 6px; }
 /* 커스텀 옵션: 묶음 맨 아래 접힌 칸 (랜덤으로 안 바뀌는 항목) */
-.custom-opt { margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--rule); }
+.custom-opt { margin-top: 14px; padding-top: 10px; }
 .custom-opt > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .02em; padding: 4px 0; user-select: none; }
 .custom-opt > summary::-webkit-details-marker { display: none; }
 .custom-opt > summary::before { content: '▸'; font-size: 11px; width: 10px; transition: transform .15s; }
@@ -236,7 +238,11 @@ button.primary:hover { background: #4d403b; }
 .custom-opt > .rows { margin-top: 8px; }
 .slots { display: grid; gap: 8px; }
 .slots > .rows[hidden], .slot-add[hidden] { display: none; }
-.slot-add { justify-self: start; padding: 7px 14px; font-size: 13px; border-style: dashed; }
+/* 점선 테두리 버튼: 둥근 사각형 SVG 를 3·3 점선으로 (굵기 2 의 바깥 절반은 잘려 1px) */
+.slot-add { justify-self: start; padding: 7px 14px; font-size: 13px; border-color: transparent;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='10' fill='none' stroke='%23e4ddd8' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E") var(--card); }
+.slot-add:hover { border-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='10' fill='none' stroke='%23c9beb8' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E"); }
 .row .slot-del { font-size: 18px; line-height: 1; }
 .tool, .tool-gap { width: 34px; height: 34px; flex: none; }
 .row .tool, .color-head .tool { padding: 0; display: grid; place-items: center; }
