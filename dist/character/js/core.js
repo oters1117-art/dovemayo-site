@@ -914,10 +914,11 @@
       // 흰자는 흰자위 색(--sclera)으로 칠한다
       out += eye.white.replace(/fill="#fff(fff)?"/gi, 'fill="var(--sclera)"') + '<g clip-path="url(#' + clipId + ')">' +
         '<g transform="' + t + sc + ')">' + body + '</g>';
-      // 홍채 테두리: 눈동자 크기와 상관없이 굵기 7 로 그린다
+      // 홍채 테두리: 눈동자 크기와 상관없이 같은 굵기. 안쪽 끝은 홍채 반지름 - 5,
+      // 바깥 끝은 홍채 면보다 0.8 더 나가게 한다 (딱 맞으면 홍채 색이 가장자리에 실선처럼 비친다. 진한 흰자위 색에서 보임, 2026-11-25)
       if (!pupil.noRing) {
-        out += '<circle cx="' + (c[0] + ((iris && iris.dx) || 0)) + '" cy="' + (c[1] + ((iris && iris.dy) || 0)) + '" r="' + r1(IRIS_R * ((iris && iris.scale) || 1) - 2.5) +
-          '" fill="none" stroke="var(--eye-ring)" stroke-width="5"/>';
+        out += '<circle cx="' + (c[0] + ((iris && iris.dx) || 0)) + '" cy="' + (c[1] + ((iris && iris.dy) || 0)) + '" r="' + r1(IRIS_R * ((iris && iris.scale) || 1) - 2.1) +
+          '" fill="none" stroke="var(--eye-ring)" stroke-width="5.8"/>';
       }
       // 하이라이트는 좌우 반전하지 않는다 (빛 방향이 같아야 하므로 한 번 더 뒤집어 되돌린다)
       if (hl && hl.mark) out += '<g transform="' + t + (flipBack ? -sc : sc) + ' ' + sc + ')">' + hl.mark + '</g>';
